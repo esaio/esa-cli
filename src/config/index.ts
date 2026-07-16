@@ -1,3 +1,27 @@
+/**
+ * esa の public app（PKCE を用いる public client）の client_id。
+ * client_secret を持たないため公開しても問題ない値。
+ * ESA_OAUTH_CLIENT_ID で上書きできる。
+ */
+const DEFAULT_CLIENT_ID =
+  "b29aa0a592d3eb6651db57a39994b57b2670613bd1b48b5937d97d34278bb133";
+
+/**
+ * login でデフォルト要求するスコープ。post 操作を中心とした実用セット。
+ * ESA_OAUTH_SCOPE で上書きできる。
+ */
+const DEFAULT_SCOPE = [
+  "read:post",
+  "write:post",
+  "read:comment",
+  "write:comment",
+  "read:category",
+  "read:tag",
+  "read:member",
+  "read:team",
+  "read:user",
+].join(" ");
+
 export const config = {
   cli: {
     name: "esa",
@@ -9,3 +33,27 @@ export const config = {
     apiBaseUrl: process.env.ESA_API_BASE_URL || "https://api.esa.io",
   },
 } as const;
+
+export type OAuthConfig = {
+  clientId: string;
+  scope: string;
+  authorizationEndpoint: string;
+  tokenEndpoint: string;
+  revocationEndpoint: string;
+};
+
+/**
+ * OAuth 認証に必要な設定を解決して返す。
+ * エンドポイントは esa の discovery
+ * (https://api.esa.io/.well-known/oauth-authorization-server) に準拠。
+ */
+export function getOAuthConfig(): OAuthConfig {
+  const baseUrl = config.esa.apiBaseUrl;
+  return {
+    clientId: process.env.ESA_OAUTH_CLIENT_ID || DEFAULT_CLIENT_ID,
+    scope: process.env.ESA_OAUTH_SCOPE || DEFAULT_SCOPE,
+    authorizationEndpoint: `${baseUrl}/oauth/authorize`,
+    tokenEndpoint: `${baseUrl}/oauth/token`,
+    revocationEndpoint: `${baseUrl}/oauth/revoke`,
+  };
+}
