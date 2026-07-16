@@ -11,9 +11,7 @@ const saveTokens = vi.fn<(tokens: TokenSet) => Promise<void>>();
 const OAUTH: OAuthConfig = {
   clientId: "cid",
   scope: "read:post",
-  authorizationEndpoint: "https://api.esa.io/oauth/authorize",
-  tokenEndpoint: "https://api.esa.io/oauth/token",
-  revocationEndpoint: "https://api.esa.io/oauth/revoke",
+  apiBaseUrl: "https://api.esa.io",
 };
 
 const CURRENT: TokenSet = {
@@ -23,7 +21,7 @@ const CURRENT: TokenSet = {
   client_id: "cid",
 };
 
-/** トークンエンドポイントの応答を差し替える。 */
+/** discovery はモックし、トークンエンドポイントの応答のみを差し替える。 */
 function mockTokenEndpoint(body: Record<string, unknown>) {
   vi.stubGlobal(
     "fetch",
@@ -36,11 +34,22 @@ beforeEach(() => {
   saveTokens.mockReset();
   saveTokens.mockResolvedValue();
   vi.doMock("../auth/token-store.js", () => ({ saveTokens }));
+  // refresh は discovery からトークンエンドポイントを解決するため、
+  // ここではネットワークに出ずに固定のメタデータを返す。
+  vi.doMock("../auth/discovery.js", () => ({
+    fetchMetadata: async () => ({
+      issuer: "https://esa.io/",
+      authorization_endpoint: "https://api.esa.io/oauth/authorize",
+      token_endpoint: "https://api.esa.io/oauth/token",
+      revocation_endpoint: "https://api.esa.io/oauth/revoke",
+    }),
+  }));
 });
 
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.doUnmock("../auth/token-store.js");
+  vi.doUnmock("../auth/discovery.js");
 });
 
 test("keeps the existing refresh_token when the response omits it", async () => {

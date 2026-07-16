@@ -1,5 +1,6 @@
 import type { OAuthConfig } from "../config/index.js";
 import { startCallbackServer } from "./callback.js";
+import { fetchMetadata } from "./discovery.js";
 import { openBrowser } from "./open-browser.js";
 import { generatePkce, generateState } from "./pkce.js";
 import { saveTokens } from "./token-store.js";
@@ -62,6 +63,9 @@ async function readError(response: Response): Promise<string> {
  * 取得したトークンを OS 資格情報ストアに保存する。
  */
 export async function login(oauth: OAuthConfig): Promise<TokenSet> {
+  console.error("認可サーバーの情報を取得しています...");
+  const metadata = await fetchMetadata(oauth.apiBaseUrl);
+
   const { verifier, challenge } = generatePkce();
   const state = generateState();
   const server = await startCallbackServer(state);
@@ -69,7 +73,7 @@ export async function login(oauth: OAuthConfig): Promise<TokenSet> {
   try {
     const redirectUri = `http://127.0.0.1:${String(server.port)}/callback`;
 
-    const authUrl = new URL(oauth.authorizationEndpoint);
+    const authUrl = new URL(metadata.authorization_endpoint);
     authUrl.searchParams.set("response_type", "code");
     authUrl.searchParams.set("client_id", oauth.clientId);
     authUrl.searchParams.set("redirect_uri", redirectUri);
@@ -92,7 +96,7 @@ export async function login(oauth: OAuthConfig): Promise<TokenSet> {
     params.set("redirect_uri", redirectUri);
     params.set("code_verifier", verifier);
 
-    const response = await postForm(oauth.tokenEndpoint, params);
+    const response = await postForm(metadata.token_endpoint, params);
     if (!response.ok) {
       throw new Error(
         `トークンの取得に失敗しました: ${await readError(response)}`,
@@ -118,12 +122,14 @@ export async function refresh(
   if (!tokens.refresh_token) {
     throw new Error("refresh_token がありません。再ログインしてください。");
   }
+  const metadata = await fetchMetadata(oauth.apiBaseUrl);
+
   const params = new URLSearchParams();
   params.set("grant_type", "refresh_token");
   params.set("refresh_token", tokens.refresh_token);
   params.set("client_id", tokens.client_id);
 
-  const response = await postForm(oauth.tokenEndpoint, params);
+  const response = await postForm(metadata.token_endpoint, params);
   if (!response.ok) {
     throw new Error(
       `トークンの更新に失敗しました: ${await readError(response)}`,
@@ -139,16 +145,23 @@ export async function refresh(
   return next;
 }
 
-/** アクセストークンと refresh_token を失効させる（ベストエフォート）。 */
+/**
+ * アクセストークンと refresh_token を失効させる（ベストエフォート）。
+ * 認可サーバーが失効エンドポイントを公開していない場合は何もしない。
+ */
 export async function revoke(
   oauth: OAuthConfig,
   tokens: TokenSet,
 ): Promise<void> {
+  const metadata = await fetchMetadata(oauth.apiBaseUrl);
+  const endpoint = metadata.revocation_endpoint;
+  if (!endpoint) return;
+
   const revokeOne = (token: string): Promise<Response> => {
     const params = new URLSearchParams();
     params.set("token", token);
     params.set("client_id", tokens.client_id);
-    return postForm(oauth.revocationEndpoint, params);
+    return postForm(endpoint, params);
   };
 
   const targets = [tokens.access_token, tokens.refresh_token].filter(

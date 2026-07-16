@@ -37,23 +37,20 @@ export const config = {
 export type OAuthConfig = {
   clientId: string;
   scope: string;
-  authorizationEndpoint: string;
-  tokenEndpoint: string;
-  revocationEndpoint: string;
+  /** 認可サーバーのメタデータ (RFC 8414) の取得元。 */
+  apiBaseUrl: string;
 };
 
 /**
  * OAuth 認証に必要な設定を解決して返す。
- * エンドポイントは esa の discovery
- * (https://api.esa.io/.well-known/oauth-authorization-server) に準拠。
+ *
+ * 各エンドポイントはここでは持たない。実行時に discovery
+ * (`/.well-known/oauth-authorization-server`) から取得する。
  */
 export function getOAuthConfig(): OAuthConfig {
-  const baseUrl = config.esa.apiBaseUrl;
   return {
     clientId: process.env.ESA_OAUTH_CLIENT_ID || DEFAULT_CLIENT_ID,
     scope: process.env.ESA_OAUTH_SCOPE || DEFAULT_SCOPE,
-    authorizationEndpoint: `${baseUrl}/oauth/authorize`,
-    tokenEndpoint: `${baseUrl}/oauth/token`,
-    revocationEndpoint: `${baseUrl}/oauth/revoke`,
+    apiBaseUrl: config.esa.apiBaseUrl,
   };
 }

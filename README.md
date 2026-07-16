@@ -41,6 +41,8 @@ esa auth logout     # トークンを失効・削除
 
 - Authorization Code + PKCE（S256）フロー。client_secret を持たない public app。
 - コールバックは `http://127.0.0.1:<ランダムポート>/callback`。
+- 各エンドポイントはハードコードせず、実行時に **discovery**
+  （`/.well-known/oauth-authorization-server`, RFC 8414）から取得する。
 - トークンの保存先は OS により自動判定（上記）。
 
 ### 環境変数
@@ -49,7 +51,7 @@ esa auth logout     # トークンを失効・削除
 | --- | --- | --- |
 | `ESA_OAUTH_SCOPE` | 要求するスコープ（スペース区切り） | `read:post write:post read:comment write:comment read:category read:tag read:member read:team read:user` |
 | `ESA_OAUTH_CLIENT_ID` | public app の client_id を上書き | 内蔵の公式 public app |
-| `ESA_API_BASE_URL` | API / OAuth のベース URL | `https://api.esa.io` |
+| `ESA_API_BASE_URL` | API のベース URL。discovery の取得元でもある | `https://api.esa.io` |
 | `ESA_ACCESS_TOKEN` | OAuth を使わずアクセストークンを直接指定 | （未設定） |
 
 ## Scripts
@@ -76,6 +78,7 @@ src/
     auth.ts              # `esa auth` コマンド群（login/logout/status）
   auth/                  # OAuth 認証とトークン保存
     oauth.ts             # Authorization Code + PKCE フロー
+    discovery.ts         # 認可サーバーのメタデータ取得 (RFC 8414)
     pkce.ts              # PKCE / state 生成
     callback.ts          # ループバック HTTP サーバー
     open-browser.ts      # 既定ブラウザの起動（OS 標準コマンド）
