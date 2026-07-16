@@ -1,0 +1,71 @@
+name: Publish
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_run:
+    workflows: ["Version Bump"]
+    types: [completed]
+    branches: [main]
+
+jobs:
+  npm-publish:
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' || github.event.workflow_run.conclusion == 'success' }}
+    permissions:
+      contents: read
+      id-token: write # for trusted publishing (OIDC)
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          cache: "npm"
+          node-version: "24.x"
+          registry-url: "https://registry.npmjs.org"
+      - name: Install dependencies
+        run: npm ci
+      - name: Run tests and checks
+        run: npm run test:release
+      - name: Build package
+        run: npm run build
+      - name: Publish to npm
+        run: npm publish --provenance --access public
+
+  verify-npm:
+    needs: npm-publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: "24.x"
+      - name: Checkout repository
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: Get published version
+        id: version
+        run: |
+          VERSION=$(jq -r '.version' package.json)
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+      # --ignore-scripts でインストールしても動くことが要件のため、
+      # ビルド済みの bin/ が同梱されているかをこの経路で検証する。
+      - name: Check the published package runs when installed with --ignore-scripts
+        shell: bash {0}
+        run: |
+          for i in 1 2 3; do
+            npm install --ignore-scripts -g "@esaio/esa-cli@${{ steps.version.outputs.version }}" >/dev/null 2>&1
+            RESULT=$(esa --version 2>&1)
+            echo "Attempt ${i}: esa --version => ${RESULT}"
+            if [[ "${RESULT}" == "${{ steps.version.outputs.version }}" ]]; then
+              echo "Success on attempt ${i}"
+              exit 0
+            fi
+            echo "Retrying in 10 seconds..."
+            sleep 10
+          done
+          echo "Error: All attempts failed"
+          echo "Expected: ${{ steps.version.outputs.version }}"
+          exit 1

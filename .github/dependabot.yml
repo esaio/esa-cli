@@ -1,0 +1,21 @@
+version: 2
+updates:
+- package-ecosystem: "github-actions"
+  directory: "/"
+  schedule:
+    interval: daily
+- package-ecosystem: npm
+  directory: "/"
+  schedule:
+    interval: daily
+    time: "03:00"
+    timezone: Asia/Tokyo
+  open-pull-requests-limit: 10
+  groups:
+    vitest:
+      patterns:
+        - "vitest"
+        - "@vitest/*"
+  ignore:
+    - dependency-name: "@types/node"
+      update-types: ["version-update:semver-major"]
