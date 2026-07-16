@@ -15,14 +15,25 @@ type TokenResponse = {
   created_at?: number;
 };
 
-function toTokenSet(data: TokenResponse, clientId: string): TokenSet {
+/**
+ * トークンエンドポイントの応答を TokenSet に変換する。
+ *
+ * RFC 6749 Section 6 では、リフレッシュ時の応答に refresh_token が含まれない
+ * 場合は既存の refresh_token を使い続けることになっているため、
+ * fallbackRefreshToken でそれを引き継ぐ。
+ */
+function toTokenSet(
+  data: TokenResponse,
+  clientId: string,
+  fallbackRefreshToken?: string,
+): TokenSet {
   const expiresAt =
     data.created_at != null && data.expires_in != null
       ? data.created_at + data.expires_in
       : undefined;
   return {
     access_token: data.access_token,
-    refresh_token: data.refresh_token,
+    refresh_token: data.refresh_token ?? fallbackRefreshToken,
     token_type: data.token_type,
     scope: data.scope,
     expires_at: expiresAt,
@@ -122,6 +133,7 @@ export async function refresh(
   const next = toTokenSet(
     (await response.json()) as TokenResponse,
     tokens.client_id,
+    tokens.refresh_token,
   );
   await saveTokens(next);
   return next;

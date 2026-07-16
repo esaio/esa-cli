@@ -61,11 +61,6 @@ export function backendLabel(backend: Backend): string {
   }
 }
 
-/** @internal テスト用: backend 判定のキャッシュをリセットする。 */
-export function resetBackendCache(): void {
-  cachedBackend = undefined;
-}
-
 export async function saveTokens(
   tokens: TokenSet,
   configDir: string = DEFAULT_CONFIG_DIR,
@@ -89,7 +84,9 @@ export async function saveTokens(
     }
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
-    throw new Error(`トークンの保存に失敗しました (${backend}): ${msg}`);
+    throw new Error(
+      `トークンの保存に失敗しました (${backendLabel(backend)}): ${msg}`,
+    );
   }
 }
 
@@ -113,20 +110,15 @@ export function loadTokens(
       break;
   }
 
+  // 各 backend は「エントリ無し」「空」のいずれも null を返すよう統一している。
   if (json == null) return null;
-  if (json === "") {
-    console.error(
-      `警告: トークンデータが空です (${backend})。\`esa auth login\` で再ログインしてください。`,
-    );
-    return null;
-  }
 
   try {
     return JSON.parse(json) as TokenSet;
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     console.error(
-      `警告: トークンデータのパースに失敗しました (${backend}): ${msg}`,
+      `警告: トークンデータのパースに失敗しました (${backendLabel(backend)}): ${msg}。\`esa auth login\` で再ログインしてください。`,
     );
     return null;
   }
