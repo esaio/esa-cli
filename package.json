@@ -34,6 +34,7 @@
     "lint": "biome check . --error-on-warnings",
     "lint:fix": "biome check --write .",
     "type-check": "tsc --noEmit",
+    "prepublishOnly": "npm run build",
     "bin-check": "node -e \"if (!require('fs').existsSync('./bin/index.js')) { console.error('Error: ./bin/index.js does not exist. Please run npm run build first.'); process.exit(1); }\""
   },
   "keywords": [
