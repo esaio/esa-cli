@@ -8,9 +8,6 @@ import {
 } from "../auth/token-store.js";
 import { getOAuthConfig } from "../config/index.js";
 
-/**
- * `esa auth` コマンド群（login / logout / status）を登録する。
- */
 export function registerAuthCommand(program: Command): void {
   const auth = program
     .command("auth")

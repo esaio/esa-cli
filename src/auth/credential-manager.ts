@@ -71,11 +71,8 @@ function addTypePrefix(): string {
 }
 
 /**
- * Windows Credential Manager (PowerShell) が利用可能か。
- *
- * keychain と同様、理由を問わず probe に失敗したら利用不可とみなして
- * 次の backend にフォールバックする。PowerShell が壊れている環境で
- * 「利用可能」と誤判定すると、保存時に落ちて login 自体が失敗するため。
+ * PowerShell が壊れている環境で「利用可能」と誤判定すると保存時に落ちて
+ * login ごと失敗するため、probe に失敗したら理由を問わず利用不可とみなす。
  */
 export function isCredentialManagerAvailable(): boolean {
   if (process.platform !== "win32") return false;

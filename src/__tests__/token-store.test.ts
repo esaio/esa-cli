@@ -1,9 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
-/**
- * backend の判定結果はモジュール内にキャッシュされるため、各テストで
- * vi.resetModules() + 動的 import により毎回新しい状態から読み込む。
- */
+// backend の判定結果はモジュール内にキャッシュされるため、テストごとに
+// モジュールを読み込み直す必要がある。
 
 type BackendMocks = {
   keychain: { load: ReturnType<typeof vi.fn>; save: ReturnType<typeof vi.fn> };

@@ -1,7 +1,4 @@
-/**
- * OAuth 2.0 Authorization Server Metadata (RFC 8414)。
- * esa が公開しているもののうち、CLI が利用するフィールドのみ定義する。
- */
+/** OAuth 2.0 Authorization Server Metadata (RFC 8414) のうち利用する範囲。 */
 export type AuthorizationServerMetadata = {
   issuer: string;
   authorization_endpoint: string;
@@ -40,12 +37,10 @@ function requireEndpoint(
 }
 
 /**
- * 認可サーバーのメタデータを取得する。
- *
- * esa の metadata は issuer が `https://esa.io/` である一方、実体は
- * `https://api.esa.io/.well-known/...` で配信されている（issuer のホストでは
- * 配信されていない）。そのため RFC 8414 の「issuer のオリジンから取得して
- * issuer の完全一致を検証する」方式は使えず、API のベース URL から取得する。
+ * esa の metadata は issuer が `https://esa.io/` だが、配信は
+ * `https://api.esa.io/.well-known/...` のみ（issuer のホストでは 404）。
+ * このため RFC 8414 の「issuer のオリジンから取得し issuer の完全一致を
+ * 検証する」方式は使えない。
  */
 export async function fetchMetadata(
   apiBaseUrl: string,
@@ -95,8 +90,7 @@ export async function fetchMetadata(
       : undefined,
   };
 
-  // この CLI は client_secret を持たない public client として PKCE(S256) 固定で
-  // 認証するため、サーバー側が対応していないなら早期に失敗させる。
+  // この CLI は PKCE(S256) 固定で認証するため、非対応なら早期に失敗させる。
   const pkceMethods = metadata.code_challenge_methods_supported;
   if (pkceMethods && !pkceMethods.includes("S256")) {
     throw new Error(

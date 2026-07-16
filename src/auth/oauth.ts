@@ -17,11 +17,8 @@ type TokenResponse = {
 };
 
 /**
- * トークンエンドポイントの応答を TokenSet に変換する。
- *
- * RFC 6749 Section 6 では、リフレッシュ時の応答に refresh_token が含まれない
- * 場合は既存の refresh_token を使い続けることになっているため、
- * fallbackRefreshToken でそれを引き継ぐ。
+ * RFC 6749 Section 6: リフレッシュ応答の refresh_token は任意で、
+ * 含まれない場合は既存のものを使い続ける。
  */
 function toTokenSet(
   data: TokenResponse,

@@ -4,12 +4,9 @@ const SERVICE = "esa-cli";
 const ACCOUNT = "oauth-tokens";
 
 /**
- * macOS Keychain (security コマンド) が利用可能か。
- *
- * `security help` は正常環境では必ず成功するため、理由を問わず失敗したら
+ * `security help` は正常な環境なら必ず成功するため、失敗したら理由を問わず
  * 利用不可とみなして次の backend にフォールバックする。
- * (ENOENT のみを見る secret-service とは方針が異なる。あちらは
- *  `secret-tool --help` が正常時でも終了コード 2 を返すための特例。)
+ * (ENOENT のみを見る secret-service とは方針が異なる。)
  */
 export function isKeychainAvailable(): boolean {
   if (process.platform !== "darwin") return false;
@@ -29,7 +26,6 @@ export function keychainSave(data: string): void {
   );
 }
 
-/** エントリが無い場合・値が空の場合はいずれも null を返す。 */
 export function keychainLoad(): string | null {
   try {
     const result = execFileSync(

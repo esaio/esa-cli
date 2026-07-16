@@ -34,8 +34,7 @@ beforeEach(() => {
   saveTokens.mockReset();
   saveTokens.mockResolvedValue();
   vi.doMock("../auth/token-store.js", () => ({ saveTokens }));
-  // refresh は discovery からトークンエンドポイントを解決するため、
-  // ここではネットワークに出ずに固定のメタデータを返す。
+  // ネットワークに出ずにトークンエンドポイントを解決させる。
   vi.doMock("../auth/discovery.js", () => ({
     fetchMetadata: async () => ({
       issuer: "https://esa.io/",

@@ -110,7 +110,6 @@ export function loadTokens(
       break;
   }
 
-  // 各 backend は「エントリ無し」「空」のいずれも null を返すよう統一している。
   if (json == null) return null;
 
   try {

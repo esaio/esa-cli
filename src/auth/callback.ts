@@ -17,10 +17,7 @@ const SUCCESS_HTML = `<!doctype html>
 <p>このタブを閉じてターミナルに戻ってください。</p>
 </body></html>`;
 
-/**
- * 127.0.0.1 のランダムポートでコールバック用 HTTP サーバーを起動する。
- * /callback に届いた認可コードを検証して返す。
- */
+/** ループバックのランダムポートで待ち受ける (RFC 8252)。 */
 export function startCallbackServer(
   expectedState: string,
 ): Promise<CallbackServer> {
