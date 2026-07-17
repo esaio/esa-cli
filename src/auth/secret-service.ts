@@ -23,12 +23,43 @@ export function isSecretServiceAvailable(): boolean {
   }
 }
 
+function stderrOf(error: unknown): string {
+  const { stderr } = error as { stderr?: Buffer | string };
+  return (stderr ?? "").toString().trim();
+}
+
+/**
+ * secret-tool の失敗を、そのまま原因が分かるメッセージに変換する。
+ * キーリングがロックされている場合、secret-tool は
+ * "Cannot create an item in a locked collection" を返して終了する。
+ * 自動ログインを使っているとログインキーリングがアンロックされないため、
+ * 実ユーザーでも普通に踏む。
+ */
+function describeSaveFailure(error: unknown): string {
+  const stderr = stderrOf(error);
+  const detail =
+    stderr || (error instanceof Error ? error.message : String(error));
+
+  if (/locked/i.test(stderr)) {
+    return [
+      detail,
+      "キーリングがロックされています。「パスワードと鍵」(seahorse) でログインキーリングをアンロックするか、",
+      "自動ログインを無効にしてログインし直してから、再度 `esa auth login` を実行してください。",
+    ].join("\n");
+  }
+  return detail;
+}
+
 export function secretServiceSave(data: string): void {
-  execFileSync(
-    "secret-tool",
-    ["store", "--label", SERVICE, "service", SERVICE, "account", ACCOUNT],
-    { input: data, stdio: ["pipe", "ignore", "ignore"] },
-  );
+  try {
+    execFileSync(
+      "secret-tool",
+      ["store", "--label", SERVICE, "service", SERVICE, "account", ACCOUNT],
+      { input: data, stdio: ["pipe", "ignore", "pipe"] },
+    );
+  } catch (error) {
+    throw new Error(describeSaveFailure(error));
+  }
 }
 
 export function secretServiceLoad(): string | null {
