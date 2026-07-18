@@ -22,12 +22,14 @@ jobs:
         run: npm ci
       - name: Run linting
         run: |
-          output=$(npm run lint 2>&1)
+          # 失敗しても出力を握り潰さないよう、いったん結果を受け取ってから表示する。
+          output=$(npm run lint 2>&1) && status=0 || status=$?
           echo "$output"
           if echo "$output" | grep -q "schema version does not match"; then
             echo "::error::Biome schema version mismatch detected. Please run 'npx biome migrate --write' to update biome.json"
             exit 1
           fi
+          exit $status
       - name: Run type checking
         run: npm run type-check
       - name: Check package.json version and package-lock.json version are same

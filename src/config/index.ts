@@ -1,3 +1,5 @@
+import packageJson from "../../package.json" with { type: "json" };
+
 /** client_secret を持たない public client のため、公開しても問題ない値。 */
 const DEFAULT_CLIENT_ID =
   "b29aa0a592d3eb6651db57a39994b57b2670613bd1b48b5937d97d34278bb133";
@@ -19,7 +21,7 @@ export const config = {
   cli: {
     name: "esa",
     description: "Official CLI for esa.io",
-    version: "0.0.1",
+    version: packageJson.version,
   },
   esa: {
     apiAccessToken: process.env.ESA_ACCESS_TOKEN || "",

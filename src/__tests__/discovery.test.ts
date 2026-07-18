@@ -102,3 +102,22 @@ test("throws when the server does not support PKCE S256", async () => {
 
   await expect(fetchMetadata(BASE_URL)).rejects.toThrow(/PKCE/);
 });
+
+test("rejects a non-HTTPS revocation_endpoint (would leak tokens on logout)", async () => {
+  mockDiscovery({
+    ...ESA_METADATA,
+    revocation_endpoint: "http://attacker.example.com/revoke",
+  });
+
+  await expect(fetchMetadata(BASE_URL)).rejects.toThrow(/HTTPS/);
+});
+
+test("treats a missing revocation_endpoint as undefined, not an error", async () => {
+  const { revocation_endpoint, ...withoutRevoke } = ESA_METADATA;
+  void revocation_endpoint;
+  mockDiscovery(withoutRevoke);
+
+  const metadata = await fetchMetadata(BASE_URL);
+
+  expect(metadata.revocation_endpoint).toBeUndefined();
+});

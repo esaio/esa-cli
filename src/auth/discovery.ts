@@ -12,6 +12,25 @@ const WELL_KNOWN_PATH = "/.well-known/oauth-authorization-server";
 
 let cache: { key: string; metadata: AuthorizationServerMetadata } | undefined;
 
+// メタデータが差し替えられた場合にトークンを平文で送らないための最低限の防御。
+function validateEndpoint(
+  value: string,
+  field: string,
+  allowHttp: boolean,
+): void {
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    throw new Error(
+      `認可サーバーのメタデータの ${field} が URL ではありません: ${value}`,
+    );
+  }
+  if (url.protocol !== "https:" && !allowHttp) {
+    throw new Error(`${field} は HTTPS である必要があります: ${value}`);
+  }
+}
+
 function requireEndpoint(
   metadata: Record<string, unknown>,
   field: string,
@@ -21,18 +40,19 @@ function requireEndpoint(
   if (typeof value !== "string" || value === "") {
     throw new Error(`認可サーバーのメタデータに ${field} がありません`);
   }
-  let url: URL;
-  try {
-    url = new URL(value);
-  } catch {
-    throw new Error(
-      `認可サーバーのメタデータの ${field} が URL ではありません: ${value}`,
-    );
-  }
-  // メタデータが差し替えられた場合にトークンを平文で送らないための最低限の防御。
-  if (url.protocol !== "https:" && !allowHttp) {
-    throw new Error(`${field} は HTTPS である必要があります: ${value}`);
-  }
+  validateEndpoint(value, field, allowHttp);
+  return value;
+}
+
+/** 任意のエンドポイント。存在する場合のみ URL/HTTPS を検証する。 */
+function optionalEndpoint(
+  metadata: Record<string, unknown>,
+  field: string,
+  allowHttp: boolean,
+): string | undefined {
+  const value = metadata[field];
+  if (typeof value !== "string" || value === "") return undefined;
+  validateEndpoint(value, field, allowHttp);
   return value;
 }
 
@@ -74,10 +94,11 @@ export async function fetchMetadata(
       allowHttp,
     ),
     token_endpoint: requireEndpoint(raw, "token_endpoint", allowHttp),
-    revocation_endpoint:
-      typeof raw.revocation_endpoint === "string"
-        ? raw.revocation_endpoint
-        : undefined,
+    revocation_endpoint: optionalEndpoint(
+      raw,
+      "revocation_endpoint",
+      allowHttp,
+    ),
     code_challenge_methods_supported: Array.isArray(
       raw.code_challenge_methods_supported,
     )

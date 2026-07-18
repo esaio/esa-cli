@@ -8,14 +8,17 @@ import type { TokenSet } from "../auth/types.js";
  */
 
 const loadTokens = vi.fn<() => TokenSet | null>();
+const deleteTokens = vi.fn<() => Promise<void>>();
+const revoke = vi.fn<() => Promise<void>>();
 
 function mockTokenStore() {
   vi.doMock("../auth/token-store.js", () => ({
     loadTokens,
-    deleteTokens: vi.fn(),
+    deleteTokens,
     getBackend: () => "keychain",
     backendLabel: () => "macOS Keychain",
   }));
+  vi.doMock("../auth/oauth.js", () => ({ revoke }));
 }
 
 /** status を実行して stdout に出力された JSON を返す。 */
@@ -31,15 +34,26 @@ async function runStatus(): Promise<Record<string, unknown>> {
   return JSON.parse(output) as Record<string, unknown>;
 }
 
+async function runLogout(): Promise<void> {
+  const { registerAuthCommand } = await import("../commands/auth.js");
+  vi.spyOn(console, "error").mockImplementation(() => {});
+  const program = new Command();
+  registerAuthCommand(program);
+  await program.parseAsync(["auth", "logout"], { from: "user" });
+}
+
 beforeEach(() => {
   vi.resetModules();
   loadTokens.mockReset();
+  deleteTokens.mockReset().mockResolvedValue();
+  revoke.mockReset().mockResolvedValue();
   mockTokenStore();
 });
 
 afterEach(() => {
   vi.restoreAllMocks();
   vi.doUnmock("../auth/token-store.js");
+  vi.doUnmock("../auth/oauth.js");
   process.env.ESA_ACCESS_TOKEN = undefined;
   delete process.env.ESA_ACCESS_TOKEN;
 });
@@ -99,5 +113,41 @@ describe("esa auth status", () => {
       expires_in_seconds: 0,
       has_refresh_token: false,
     });
+  });
+});
+
+describe("esa auth logout", () => {
+  const TOKENS: TokenSet = {
+    access_token: "at",
+    refresh_token: "rt",
+    token_type: "Bearer",
+    client_id: "cid",
+  };
+
+  test("deletes the local token after a successful revoke", async () => {
+    loadTokens.mockReturnValue(TOKENS);
+
+    await runLogout();
+
+    expect(revoke).toHaveBeenCalled();
+    expect(deleteTokens).toHaveBeenCalled();
+  });
+
+  test("still deletes the local token when revoke fails (e.g. offline)", async () => {
+    loadTokens.mockReturnValue(TOKENS);
+    revoke.mockRejectedValue(new Error("getaddrinfo ENOTFOUND"));
+
+    await runLogout();
+
+    expect(deleteTokens).toHaveBeenCalled();
+  });
+
+  test("does nothing when not logged in", async () => {
+    loadTokens.mockReturnValue(null);
+
+    await runLogout();
+
+    expect(revoke).not.toHaveBeenCalled();
+    expect(deleteTokens).not.toHaveBeenCalled();
   });
 });

@@ -52,7 +52,7 @@ esa auth logout     # トークンを失効・削除
 | `ESA_OAUTH_SCOPE` | 要求するスコープ（スペース区切り） | `read:post write:post read:comment write:comment read:category read:tag read:member read:team read:user` |
 | `ESA_OAUTH_CLIENT_ID` | public app の client_id を上書き | 内蔵の公式 public app |
 | `ESA_API_BASE_URL` | API のベース URL。discovery の取得元でもある | `https://api.esa.io` |
-| `ESA_ACCESS_TOKEN` | OAuth を使わずアクセストークンを直接指定 | （未設定） |
+| `ESA_ACCESS_TOKEN` | アクセストークンを直接指定（現状は `esa auth status` の表示にのみ反映） | （未設定） |
 
 ## Scripts
 
@@ -87,6 +87,7 @@ src/
     credential-manager.ts # Windows Credential Manager
     secret-service.ts    # Linux Secret Service
     encrypted-store.ts   # フォールバックの暗号化ファイル
+    machine-id.ts        # 暗号化ファイルの鍵に使うマシン固有 ID
     types.ts             # TokenSet 型
   config/                # 設定・環境変数
     index.ts

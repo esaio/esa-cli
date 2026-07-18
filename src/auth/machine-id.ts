@@ -68,7 +68,8 @@ let cached: string | undefined;
 /**
  * マシン固有の識別子。暗号化ファイルの鍵の素として使い、別マシンへ
  * ファイルをコピーしても復号できないようにする。
- * OS が提供する推測不能な ID を優先する。
+ * OS が提供する推測不能な ID を優先するが、それが取得できない環境では
+ * 推測可能な `user@hostname` に落ちる（その場合は持ち出し耐性が無い）。
  */
 export function getMachineId(): string {
   if (cached === undefined) cached = detect();

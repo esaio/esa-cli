@@ -19,11 +19,21 @@ export function isKeychainAvailable(): boolean {
 }
 
 export function keychainSave(data: string): void {
-  execFileSync(
-    "security",
-    ["add-generic-password", "-s", SERVICE, "-a", ACCOUNT, "-w", data, "-U"],
-    { stdio: "ignore" },
-  );
+  try {
+    execFileSync(
+      "security",
+      ["add-generic-password", "-s", SERVICE, "-a", ACCOUNT, "-w", data, "-U"],
+      { stdio: ["pipe", "ignore", "pipe"] },
+    );
+  } catch (error) {
+    // security の stderr（例: Keychain がロックされている等）を握り潰さず
+    // 原因が分かるメッセージにして投げ直す。
+    const { stderr } = error as { stderr?: Buffer | string };
+    const detail = (stderr ?? "").toString().trim();
+    throw new Error(
+      detail || (error instanceof Error ? error.message : String(error)),
+    );
+  }
 }
 
 export function keychainLoad(): string | null {

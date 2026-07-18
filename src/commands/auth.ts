@@ -36,8 +36,16 @@ export function registerAuthCommand(program: Command): void {
         console.error("ログインしていません。");
         return;
       }
-      const oauth = getOAuthConfig();
-      await revoke(oauth, tokens);
+      // 失効はベストエフォート。ネットワーク障害などで失敗しても、
+      // ローカルのトークン削除は必ず行う（端末紛失時に消せないと困る）。
+      try {
+        await revoke(getOAuthConfig(), tokens);
+      } catch (error) {
+        const msg = error instanceof Error ? error.message : String(error);
+        console.error(
+          `トークンの失効に失敗しました（削除は続行します）: ${msg}`,
+        );
+      }
       await deleteTokens();
       console.error("ログアウトしました。");
     });
