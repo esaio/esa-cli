@@ -75,9 +75,12 @@ export function registerAuthCommand(program: Command): void {
       console.log(
         JSON.stringify(
           {
+            auth_method: "oauth",
+            backend: getBackend(),
             token_type: next.token_type,
             scope: next.scope,
             has_refresh_token: Boolean(next.refresh_token),
+            expired: expiresIn != null ? expiresIn <= 0 : null,
             expires_in_seconds:
               expiresIn != null ? Math.max(0, expiresIn) : null,
           },

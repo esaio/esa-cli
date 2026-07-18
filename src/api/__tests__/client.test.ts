@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import type { ResolvedAuth } from "../../auth/resolve-auth.js";
+import type { TokenSet } from "../../auth/types.js";
 
-const refresh = vi.fn();
+const refresh = vi.fn<() => Promise<TokenSet>>();
 const resolveAuth = vi.fn<() => ResolvedAuth>();
 const getOAuthConfig = vi.fn(() => ({
   clientId: "cid",
@@ -33,6 +34,16 @@ function oauth(accessToken: string, expiresAt?: number): ResolvedAuth {
   };
 }
 
+/** refresh() の戻り値（更新後トークン）。 */
+function tokenSet(accessToken: string, expiresAt: number): TokenSet {
+  return {
+    access_token: accessToken,
+    token_type: "Bearer",
+    client_id: "cid",
+    expires_at: expiresAt,
+  };
+}
+
 function json(body: unknown, status: number): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -55,7 +66,7 @@ function sentAuthHeader(
 }
 
 beforeEach(() => {
-  refresh.mockReset().mockResolvedValue(undefined);
+  refresh.mockReset();
   resolveAuth.mockReset();
   getOAuthConfig.mockReset().mockReturnValue({
     clientId: "cid",
@@ -66,6 +77,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  vi.restoreAllMocks();
 });
 
 test("sends the Bearer token and esa-cli User-Agent", async () => {
@@ -89,20 +101,38 @@ test("throws when there is no auth", async () => {
 });
 
 test("refreshes before sending when the token is about to expire", async () => {
-  // マージン(60s)以内。refresh 後は新トークンを返す。
-  let refreshed = false;
-  refresh.mockImplementation(async () => {
-    refreshed = true;
-  });
-  resolveAuth.mockImplementation(() =>
-    refreshed ? oauth("new", NOW() + 7200) : oauth("old", NOW() + 30),
-  );
+  resolveAuth.mockReturnValue(oauth("old", NOW() + 30)); // マージン内
+  refresh.mockResolvedValue(tokenSet("new", NOW() + 7200));
   const fetchMock = stubOkFetch();
 
   await createEsaClient().GET("/v1/user");
 
   expect(refresh).toHaveBeenCalledTimes(1);
-  expect(sentAuthHeader(fetchMock)).toBe("Bearer new");
+  expect(sentAuthHeader(fetchMock)).toBe("Bearer new"); // refresh の戻り値を使う
+});
+
+test("treats the margin boundary (exactly 60s) as expiring", async () => {
+  // Date.now を固定して <=（境界含む）を検証する。
+  const nowSec = 1_700_000_000;
+  vi.spyOn(Date, "now").mockReturnValue(nowSec * 1000);
+  resolveAuth.mockReturnValue(oauth("old", nowSec + 60));
+  refresh.mockResolvedValue(tokenSet("new", nowSec + 7200));
+  stubOkFetch();
+
+  await createEsaClient().GET("/v1/user");
+
+  expect(refresh).toHaveBeenCalledTimes(1);
+});
+
+test("does not refresh one second past the margin (61s)", async () => {
+  const nowSec = 1_700_000_000;
+  vi.spyOn(Date, "now").mockReturnValue(nowSec * 1000);
+  resolveAuth.mockReturnValue(oauth("old", nowSec + 61));
+  stubOkFetch();
+
+  await createEsaClient().GET("/v1/user");
+
+  expect(refresh).not.toHaveBeenCalled();
 });
 
 test("does not refresh when the token is still valid", async () => {
@@ -147,6 +177,19 @@ test("still sends with the current token if the proactive refresh fails", async 
   expect(sentAuthHeader(fetchMock)).toBe("Bearer old");
 });
 
+test("passes a 401 response through without retrying", async () => {
+  // ローカル判定が外れてサーバーが 401 を返しても、リトライせず 401 を返す。
+  resolveAuth.mockReturnValue(oauth("tok", NOW() + 3600));
+  const fetchMock = vi.fn(async () => json({ message: "unauthorized" }, 401));
+  vi.stubGlobal("fetch", fetchMock);
+
+  const { response } = await createEsaClient().GET("/v1/user");
+
+  expect(response.status).toBe(401);
+  expect(fetchMock).toHaveBeenCalledTimes(1);
+  expect(refresh).not.toHaveBeenCalled();
+});
+
 test("wraps a network failure in a friendly error", async () => {
   resolveAuth.mockReturnValue(oauth("tok", NOW() + 3600));
   vi.stubGlobal(
@@ -159,24 +202,4 @@ test("wraps a network failure in a friendly error", async () => {
   await expect(createEsaClient().GET("/v1/user")).rejects.toThrow(
     /接続に失敗しました/,
   );
-});
-
-test("rejects a non-HTTPS external base URL before sending", () => {
-  getOAuthConfig.mockReturnValue({
-    clientId: "cid",
-    scope: "read:post",
-    apiBaseUrl: "http://evil.example.com",
-  });
-
-  expect(() => createEsaClient()).toThrow(/HTTPS/);
-});
-
-test("allows http on localhost for local development", () => {
-  getOAuthConfig.mockReturnValue({
-    clientId: "cid",
-    scope: "read:post",
-    apiBaseUrl: "http://localhost:3000",
-  });
-
-  expect(() => createEsaClient()).not.toThrow();
 });

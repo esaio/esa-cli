@@ -1,0 +1,42 @@
+import { afterEach, beforeEach, expect, test, vi } from "vitest";
+
+const ORIGINAL = process.env.ESA_API_BASE_URL;
+
+/** config は import 時に process.env を読むため、都度読み込み直す。 */
+async function loadGetOAuthConfig() {
+  vi.resetModules();
+  const { getOAuthConfig } = await import("../index.js");
+  return getOAuthConfig;
+}
+
+beforeEach(() => {
+  delete process.env.ESA_API_BASE_URL;
+});
+
+afterEach(() => {
+  if (ORIGINAL === undefined) delete process.env.ESA_API_BASE_URL;
+  else process.env.ESA_API_BASE_URL = ORIGINAL;
+});
+
+test("uses the default https base URL", async () => {
+  const getOAuthConfig = await loadGetOAuthConfig();
+  expect(getOAuthConfig().apiBaseUrl).toBe("https://api.esa.io");
+});
+
+test("rejects a non-HTTPS external base URL (would leak tokens)", async () => {
+  process.env.ESA_API_BASE_URL = "http://evil.example.com";
+  const getOAuthConfig = await loadGetOAuthConfig();
+  expect(() => getOAuthConfig()).toThrow(/HTTPS/);
+});
+
+test("allows http on localhost for local development", async () => {
+  process.env.ESA_API_BASE_URL = "http://localhost:3000";
+  const getOAuthConfig = await loadGetOAuthConfig();
+  expect(() => getOAuthConfig()).not.toThrow();
+});
+
+test("rejects a malformed base URL", async () => {
+  process.env.ESA_API_BASE_URL = "not a url";
+  const getOAuthConfig = await loadGetOAuthConfig();
+  expect(() => getOAuthConfig()).toThrow(/ESA_API_BASE_URL/);
+});

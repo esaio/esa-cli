@@ -16,7 +16,7 @@ const ESA_METADATA = {
 
 function mockDiscovery(body: unknown, status = 200) {
   const fetchMock = vi.fn(
-    async () =>
+    async (_url: string, _init?: RequestInit) =>
       new Response(typeof body === "string" ? body : JSON.stringify(body), {
         status,
       }),
@@ -47,6 +47,15 @@ test("fetches metadata from the well-known endpoint of the API base URL", async 
   );
   expect(metadata.token_endpoint).toBe("https://api.esa.io/oauth/token");
   expect(metadata.revocation_endpoint).toBe("https://api.esa.io/oauth/revoke");
+});
+
+test("sets a timeout signal so an unresponsive server cannot hang", async () => {
+  const fetchMock = mockDiscovery(ESA_METADATA);
+
+  await fetchMetadata(BASE_URL);
+
+  const init = fetchMock.mock.calls[0][1];
+  expect(init?.signal).toBeInstanceOf(AbortSignal);
 });
 
 test("caches metadata so repeated calls hit the network once", async () => {

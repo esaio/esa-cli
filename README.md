@@ -53,7 +53,7 @@ esa team list --page 2 --per-page 50
 
 API リクエストの認証は次の順で選ばれます:
 
-1. `esa auth login` で保存した **OAuth トークン**（期限切れ時は refresh token で自動更新）
+1. `esa auth login` で保存した **OAuth トークン**（期限が近づくと送信前に自動更新）
 2. 環境変数 **`ESA_ACCESS_TOKEN`**
 3. どちらも無ければエラー（`esa auth login` を案内）
 
@@ -95,11 +95,11 @@ src/
   index.ts               # CLI エントリポイント（commander）
   commands/              # サブコマンド定義
     index.ts             # コマンド登録の集約
-    auth.ts              # `esa auth` コマンド群（login/logout/status）
+    auth.ts              # `esa auth` コマンド群（login/logout/refresh/status）
     user.ts              # `esa user`
     team.ts              # `esa team list`
   api/                   # esa API クライアント
-    client.ts            # openapi-fetch クライアント（認証・401 リフレッシュ）
+    client.ts            # openapi-fetch クライアント（認証・送信前のトークン更新）
     response.ts          # レスポンスの取り出しとエラー整形
   auth/                  # OAuth 認証とトークン保存
     oauth.ts             # Authorization Code + PKCE フロー

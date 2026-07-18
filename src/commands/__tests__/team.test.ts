@@ -73,3 +73,21 @@ test("rejects a non-numeric --page without calling the API", async () => {
   );
   expect(get).not.toHaveBeenCalled();
 });
+
+test("rejects --page 0 (must be >= 1)", async () => {
+  vi.spyOn(console, "log").mockImplementation(() => {});
+
+  await expect(run(["team", "list", "--page", "0"])).rejects.toThrow(
+    /--page.*整数/,
+  );
+  expect(get).not.toHaveBeenCalled();
+});
+
+test("rejects a negative --per-page", async () => {
+  vi.spyOn(console, "log").mockImplementation(() => {});
+
+  await expect(run(["team", "list", "--per-page", "-1"])).rejects.toThrow(
+    /--per-page.*整数/,
+  );
+  expect(get).not.toHaveBeenCalled();
+});

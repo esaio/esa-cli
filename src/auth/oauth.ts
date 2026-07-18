@@ -1,4 +1,4 @@
-import type { OAuthConfig } from "../config/index.js";
+import { type OAuthConfig, REQUEST_TIMEOUT_MS } from "../config/index.js";
 import { startCallbackServer } from "./callback.js";
 import { fetchMetadata } from "./discovery.js";
 import { openBrowser } from "./open-browser.js";
@@ -47,6 +47,7 @@ async function postForm(
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: params,
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   });
 }
 

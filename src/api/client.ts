@@ -8,31 +8,6 @@ import type { paths } from "../generated/api-types.js";
 // 期限のこの秒数前になったら、送信前にトークンを更新する。
 const REFRESH_MARGIN_SECONDS = 60;
 
-/**
- * トークンを平文で送らないための最低限の防御。ESA_API_BASE_URL の誤設定で
- * http や第三者ホストへ Bearer トークンを送るのを防ぐ（localhost の http は
- * ローカル開発用に許容）。discovery 側の検証と方針を揃える。
- */
-function validateApiBaseUrl(apiBaseUrl: string): void {
-  let url: URL;
-  try {
-    url = new URL(apiBaseUrl);
-  } catch {
-    throw new Error(
-      `API のベース URL が不正です（ESA_API_BASE_URL を確認してください）: ${apiBaseUrl}`,
-    );
-  }
-  if (url.protocol === "https:") return;
-  const isLoopback =
-    url.hostname === "localhost" ||
-    url.hostname === "127.0.0.1" ||
-    url.hostname === "::1";
-  if (url.protocol === "http:" && isLoopback) return;
-  throw new Error(
-    `API のベース URL は HTTPS である必要があります（localhost を除く）: ${apiBaseUrl}`,
-  );
-}
-
 function isExpiring(tokens: TokenSet): boolean {
   if (tokens.expires_at == null) return false; // 期限不明なら更新しない
   const now = Math.floor(Date.now() / 1000);
@@ -69,9 +44,8 @@ const authMiddleware: Middleware = {
     // env トークンは更新できないので対象外。
     if (auth.method === "oauth" && isExpiring(auth.tokens)) {
       try {
-        await refresh(getOAuthConfig(), auth.tokens);
-        const refreshed = bearerOf(resolveAuth());
-        if (refreshed != null) token = refreshed;
+        const next = await refresh(getOAuthConfig(), auth.tokens);
+        token = next.access_token;
       } catch {
         // 更新できなくても現トークンで送り、サーバーの判断に委ねる。
       }
@@ -90,8 +64,7 @@ const authMiddleware: Middleware = {
 
 /** esa API を叩く openapi-fetch クライアントを生成する。 */
 export function createEsaClient(): Client<paths> {
-  const { apiBaseUrl } = getOAuthConfig();
-  validateApiBaseUrl(apiBaseUrl);
+  const { apiBaseUrl } = getOAuthConfig(); // apiBaseUrl はここで検証される
   const client = createClient<paths>({ baseUrl: apiBaseUrl });
   client.use(userAgentMiddleware);
   client.use(authMiddleware);

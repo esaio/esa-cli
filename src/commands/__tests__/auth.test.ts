@@ -207,7 +207,10 @@ describe("esa auth refresh", () => {
     const out = await runRefresh();
 
     expect(refresh).toHaveBeenCalled();
+    // status と揃ったスキーマ（auth_method / backend を含む）で出力する。
     expect(out).toMatchObject({
+      auth_method: "oauth",
+      backend: "keychain",
       token_type: "Bearer",
       has_refresh_token: true,
     });
