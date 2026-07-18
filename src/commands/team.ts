@@ -2,6 +2,7 @@ import type { Command } from "commander";
 import { createEsaClient } from "../api/client.js";
 import { unwrap } from "../api/response.js";
 import type { paths } from "../generated/api-types.js";
+import { positiveInt } from "./parse.js";
 
 type TeamsQuery = NonNullable<paths["/v1/teams"]["get"]["parameters"]["query"]>;
 
@@ -10,14 +11,6 @@ type ListOptions = {
   perPage?: string;
   role?: string;
 };
-
-function positiveInt(value: string, name: string): number {
-  const n = Number(value);
-  if (!Number.isInteger(n) || n < 1) {
-    throw new Error(`${name} は 1 以上の整数で指定してください: ${value}`);
-  }
-  return n;
-}
 
 export function registerTeamCommand(program: Command): void {
   const team = program.command("team").description("Work with teams");
