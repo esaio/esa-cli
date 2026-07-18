@@ -10,6 +10,7 @@ import type { TokenSet } from "../../auth/types.js";
 const loadTokens = vi.fn<() => TokenSet | null>();
 const deleteTokens = vi.fn<() => Promise<void>>();
 const revoke = vi.fn<() => Promise<void>>();
+const refresh = vi.fn<() => Promise<TokenSet>>();
 
 function mockTokenStore() {
   vi.doMock("../../auth/token-store.js", () => ({
@@ -18,7 +19,7 @@ function mockTokenStore() {
     getBackend: () => "keychain",
     backendLabel: () => "macOS Keychain",
   }));
-  vi.doMock("../../auth/oauth.js", () => ({ revoke }));
+  vi.doMock("../../auth/oauth.js", () => ({ revoke, refresh }));
 }
 
 /** status を実行して stdout に出力された JSON を返す。 */
@@ -47,6 +48,7 @@ beforeEach(() => {
   loadTokens.mockReset();
   deleteTokens.mockReset().mockResolvedValue();
   revoke.mockReset().mockResolvedValue();
+  refresh.mockReset();
   mockTokenStore();
 });
 
@@ -165,5 +167,63 @@ describe("esa auth logout", () => {
 
     expect(revoke).not.toHaveBeenCalled();
     expect(deleteTokens).toHaveBeenCalled();
+  });
+});
+
+describe("esa auth refresh", () => {
+  const TOKENS: TokenSet = {
+    access_token: "at",
+    refresh_token: "rt",
+    token_type: "Bearer",
+    client_id: "cid",
+  };
+
+  async function runRefresh(): Promise<Record<string, unknown>> {
+    const { registerAuthCommand } = await import("../auth.js");
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const program = new Command();
+    program.exitOverride();
+    registerAuthCommand(program);
+    await program.parseAsync(["auth", "refresh"], { from: "user" });
+    return JSON.parse(log.mock.calls[0]?.[0] as string) as Record<
+      string,
+      unknown
+    >;
+  }
+
+  test("refreshes the OAuth token and prints the new expiry", async () => {
+    loadTokens.mockReturnValue(TOKENS);
+    const future = Math.floor(Date.now() / 1000) + 7200;
+    refresh.mockResolvedValue({
+      access_token: "new-at",
+      refresh_token: "new-rt",
+      token_type: "Bearer",
+      scope: "read:post",
+      expires_at: future,
+      client_id: "cid",
+    });
+
+    const out = await runRefresh();
+
+    expect(refresh).toHaveBeenCalled();
+    expect(out).toMatchObject({
+      token_type: "Bearer",
+      has_refresh_token: true,
+    });
+    expect(out.expires_in_seconds).toBeGreaterThan(0);
+  });
+
+  test("errors when not logged in via OAuth", async () => {
+    loadTokens.mockReturnValue(null);
+    const { registerAuthCommand } = await import("../auth.js");
+    const program = new Command();
+    program.exitOverride();
+    registerAuthCommand(program);
+
+    await expect(
+      program.parseAsync(["auth", "refresh"], { from: "user" }),
+    ).rejects.toThrow(/OAuth でログインしていません/);
+    expect(refresh).not.toHaveBeenCalled();
   });
 });

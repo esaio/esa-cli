@@ -1,5 +1,5 @@
 import type { Command } from "commander";
-import { login, revoke } from "../auth/oauth.js";
+import { login, refresh, revoke } from "../auth/oauth.js";
 import { resolveAuth } from "../auth/resolve-auth.js";
 import {
   backendLabel,
@@ -53,6 +53,37 @@ export function registerAuthCommand(program: Command): void {
         tokens != null
           ? "ログアウトしました。"
           : "保存されたトークンを削除しました。",
+      );
+    });
+
+  auth
+    .command("refresh")
+    .description("Refresh the OAuth access token using the refresh token")
+    .action(async () => {
+      const current = resolveAuth();
+      if (current.method !== "oauth") {
+        throw new Error(
+          "OAuth でログインしていません。`esa auth login` を実行してください。",
+        );
+      }
+      const next = await refresh(getOAuthConfig(), current.tokens);
+      console.error(
+        `トークンを更新しました（${backendLabel(getBackend())}）。`,
+      );
+      const now = Math.floor(Date.now() / 1000);
+      const expiresIn = next.expires_at != null ? next.expires_at - now : null;
+      console.log(
+        JSON.stringify(
+          {
+            token_type: next.token_type,
+            scope: next.scope,
+            has_refresh_token: Boolean(next.refresh_token),
+            expires_in_seconds:
+              expiresIn != null ? Math.max(0, expiresIn) : null,
+          },
+          null,
+          2,
+        ),
       );
     });
 

@@ -34,6 +34,7 @@ Linux Secret Service）に保存されます。いずれも使えない環境で
 ```bash
 esa auth login     # ブラウザで OAuth 認証してトークンを保存
 esa auth status    # 現在の認証状態を表示（JSON）
+esa auth refresh   # refresh token でアクセストークンを更新
 esa auth logout     # トークンを失効・削除
 ```
 
