@@ -1,6 +1,6 @@
 import { Command } from "commander";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import type { TokenSet } from "../auth/types.js";
+import type { TokenSet } from "../../auth/types.js";
 
 /**
  * `esa auth status` の出力分岐を検証する。
@@ -12,18 +12,18 @@ const deleteTokens = vi.fn<() => Promise<void>>();
 const revoke = vi.fn<() => Promise<void>>();
 
 function mockTokenStore() {
-  vi.doMock("../auth/token-store.js", () => ({
+  vi.doMock("../../auth/token-store.js", () => ({
     loadTokens,
     deleteTokens,
     getBackend: () => "keychain",
     backendLabel: () => "macOS Keychain",
   }));
-  vi.doMock("../auth/oauth.js", () => ({ revoke }));
+  vi.doMock("../../auth/oauth.js", () => ({ revoke }));
 }
 
 /** status を実行して stdout に出力された JSON を返す。 */
 async function runStatus(): Promise<Record<string, unknown>> {
-  const { registerAuthCommand } = await import("../commands/auth.js");
+  const { registerAuthCommand } = await import("../auth.js");
   const log = vi.spyOn(console, "log").mockImplementation(() => {});
   const program = new Command();
   registerAuthCommand(program);
@@ -35,7 +35,7 @@ async function runStatus(): Promise<Record<string, unknown>> {
 }
 
 async function runLogout(): Promise<void> {
-  const { registerAuthCommand } = await import("../commands/auth.js");
+  const { registerAuthCommand } = await import("../auth.js");
   vi.spyOn(console, "error").mockImplementation(() => {});
   const program = new Command();
   registerAuthCommand(program);
@@ -52,8 +52,8 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.restoreAllMocks();
-  vi.doUnmock("../auth/token-store.js");
-  vi.doUnmock("../auth/oauth.js");
+  vi.doUnmock("../../auth/token-store.js");
+  vi.doUnmock("../../auth/oauth.js");
   process.env.ESA_ACCESS_TOKEN = undefined;
   delete process.env.ESA_ACCESS_TOKEN;
 });

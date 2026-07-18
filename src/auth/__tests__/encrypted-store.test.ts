@@ -6,7 +6,7 @@ import {
   encryptedDelete,
   encryptedLoad,
   encryptedSave,
-} from "../auth/encrypted-store.js";
+} from "../encrypted-store.js";
 
 let dir: string;
 

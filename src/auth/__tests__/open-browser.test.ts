@@ -5,7 +5,7 @@ vi.mock("node:child_process", () => ({
   execFile: (...args: unknown[]) => execFileMock(...args),
 }));
 
-const { openBrowser } = await import("../auth/open-browser.js");
+const { openBrowser } = await import("../open-browser.js");
 
 // 実際の認可 URL と同じく & 区切りのクエリを持つもの。
 const AUTH_URL =

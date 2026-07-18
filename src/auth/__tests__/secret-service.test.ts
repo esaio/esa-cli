@@ -5,7 +5,7 @@ vi.mock("node:child_process", () => ({
   execFileSync: (...args: unknown[]) => execFileSyncMock(...args),
 }));
 
-const { secretServiceSave } = await import("../auth/secret-service.js");
+const { secretServiceSave } = await import("../secret-service.js");
 
 /** execFileSync が投げるエラーの形（stderr を持つ）。 */
 function commandFailure(stderr: string): Error {

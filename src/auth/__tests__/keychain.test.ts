@@ -5,7 +5,7 @@ vi.mock("node:child_process", () => ({
   execFileSync: (...args: unknown[]) => execFileSyncMock(...args),
 }));
 
-const { keychainSave } = await import("../auth/keychain.js");
+const { keychainSave } = await import("../keychain.js");
 
 function commandFailure(stderr: string): Error {
   return Object.assign(

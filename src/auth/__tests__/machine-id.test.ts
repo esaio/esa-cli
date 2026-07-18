@@ -21,7 +21,7 @@ function setPlatform(platform: NodeJS.Platform) {
 }
 
 async function importGetMachineId() {
-  const { getMachineId } = await import("../auth/machine-id.js");
+  const { getMachineId } = await import("../machine-id.js");
   return getMachineId;
 }
 

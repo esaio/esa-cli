@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-import type { TokenSet } from "../auth/types.js";
-import type { OAuthConfig } from "../config/index.js";
+import type { OAuthConfig } from "../../config/index.js";
+import type { TokenSet } from "../types.js";
 
 /**
  * refresh() のトークン引き継ぎを検証する。
@@ -33,9 +33,9 @@ beforeEach(() => {
   vi.resetModules();
   saveTokens.mockReset();
   saveTokens.mockResolvedValue();
-  vi.doMock("../auth/token-store.js", () => ({ saveTokens }));
+  vi.doMock("../token-store.js", () => ({ saveTokens }));
   // ネットワークに出ずにトークンエンドポイントを解決させる。
-  vi.doMock("../auth/discovery.js", () => ({
+  vi.doMock("../discovery.js", () => ({
     fetchMetadata: async () => ({
       issuer: "https://esa.io/",
       authorization_endpoint: "https://api.esa.io/oauth/authorize",
@@ -47,8 +47,8 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.unstubAllGlobals();
-  vi.doUnmock("../auth/token-store.js");
-  vi.doUnmock("../auth/discovery.js");
+  vi.doUnmock("../token-store.js");
+  vi.doUnmock("../discovery.js");
 });
 
 test("keeps the existing refresh_token when the response omits it", async () => {
@@ -59,7 +59,7 @@ test("keeps the existing refresh_token when the response omits it", async () => 
     expires_in: 3600,
     created_at: 1_700_000_000,
   });
-  const { refresh } = await import("../auth/oauth.js");
+  const { refresh } = await import("../oauth.js");
 
   const next = await refresh(OAUTH, CURRENT);
 
@@ -78,7 +78,7 @@ test("uses the rotated refresh_token when the response provides one", async () =
     expires_in: 3600,
     created_at: 1_700_000_000,
   });
-  const { refresh } = await import("../auth/oauth.js");
+  const { refresh } = await import("../oauth.js");
 
   const next = await refresh(OAUTH, CURRENT);
 
@@ -89,7 +89,7 @@ test("uses the rotated refresh_token when the response provides one", async () =
 test("throws without calling the endpoint when there is no refresh_token", async () => {
   const fetchSpy = vi.fn();
   vi.stubGlobal("fetch", fetchSpy);
-  const { refresh } = await import("../auth/oauth.js");
+  const { refresh } = await import("../oauth.js");
 
   await expect(
     refresh(OAUTH, { ...CURRENT, refresh_token: undefined }),

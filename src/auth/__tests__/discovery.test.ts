@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-import { clearMetadataCache, fetchMetadata } from "../auth/discovery.js";
+import { clearMetadataCache, fetchMetadata } from "../discovery.js";
 
 const BASE_URL = "https://api.esa.io";
 

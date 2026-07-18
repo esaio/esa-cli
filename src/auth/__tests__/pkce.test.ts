@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { expect, test } from "vitest";
-import { generatePkce, generateState } from "../auth/pkce.js";
+import { generatePkce, generateState } from "../pkce.js";
 
 const BASE64URL = /^[A-Za-z0-9_-]+$/;
 

@@ -23,25 +23,25 @@ function mockBackends(available: {
     encrypted: { save: vi.fn() },
   };
 
-  vi.doMock("../auth/keychain.js", () => ({
+  vi.doMock("../keychain.js", () => ({
     isKeychainAvailable: () => available.keychain,
     keychainSave: mocks.keychain.save,
     keychainLoad: mocks.keychain.load,
     keychainDelete: vi.fn(),
   }));
-  vi.doMock("../auth/credential-manager.js", () => ({
+  vi.doMock("../credential-manager.js", () => ({
     isCredentialManagerAvailable: () => available.credentialManager,
     credentialManagerSave: vi.fn(),
     credentialManagerLoad: vi.fn(),
     credentialManagerDelete: vi.fn(),
   }));
-  vi.doMock("../auth/secret-service.js", () => ({
+  vi.doMock("../secret-service.js", () => ({
     isSecretServiceAvailable: () => available.secretService,
     secretServiceSave: mocks.secretService.save,
     secretServiceLoad: vi.fn(),
     secretServiceDelete: vi.fn(),
   }));
-  vi.doMock("../auth/encrypted-store.js", () => ({
+  vi.doMock("../encrypted-store.js", () => ({
     encryptedSave: mocks.encrypted.save,
     encryptedLoad: vi.fn(),
     encryptedDelete: vi.fn(),
@@ -51,7 +51,7 @@ function mockBackends(available: {
 }
 
 async function importTokenStore() {
-  return import("../auth/token-store.js");
+  return import("../token-store.js");
 }
 
 const TOKENS = {
@@ -66,10 +66,10 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.restoreAllMocks();
-  vi.doUnmock("../auth/keychain.js");
-  vi.doUnmock("../auth/credential-manager.js");
-  vi.doUnmock("../auth/secret-service.js");
-  vi.doUnmock("../auth/encrypted-store.js");
+  vi.doUnmock("../keychain.js");
+  vi.doUnmock("../credential-manager.js");
+  vi.doUnmock("../secret-service.js");
+  vi.doUnmock("../encrypted-store.js");
 });
 
 describe("backend detection", () => {
