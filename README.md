@@ -37,6 +37,25 @@ esa auth status    # 現在の認証状態を表示（JSON）
 esa auth logout     # トークンを失効・削除
 ```
 
+### API コマンド
+
+認証後、esa API を叩けます。レスポンスは JSON で stdout に出力するので `jq` 等に流せます。
+
+```bash
+esa user                    # 認証ユーザーの情報 (GET /v1/user)
+esa team list               # 所属チーム一覧 (GET /v1/teams)
+esa team list --role owner  # 権限で絞り込み (member | owner)
+esa team list --page 2 --per-page 50
+```
+
+### 認証の優先順位
+
+API リクエストの認証は次の順で選ばれます:
+
+1. `esa auth login` で保存した **OAuth トークン**（期限切れ時は refresh token で自動更新）
+2. 環境変数 **`ESA_ACCESS_TOKEN`**
+3. どちらも無ければエラー（`esa auth login` を案内）
+
 ## Authentication flow
 
 - Authorization Code + PKCE（S256）フロー。client_secret を持たない public app。
@@ -76,9 +95,15 @@ src/
   commands/              # サブコマンド定義
     index.ts             # コマンド登録の集約
     auth.ts              # `esa auth` コマンド群（login/logout/status）
+    user.ts              # `esa user`
+    team.ts              # `esa team list`
+  api/                   # esa API クライアント
+    client.ts            # openapi-fetch クライアント（認証・401 リフレッシュ）
+    response.ts          # レスポンスの取り出しとエラー整形
   auth/                  # OAuth 認証とトークン保存
     oauth.ts             # Authorization Code + PKCE フロー
     discovery.ts         # 認可サーバーのメタデータ取得 (RFC 8414)
+    resolve-auth.ts      # 認証方式の選択（OAuth / ESA_ACCESS_TOKEN / none）
     pkce.ts              # PKCE / state 生成
     callback.ts          # ループバック HTTP サーバー
     open-browser.ts      # 既定ブラウザの起動（OS 標準コマンド）
@@ -91,7 +116,8 @@ src/
     types.ts             # TokenSet 型
   config/                # 設定・環境変数
     index.ts
-  __tests__/             # テスト
+  generated/             # openapi.yaml から生成した API 型（npm run update-esa-api）
+    api-types.ts
 ```
 
 ## License
