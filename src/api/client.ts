@@ -22,10 +22,7 @@ function bearerOf(auth: ResolvedAuth): string | null {
 
 const userAgentMiddleware: Middleware = {
   onRequest({ request }) {
-    request.headers.set(
-      "User-Agent",
-      `esa-cli/${config.cli.version} (official)`,
-    );
+    request.headers.set("User-Agent", config.cli.userAgent);
     return request;
   },
 };

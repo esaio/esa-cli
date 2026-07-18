@@ -13,7 +13,14 @@ const getOAuthConfig = vi.fn(() => ({
 vi.mock("../../auth/oauth.js", () => ({ refresh }));
 vi.mock("../../auth/resolve-auth.js", () => ({ resolveAuth }));
 vi.mock("../../config/index.js", () => ({
-  config: { cli: { name: "esa", description: "", version: "9.9.9" } },
+  config: {
+    cli: {
+      name: "esa",
+      description: "",
+      version: "9.9.9",
+      userAgent: "esa-cli/9.9.9 (official)",
+    },
+  },
   getOAuthConfig,
 }));
 

@@ -22,6 +22,8 @@ export const config = {
     name: "esa",
     description: "Official CLI for esa.io",
     version: packageJson.version,
+    // esa API リクエストの User-Agent。esa 側でクライアントを識別するため。
+    userAgent: `esa-cli/${packageJson.version} (official)`,
   },
   esa: {
     apiAccessToken: process.env.ESA_ACCESS_TOKEN || "",
