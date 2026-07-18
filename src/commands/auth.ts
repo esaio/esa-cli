@@ -1,5 +1,6 @@
 import type { Command } from "commander";
 import { login, revoke } from "../auth/oauth.js";
+import { resolveAuth } from "../auth/resolve-auth.js";
 import {
   backendLabel,
   deleteTokens,
@@ -59,22 +60,23 @@ export function registerAuthCommand(program: Command): void {
     .command("status")
     .description("Show the current authentication status")
     .action(() => {
-      const tokens = loadTokens();
-      if (tokens == null) {
-        if (process.env.ESA_ACCESS_TOKEN) {
-          console.log(
-            JSON.stringify(
-              { auth_method: "env", source: "ESA_ACCESS_TOKEN" },
-              null,
-              2,
-            ),
-          );
-          return;
-        }
+      const auth = resolveAuth();
+      if (auth.method === "none") {
         console.log(JSON.stringify({ auth_method: "none" }, null, 2));
         return;
       }
+      if (auth.method === "env") {
+        console.log(
+          JSON.stringify(
+            { auth_method: "env", source: "ESA_ACCESS_TOKEN" },
+            null,
+            2,
+          ),
+        );
+        return;
+      }
 
+      const { tokens } = auth;
       const now = Math.floor(Date.now() / 1000);
       const expiresIn =
         tokens.expires_at != null ? tokens.expires_at - now : null;
