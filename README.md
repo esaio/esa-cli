@@ -4,7 +4,7 @@ Official CLI for [esa.io](https://esa.io).
 
 ## Requirements
 
-- Node.js >= 24.14.0
+- Node.js >= 24.18.0
 - npm >= 11.7.0
 
 ## Development
