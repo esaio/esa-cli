@@ -67,6 +67,15 @@ export async function fetchMetadata(
 ): Promise<AuthorizationServerMetadata> {
   if (cache?.key === apiBaseUrl) return cache.metadata;
 
+  let base: URL;
+  try {
+    base = new URL(apiBaseUrl);
+  } catch {
+    throw new Error(
+      `API のベース URL が不正です（ESA_API_BASE_URL を確認してください）: ${apiBaseUrl}`,
+    );
+  }
+
   const url = `${apiBaseUrl}${WELL_KNOWN_PATH}`;
   let response: Response;
   try {
@@ -84,7 +93,7 @@ export async function fetchMetadata(
   }
 
   const raw = (await response.json()) as Record<string, unknown>;
-  const allowHttp = new URL(apiBaseUrl).protocol === "http:";
+  const allowHttp = base.protocol === "http:";
 
   const metadata: AuthorizationServerMetadata = {
     issuer: typeof raw.issuer === "string" ? raw.issuer : "",

@@ -114,6 +114,20 @@ describe("esa auth status", () => {
       has_refresh_token: false,
     });
   });
+
+  test("reports null expiry (not 0) when expires_at is unknown", async () => {
+    loadTokens.mockReturnValue({
+      access_token: "at",
+      token_type: "Bearer",
+      client_id: "cid",
+    });
+
+    // 期限不明を「期限切れ0秒」と混同しないよう、両方 null にする。
+    expect(await runStatus()).toMatchObject({
+      expired: null,
+      expires_in_seconds: null,
+    });
+  });
 });
 
 describe("esa auth logout", () => {
@@ -142,12 +156,14 @@ describe("esa auth logout", () => {
     expect(deleteTokens).toHaveBeenCalled();
   });
 
-  test("does nothing when not logged in", async () => {
+  test("still tries to delete when the stored token is unreadable (null)", async () => {
+    // loadTokens はパース失敗時も null を返すため、壊れたデータが残っている
+    // 可能性がある。revoke は無理でも削除は試みる。
     loadTokens.mockReturnValue(null);
 
     await runLogout();
 
     expect(revoke).not.toHaveBeenCalled();
-    expect(deleteTokens).not.toHaveBeenCalled();
+    expect(deleteTokens).toHaveBeenCalled();
   });
 });

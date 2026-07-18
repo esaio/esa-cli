@@ -32,22 +32,27 @@ export function registerAuthCommand(program: Command): void {
     .description("Log out and remove the stored token")
     .action(async () => {
       const tokens = loadTokens();
-      if (tokens == null) {
-        console.error("ログインしていません。");
-        return;
-      }
+
       // 失効はベストエフォート。ネットワーク障害などで失敗しても、
       // ローカルのトークン削除は必ず行う（端末紛失時に消せないと困る）。
-      try {
-        await revoke(getOAuthConfig(), tokens);
-      } catch (error) {
-        const msg = error instanceof Error ? error.message : String(error);
-        console.error(
-          `トークンの失効に失敗しました（削除は続行します）: ${msg}`,
-        );
+      // tokens が null でも、パース不能な壊れたデータが残っている場合が
+      // あるため削除は試みる（失効は tokens が無いと行えない）。
+      if (tokens != null) {
+        try {
+          await revoke(getOAuthConfig(), tokens);
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : String(error);
+          console.error(
+            `トークンの失効に失敗しました（削除は続行します）: ${msg}`,
+          );
+        }
       }
       await deleteTokens();
-      console.error("ログアウトしました。");
+      console.error(
+        tokens != null
+          ? "ログアウトしました。"
+          : "保存されたトークンを削除しました。",
+      );
     });
 
   auth
@@ -83,7 +88,7 @@ export function registerAuthCommand(program: Command): void {
             has_refresh_token: Boolean(tokens.refresh_token),
             expired: expiresIn != null ? expiresIn <= 0 : null,
             expires_in_seconds:
-              expiresIn != null && expiresIn > 0 ? expiresIn : 0,
+              expiresIn != null ? Math.max(0, expiresIn) : null,
           },
           null,
           2,

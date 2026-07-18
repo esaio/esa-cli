@@ -121,3 +121,10 @@ test("treats a missing revocation_endpoint as undefined, not an error", async ()
 
   expect(metadata.revocation_endpoint).toBeUndefined();
 });
+
+test("throws a clear error when the base URL is invalid, without fetching", async () => {
+  const fetchMock = mockDiscovery(ESA_METADATA);
+
+  await expect(fetchMetadata("api.esa.io")).rejects.toThrow(/ESA_API_BASE_URL/);
+  expect(fetchMock).not.toHaveBeenCalled();
+});
