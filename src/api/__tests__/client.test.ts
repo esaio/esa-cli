@@ -18,16 +18,40 @@ vi.mock("../../config/index.js", () => ({
 
 const { createEsaClient } = await import("../client.js");
 
-const oauth = (accessToken: string): ResolvedAuth => ({
-  method: "oauth",
-  tokens: { access_token: accessToken, token_type: "Bearer", client_id: "cid" },
-});
+const NOW = () => Math.floor(Date.now() / 1000);
+
+/** expiresAt を省くと期限不明のトークン。 */
+function oauth(accessToken: string, expiresAt?: number): ResolvedAuth {
+  return {
+    method: "oauth",
+    tokens: {
+      access_token: accessToken,
+      token_type: "Bearer",
+      client_id: "cid",
+      expires_at: expiresAt,
+    },
+  };
+}
 
 function json(body: unknown, status: number): Response {
   return new Response(JSON.stringify(body), {
     status,
     headers: { "content-type": "application/json" },
   });
+}
+
+function stubOkFetch() {
+  const fetchMock = vi.fn(async (_input: Request) =>
+    json({ myself: true }, 200),
+  );
+  vi.stubGlobal("fetch", fetchMock);
+  return fetchMock;
+}
+
+function sentAuthHeader(
+  fetchMock: ReturnType<typeof stubOkFetch>,
+): string | null {
+  return fetchMock.mock.calls[0][0].headers.get("Authorization");
 }
 
 beforeEach(() => {
@@ -45,92 +69,86 @@ afterEach(() => {
 });
 
 test("sends the Bearer token and esa-cli User-Agent", async () => {
-  resolveAuth.mockReturnValue(oauth("old"));
-  const fetchMock = vi.fn(async (_input: Request) =>
-    json({ myself: true }, 200),
-  );
-  vi.stubGlobal("fetch", fetchMock);
+  resolveAuth.mockReturnValue(oauth("tok", NOW() + 3600));
+  const fetchMock = stubOkFetch();
 
   await createEsaClient().GET("/v1/user");
 
   const request = fetchMock.mock.calls[0][0];
-  expect(request.headers.get("Authorization")).toBe("Bearer old");
+  expect(request.headers.get("Authorization")).toBe("Bearer tok");
   expect(request.headers.get("User-Agent")).toBe("esa-cli/9.9.9 (official)");
 });
 
 test("throws when there is no auth", async () => {
   resolveAuth.mockReturnValue({ method: "none" });
-  vi.stubGlobal(
-    "fetch",
-    vi.fn(async () => json({}, 200)),
-  );
+  stubOkFetch();
 
   await expect(createEsaClient().GET("/v1/user")).rejects.toThrow(
     /認証情報がありません/,
   );
 });
 
-test("refreshes on 401 and retries with the new token", async () => {
-  // refresh 後は新しいトークンを返すようにして、リトライにそれが載ることを検証する。
+test("refreshes before sending when the token is about to expire", async () => {
+  // マージン(60s)以内。refresh 後は新トークンを返す。
   let refreshed = false;
   refresh.mockImplementation(async () => {
     refreshed = true;
   });
-  resolveAuth.mockImplementation(() => oauth(refreshed ? "new" : "old"));
-  const fetchMock = vi
-    .fn()
-    .mockResolvedValueOnce(json({ message: "unauthorized" }, 401))
-    .mockResolvedValueOnce(json({ myself: true }, 200));
-  vi.stubGlobal("fetch", fetchMock);
+  resolveAuth.mockImplementation(() =>
+    refreshed ? oauth("new", NOW() + 7200) : oauth("old", NOW() + 30),
+  );
+  const fetchMock = stubOkFetch();
 
-  const { data, response } = await createEsaClient().GET("/v1/user");
+  await createEsaClient().GET("/v1/user");
 
   expect(refresh).toHaveBeenCalledTimes(1);
-  expect(response.status).toBe(200);
-  expect(data).toEqual({ myself: true });
-  // リトライ（2回目）に refresh 後の新トークンが載っていること。
-  const retry = fetchMock.mock.calls[1][0] as Request;
-  expect(retry.headers.get("Authorization")).toBe("Bearer new");
+  expect(sentAuthHeader(fetchMock)).toBe("Bearer new");
 });
 
-test("retries at most once and converges when 401 persists", async () => {
-  resolveAuth.mockReturnValue(oauth("old"));
-  const fetchMock = vi.fn(async () => json({ message: "unauthorized" }, 401));
-  vi.stubGlobal("fetch", fetchMock);
+test("does not refresh when the token is still valid", async () => {
+  resolveAuth.mockReturnValue(oauth("tok", NOW() + 3600));
+  const fetchMock = stubOkFetch();
 
-  const { response } = await createEsaClient().GET("/v1/user");
-
-  expect(response.status).toBe(401);
-  expect(refresh).toHaveBeenCalledTimes(1);
-  expect(fetchMock).toHaveBeenCalledTimes(2); // 1 回だけリトライして収束
-});
-
-test("does not refresh on 401 for env token", async () => {
-  resolveAuth.mockReturnValue({ method: "env", token: "env-token" });
-  const fetchMock = vi.fn(async () => json({ message: "unauthorized" }, 401));
-  vi.stubGlobal("fetch", fetchMock);
-
-  const { response } = await createEsaClient().GET("/v1/user");
+  await createEsaClient().GET("/v1/user");
 
   expect(refresh).not.toHaveBeenCalled();
-  expect(response.status).toBe(401);
-  expect(fetchMock).toHaveBeenCalledTimes(1);
+  expect(sentAuthHeader(fetchMock)).toBe("Bearer tok");
 });
 
-test("returns the original 401 when refresh fails", async () => {
-  resolveAuth.mockReturnValue(oauth("old"));
-  refresh.mockRejectedValue(new Error("refresh failed"));
-  const fetchMock = vi.fn(async () => json({ message: "unauthorized" }, 401));
-  vi.stubGlobal("fetch", fetchMock);
+test("does not refresh when the expiry is unknown", async () => {
+  resolveAuth.mockReturnValue(oauth("tok")); // expires_at 無し
+  const fetchMock = stubOkFetch();
 
-  const { response } = await createEsaClient().GET("/v1/user");
+  await createEsaClient().GET("/v1/user");
 
-  expect(response.status).toBe(401);
+  expect(refresh).not.toHaveBeenCalled();
+  expect(sentAuthHeader(fetchMock)).toBe("Bearer tok");
+});
+
+test("uses the env token without refreshing", async () => {
+  resolveAuth.mockReturnValue({ method: "env", token: "env-token" });
+  const fetchMock = stubOkFetch();
+
+  await createEsaClient().GET("/v1/user");
+
+  expect(refresh).not.toHaveBeenCalled();
+  expect(sentAuthHeader(fetchMock)).toBe("Bearer env-token");
+});
+
+test("still sends with the current token if the proactive refresh fails", async () => {
+  resolveAuth.mockReturnValue(oauth("old", NOW() + 30));
+  refresh.mockRejectedValue(new Error("network down"));
+  const fetchMock = stubOkFetch();
+
+  await createEsaClient().GET("/v1/user");
+
+  expect(refresh).toHaveBeenCalledTimes(1);
   expect(fetchMock).toHaveBeenCalledTimes(1);
+  expect(sentAuthHeader(fetchMock)).toBe("Bearer old");
 });
 
 test("wraps a network failure in a friendly error", async () => {
-  resolveAuth.mockReturnValue(oauth("old"));
+  resolveAuth.mockReturnValue(oauth("tok", NOW() + 3600));
   vi.stubGlobal(
     "fetch",
     vi.fn(async () => {

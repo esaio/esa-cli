@@ -1,10 +1,12 @@
 import createClient, { type Client, type Middleware } from "openapi-fetch";
 import { refresh } from "../auth/oauth.js";
-import { resolveAuth } from "../auth/resolve-auth.js";
+import { type ResolvedAuth, resolveAuth } from "../auth/resolve-auth.js";
+import type { TokenSet } from "../auth/types.js";
 import { config, getOAuthConfig } from "../config/index.js";
 import type { paths } from "../generated/api-types.js";
 
-const RETRIED_HEADER = "x-esa-cli-retried";
+// 期限のこの秒数前になったら、送信前にトークンを更新する。
+const REFRESH_MARGIN_SECONDS = 60;
 
 /**
  * トークンを平文で送らないための最低限の防御。ESA_API_BASE_URL の誤設定で
@@ -31,17 +33,16 @@ function validateApiBaseUrl(apiBaseUrl: string): void {
   );
 }
 
-function applyAuth(headers: Headers): boolean {
-  const auth = resolveAuth();
-  if (auth.method === "oauth") {
-    headers.set("Authorization", `Bearer ${auth.tokens.access_token}`);
-    return true;
-  }
-  if (auth.method === "env") {
-    headers.set("Authorization", `Bearer ${auth.token}`);
-    return true;
-  }
-  return false;
+function isExpiring(tokens: TokenSet): boolean {
+  if (tokens.expires_at == null) return false; // 期限不明なら更新しない
+  const now = Math.floor(Date.now() / 1000);
+  return tokens.expires_at - now <= REFRESH_MARGIN_SECONDS;
+}
+
+function bearerOf(auth: ResolvedAuth): string | null {
+  if (auth.method === "oauth") return auth.tokens.access_token;
+  if (auth.method === "env") return auth.token;
+  return null;
 }
 
 const userAgentMiddleware: Middleware = {
@@ -55,37 +56,29 @@ const userAgentMiddleware: Middleware = {
 };
 
 const authMiddleware: Middleware = {
-  onRequest({ request }) {
-    // 毎リクエスト時に解決する（下の refresh 後の更新を次リクエストへ反映するため）。
-    if (!applyAuth(request.headers)) {
+  async onRequest({ request }) {
+    const auth = resolveAuth();
+    let token = bearerOf(auth);
+    if (token == null) {
       throw new Error(
         "認証情報がありません。`esa auth login` でログインするか、ESA_ACCESS_TOKEN を設定してください。",
       );
     }
-    return request;
-  },
 
-  async onResponse({ request, response }) {
-    // OAuth のときだけ、401 で一度リフレッシュしてリトライする。
-    if (response.status !== 401) return response;
-    if (request.headers.get(RETRIED_HEADER)) return response;
-
-    const auth = resolveAuth();
-    if (auth.method !== "oauth") return response;
-
-    try {
-      await refresh(getOAuthConfig(), auth.tokens);
-    } catch {
-      return response; // リフレッシュ失敗時は元の 401 をそのまま返す
+    // OAuth は期限切れで 401 になる前に、送信前に更新する（プロアクティブ）。
+    // env トークンは更新できないので対象外。
+    if (auth.method === "oauth" && isExpiring(auth.tokens)) {
+      try {
+        await refresh(getOAuthConfig(), auth.tokens);
+        const refreshed = bearerOf(resolveAuth());
+        if (refreshed != null) token = refreshed;
+      } catch {
+        // 更新できなくても現トークンで送り、サーバーの判断に委ねる。
+      }
     }
 
-    const retry = new Request(request, {
-      headers: new Headers(request.headers),
-    });
-    retry.headers.set(RETRIED_HEADER, "1");
-    applyAuth(retry.headers); // リフレッシュ後の新しいトークンを載せ直す
-    // 生 fetch で送る（middleware を再度通さない = リトライは一度きり）。
-    return fetch(retry);
+    request.headers.set("Authorization", `Bearer ${token}`);
+    return request;
   },
 
   onError({ error }) {
