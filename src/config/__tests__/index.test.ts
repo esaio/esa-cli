@@ -59,6 +59,18 @@ test("allows a *.localhost subdomain for local development", async () => {
   expect(() => getOAuthConfig()).not.toThrow();
 });
 
+test("allows IPv6 loopback for local development", async () => {
+  process.env.ESA_API_BASE_URL = "http://[::1]:3000";
+  const getOAuthConfig = await loadGetOAuthConfig();
+  expect(() => getOAuthConfig()).not.toThrow();
+});
+
+test("rejects a non-http(s) scheme even on localhost", async () => {
+  process.env.ESA_API_BASE_URL = "ws://localhost:3000";
+  const getOAuthConfig = await loadGetOAuthConfig();
+  expect(() => getOAuthConfig()).toThrow(/http\/https/);
+});
+
 test("rejects a malformed base URL", async () => {
   process.env.ESA_API_BASE_URL = "not a url";
   const getOAuthConfig = await loadGetOAuthConfig();

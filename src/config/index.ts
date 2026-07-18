@@ -54,8 +54,16 @@ function validateApiBaseUrl(apiBaseUrl: string): void {
     );
   }
 
+  // ws:// などで思わぬ通信をしないよう http/https に限定する。
+  if (url.protocol !== "http:" && url.protocol !== "https:") {
+    throw new Error(
+      `API のベース URL は http/https のみ対応しています: ${apiBaseUrl}`,
+    );
+  }
+
   const host = url.hostname;
   // RFC 6761: localhost とそのサブドメインは loopback に解決される。
+  // IPv6 ループバックの hostname は WHATWG URL では "[::1]"（角括弧付き）。
   const isLoopback =
     host === "localhost" ||
     host.endsWith(".localhost") ||
