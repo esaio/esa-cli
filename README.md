@@ -46,7 +46,26 @@ esa auth logout     # トークンを失効・削除
 esa user                    # 認証ユーザーの情報 (GET /v1/user)
 esa team list               # 所属チーム一覧 (GET /v1/teams)
 esa team list --role owner  # 権限で絞り込み (member | owner)
-esa team list --page 2 --per-page 50
+
+esa post list               # 記事一覧 (GET /v1/teams/{team}/posts)
+esa post list -q "wip:true" # 検索クエリで絞り込み
+esa post get 123            # 記事を1件取得
+```
+
+### 対象チームの指定
+
+post 系コマンドはチームを対象に動きます。チームは次の順で解決されます:
+
+1. `--team <name>` フラグ
+2. 環境変数 `ESA_TEAM`
+3. 設定ファイルの既定チーム（`esa config set default-team <name>`）
+4. 所属チームが1つだけならそれを自動採用
+5. 複数所属で未指定ならエラー（`--team` か既定チームの設定を促す）
+
+```bash
+esa config set default-team docs   # 既定チームを設定
+esa config get                     # 現在の設定を表示
+esa post list --team docs          # 明示指定
 ```
 
 ### 認証の優先順位
@@ -73,6 +92,7 @@ API リクエストの認証は次の順で選ばれます:
 | `ESA_OAUTH_CLIENT_ID` | public app の client_id を上書き | 内蔵の公式 public app |
 | `ESA_API_BASE_URL` | API のベース URL。discovery の取得元でもある | `https://api.esa.io` |
 | `ESA_ACCESS_TOKEN` | OAuth を使わずアクセストークンを直接指定 | （未設定） |
+| `ESA_TEAM` | post 系コマンドの対象チーム（`--team` の既定） | （未設定） |
 
 ## Scripts
 
@@ -98,8 +118,12 @@ src/
     auth.ts              # `esa auth` コマンド群（login/logout/refresh/status）
     user.ts              # `esa user`
     team.ts              # `esa team list`
+    post.ts              # `esa post list` / `esa post get`
+    config.ts            # `esa config set/get`（既定チーム等）
+    parse.ts             # オプション・引数の共通バリデーション
   api/                   # esa API クライアント
     client.ts            # openapi-fetch クライアント（認証・送信前のトークン更新）
+    resolve-team.ts      # 対象チームの解決（--team / ESA_TEAM / 既定 / 単一所属）
     response.ts          # レスポンスの取り出しとエラー整形
   auth/                  # OAuth 認証とトークン保存
     oauth.ts             # Authorization Code + PKCE フロー
@@ -117,6 +141,7 @@ src/
     types.ts             # TokenSet 型
   config/                # 設定・環境変数
     index.ts
+    file-store.ts        # 設定ファイル (~/.config/esa-cli/config.json) の読み書き
   generated/             # openapi.yaml から生成した API 型（npm run update-esa-api）
     api-types.ts
 ```
