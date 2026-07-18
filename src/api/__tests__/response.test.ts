@@ -8,6 +8,12 @@ test("returns data on success", () => {
   );
 });
 
+test("treats a 204 (no content) success as success, not an error", () => {
+  expect(
+    unwrap({ response: new Response(null, { status: 204 }) }),
+  ).toBeUndefined();
+});
+
 test("throws a login hint on 401", () => {
   expect(() =>
     unwrap({ response: new Response(null, { status: 401 }) }),

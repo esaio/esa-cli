@@ -64,3 +64,12 @@ test("ignores an invalid --role value", async () => {
 
   expect(get).toHaveBeenCalledWith("/v1/teams", { params: { query: {} } });
 });
+
+test("rejects a non-numeric --page without calling the API", async () => {
+  vi.spyOn(console, "log").mockImplementation(() => {});
+
+  await expect(run(["team", "list", "--page", "abc"])).rejects.toThrow(
+    /--page.*整数/,
+  );
+  expect(get).not.toHaveBeenCalled();
+});

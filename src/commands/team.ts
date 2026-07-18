@@ -11,6 +11,14 @@ type ListOptions = {
   role?: string;
 };
 
+function positiveInt(value: string, name: string): number {
+  const n = Number(value);
+  if (!Number.isInteger(n) || n < 1) {
+    throw new Error(`${name} は 1 以上の整数で指定してください: ${value}`);
+  }
+  return n;
+}
+
 export function registerTeamCommand(program: Command): void {
   const team = program.command("team").description("Work with teams");
 
@@ -22,8 +30,10 @@ export function registerTeamCommand(program: Command): void {
     .option("--role <role>", "権限で絞り込み (member | owner)")
     .action(async (options: ListOptions) => {
       const query: TeamsQuery = {};
-      if (options.page) query.page = Number(options.page);
-      if (options.perPage) query.per_page = Number(options.perPage);
+      if (options.page) query.page = positiveInt(options.page, "--page");
+      if (options.perPage) {
+        query.per_page = positiveInt(options.perPage, "--per-page");
+      }
       if (options.role === "member" || options.role === "owner") {
         query.role = options.role;
       }
