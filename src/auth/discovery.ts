@@ -1,3 +1,5 @@
+import { REQUEST_TIMEOUT_MS } from "../config/index.js";
+
 /** OAuth 2.0 Authorization Server Metadata (RFC 8414) のうち利用する範囲。 */
 export type AuthorizationServerMetadata = {
   issuer: string;
@@ -79,7 +81,10 @@ export async function fetchMetadata(
   const url = `${apiBaseUrl}${WELL_KNOWN_PATH}`;
   let response: Response;
   try {
-    response = await fetch(url, { headers: { Accept: "application/json" } });
+    response = await fetch(url, {
+      headers: { Accept: "application/json" },
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    });
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     throw new Error(
