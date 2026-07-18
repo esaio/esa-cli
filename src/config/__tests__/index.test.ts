@@ -26,11 +26,35 @@ test("uses the default https base URL", async () => {
 test("rejects a non-HTTPS external base URL (would leak tokens)", async () => {
   process.env.ESA_API_BASE_URL = "http://evil.example.com";
   const getOAuthConfig = await loadGetOAuthConfig();
-  expect(() => getOAuthConfig()).toThrow(/HTTPS/);
+  expect(() => getOAuthConfig()).toThrow(/許可されていない/);
+});
+
+test("rejects an HTTPS third-party host (would still leak tokens over TLS)", async () => {
+  process.env.ESA_API_BASE_URL = "https://evil.example.com";
+  const getOAuthConfig = await loadGetOAuthConfig();
+  expect(() => getOAuthConfig()).toThrow(/許可されていない/);
+});
+
+test("rejects a userinfo-spoofed host (hostname is the real host)", async () => {
+  process.env.ESA_API_BASE_URL = "https://api.esa.io@evil.com";
+  const getOAuthConfig = await loadGetOAuthConfig();
+  expect(() => getOAuthConfig()).toThrow(/許可されていない/);
+});
+
+test("rejects http on api.esa.io (production must be HTTPS)", async () => {
+  process.env.ESA_API_BASE_URL = "http://api.esa.io";
+  const getOAuthConfig = await loadGetOAuthConfig();
+  expect(() => getOAuthConfig()).toThrow(/許可されていない/);
 });
 
 test("allows http on localhost for local development", async () => {
   process.env.ESA_API_BASE_URL = "http://localhost:3000";
+  const getOAuthConfig = await loadGetOAuthConfig();
+  expect(() => getOAuthConfig()).not.toThrow();
+});
+
+test("allows a *.localhost subdomain for local development", async () => {
+  process.env.ESA_API_BASE_URL = "http://sub.localhost:3000";
   const getOAuthConfig = await loadGetOAuthConfig();
   expect(() => getOAuthConfig()).not.toThrow();
 });

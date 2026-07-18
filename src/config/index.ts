@@ -37,10 +37,12 @@ export type OAuthConfig = {
 };
 
 /**
- * トークンを平文で送らないための最低限の防御。ESA_API_BASE_URL の誤設定で
- * http や第三者ホストへ Bearer トークン・refresh_token を送るのを防ぐ
- * （localhost の http はローカル開発用に許容）。ここで検証することで、
- * API クライアントと auth コマンド（login/logout/refresh）の両方が守られる。
+ * Bearer トークンや refresh_token を第三者ホストへ送らないための防御。
+ * ESA_API_BASE_URL は esa 本番（HTTPS）か、ローカル開発用の loopback ホスト
+ * のみ許可する。ホスト名で判定するため userinfo 偽装
+ * （https://api.esa.io@evil.com は hostname が evil.com）も弾ける。
+ * ここで検証することで、API クライアントと auth コマンド
+ * （login/logout/refresh）の両方が守られる。
  */
 function validateApiBaseUrl(apiBaseUrl: string): void {
   let url: URL;
@@ -51,14 +53,20 @@ function validateApiBaseUrl(apiBaseUrl: string): void {
       `API のベース URL が不正です（ESA_API_BASE_URL を確認してください）: ${apiBaseUrl}`,
     );
   }
-  if (url.protocol === "https:") return;
+
+  const host = url.hostname;
+  // RFC 6761: localhost とそのサブドメインは loopback に解決される。
   const isLoopback =
-    url.hostname === "localhost" ||
-    url.hostname === "127.0.0.1" ||
-    url.hostname === "::1";
-  if (url.protocol === "http:" && isLoopback) return;
+    host === "localhost" ||
+    host.endsWith(".localhost") ||
+    host === "127.0.0.1" ||
+    host === "[::1]";
+  if (isLoopback) return; // ローカル開発（http/https どちらも可）
+
+  if (host === "api.esa.io" && url.protocol === "https:") return;
+
   throw new Error(
-    `API のベース URL は HTTPS である必要があります（localhost を除く）: ${apiBaseUrl}`,
+    `許可されていない API のベース URL です（api.esa.io または localhost のみ）: ${apiBaseUrl}`,
   );
 }
 
