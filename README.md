@@ -88,6 +88,17 @@ esa comment delete 456       # 確認プロンプトの後に削除
 esa comment delete 456 --yes # 確認をスキップ（非対話環境では --yes 必須）
 ```
 
+カテゴリ・タグ・メンバーの一覧も取得できます。
+
+```bash
+esa category list                 # カテゴリパス一覧（ページング。GET /v1/teams/{team}/categories/paths）
+esa category list --all           # 全ページを辿って全カテゴリパスをまとめて取得
+esa category list --prefix dev/   # 前方一致で絞り込み（--suffix / --match / --exact-match も可）
+esa tag list                      # タグ一覧 (GET /v1/teams/{team}/tags)
+esa member list                   # メンバー一覧 (GET /v1/teams/{team}/members)
+esa member list --sort posts_count --order desc # 投稿数の多い順に並べる
+```
+
 ### 任意の API を叩く（`esa api`）
 
 専用コマンドが用意されていない API パスには、`esa api` で直接アクセスできます（任意パスへのエスケープハッチ）。認証・ベース URL・トークン更新は既存の仕組みをそのまま使います。レスポンスは JSON で stdout に出ます。
@@ -219,6 +230,9 @@ src/
     team.ts              # `esa team list`
     post.ts              # `esa post` コマンド群（list/search/get/create/update/append/prepend/archive/delete）
     comment.ts           # `esa comment` コマンド群（list/get/create/update/delete）
+    category.ts          # `esa category list`（カテゴリパス一覧）
+    tag.ts               # `esa tag list`（タグ一覧）
+    member.ts            # `esa member list`（メンバー一覧）
     api.ts               # `esa api` 任意パスへのエスケープハッチ
     body-input.ts        # 本文の入力（--body / --body-file / 標準入力）
     confirm.ts           # y/N の確認プロンプト（delete で使用）

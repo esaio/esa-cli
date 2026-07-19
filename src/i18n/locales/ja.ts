@@ -140,6 +140,37 @@ export const ja: Resources = {
       "対応していない --method です: {{method}}（指定可能: {{allowed}}）",
     invalidJson: "リクエスト本文が正しい JSON ではありません。",
   },
+  category: {
+    desc: "カテゴリを操作します",
+    listDesc:
+      "チームのカテゴリパス一覧を表示します (GET /v1/teams/{team_name}/categories/paths)",
+    teamOpt: "対象チーム",
+    pageOpt: "ページ番号",
+    perPageOpt: "1ページあたりの件数",
+    prefixOpt: "指定した文字列で始まるパスのみ",
+    suffixOpt: "指定した文字列で終わるパスのみ",
+    matchOpt: "指定した文字列を含むパスのみ",
+    exactMatchOpt: "指定したパスと完全一致するもののみ",
+    allOpt: "全ページを取得して全カテゴリパスを一度に返します",
+    allPageConflict: "--all と --page は同時に指定できません。",
+  },
+  tag: {
+    desc: "タグを操作します",
+    listDesc: "チームのタグ一覧を表示します (GET /v1/teams/{team_name}/tags)",
+    teamOpt: "対象チーム",
+    pageOpt: "ページ番号",
+    perPageOpt: "1ページあたりの件数",
+  },
+  member: {
+    desc: "チームメンバーを操作します",
+    listDesc:
+      "チームのメンバー一覧を表示します (GET /v1/teams/{team_name}/members)",
+    teamOpt: "対象チーム",
+    pageOpt: "ページ番号",
+    perPageOpt: "1ページあたりの件数",
+    sortOpt: "ソート基準 (posts_count | joined | last_accessed)",
+    orderOpt: "ソート順 (desc | asc)",
+  },
   parse: {
     notPositiveInt: "{{name}} は 1 以上の整数で指定してください: {{value}}",
   },
