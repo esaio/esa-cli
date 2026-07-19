@@ -120,6 +120,21 @@ export const en = {
     deleteCanceled: "Canceled.",
     deleteDone: "Deleted comment #{{id}}.",
   },
+  api: {
+    desc: "Call an arbitrary esa API path (escape hatch)",
+    pathArg: "API path starting with / (e.g. /v1/teams/{team}/posts)",
+    methodOpt: "HTTP method (default GET, or POST when --input is given)",
+    fieldOpt: "Query parameter as key=value (repeatable)",
+    headerOpt: "Extra request header as key:value (repeatable)",
+    inputOpt: "Request body from a JSON file (- for stdin)",
+    teamOpt: "Team used to fill the {team} placeholder in the path",
+    invalidPath:
+      "Path must start with a single / (// is not allowed): {{path}}",
+    invalidField: "Invalid --field (expected key=value): {{field}}",
+    invalidHeader: "Invalid --header (expected key:value): {{header}}",
+    invalidMethod: "Unsupported --method: {{method}} (allowed: {{allowed}})",
+    invalidJson: "Request body is not valid JSON.",
+  },
   parse: {
     notPositiveInt: "{{name}} must be a positive integer (>= 1): {{value}}",
   },

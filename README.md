@@ -88,6 +88,53 @@ esa comment delete 456       # 確認プロンプトの後に削除
 esa comment delete 456 --yes # 確認をスキップ（非対話環境では --yes 必須）
 ```
 
+### 任意の API を叩く（`esa api`）
+
+専用コマンドが用意されていない API パスには、`esa api` で直接アクセスできます（任意パスへのエスケープハッチ）。認証・ベース URL・トークン更新は既存の仕組みをそのまま使います。レスポンスは JSON で stdout に出ます。
+
+```bash
+esa api /v1/user                                  # GET（既定）
+esa api /v1/teams/{team}/posts -f q=wip:true -f per_page=5  # -f はクエリ、{team} は自動解決
+esa api /v1/teams/{team}/comments/456 -X DELETE   # メソッドを明示
+
+# 本文は生 JSON を --input（- で標準入力）で渡す。--input があれば既定で POST
+echo '{"post":{"name":"Hi","wip":false}}' \
+  | esa api /v1/teams/{team}/posts --input -
+esa api /v1/teams/{team}/comments/456 -X PATCH --input body.json
+```
+
+- `-X, --method`: HTTP メソッド。省略時は GET（`--input` があれば POST）
+- `-f, --field key=value`: クエリパラメータ（繰り返し可）
+- `--input <file>`: リクエスト本文の JSON（`-` で標準入力）
+- `-H, --header key:value`: 追加ヘッダ（繰り返し可）
+- パス中の `{team}` は対象チーム（下記の解決順、`--team` でも指定可）に置換されます
+
+### `jq` と組み合わせる（標準入力）
+
+各コマンドはレスポンス JSON を stdout に出し、本文やリクエストボディを標準入力（`-`）から受け取れるので、`jq` でパイプして繋げられます。エスケープ（改行やクォート）を `jq` に任せられるのも利点です。
+
+渡し方は 2 種類あります。
+
+- `esa post/comment ... --body-file -`: **本文テキストだけ**を受け取る。`jq -r`（raw 出力）でテキストを組み立てる
+- `esa api ... --input -`: **ボディ JSON 全体**を受け取る。`jq -n`（新規生成）で `{post: …}` や `{comment: …}` を組み立てる
+
+```bash
+# 取得した JSON を jq -r でコメント本文に整形して投稿
+esa post get 123 \
+  | jq -r '"現在のタグ（\(.tags | length)個）: \(.tags | join(", "))"' \
+  | esa comment create 123 --body-file -
+
+# jq -n でボディ JSON 全体を組み立てて POST（--user なども載せられる）
+jq -n --arg body "LGTM :+1:" --arg user alice \
+  '{comment: {body_md: $body, user: $user}}' \
+  | esa api /v1/teams/{team}/posts/123/comments --input -
+
+# 取得 → 加工 → 書き戻し（既存タグに1つ追加して PATCH）
+esa post get 123 \
+  | jq '{post: {tags: (.tags + ["新タグ"])}}' \
+  | esa api /v1/teams/{team}/posts/123 -X PATCH --input -
+```
+
 ### 対象チームの指定
 
 post / comment 系コマンドはチームを対象に動きます。チームは次の順で解決されます:
@@ -172,6 +219,7 @@ src/
     team.ts              # `esa team list`
     post.ts              # `esa post` コマンド群（list/search/get/create/update/append/prepend/archive/delete）
     comment.ts           # `esa comment` コマンド群（list/get/create/update/delete）
+    api.ts               # `esa api` 任意パスへのエスケープハッチ
     body-input.ts        # 本文の入力（--body / --body-file / 標準入力）
     confirm.ts           # y/N の確認プロンプト（delete で使用）
     config.ts            # `esa config set/get`（既定チーム・表示言語）
