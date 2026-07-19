@@ -109,6 +109,32 @@ esa api /v1/teams/{team}/comments/456 -X PATCH --input body.json
 - `-H, --header key:value`: 追加ヘッダ（繰り返し可）
 - パス中の `{team}` は対象チーム（下記の解決順、`--team` でも指定可）に置換されます
 
+### `jq` と組み合わせる（標準入力）
+
+各コマンドはレスポンス JSON を stdout に出し、本文やリクエストボディを標準入力（`-`）から受け取れるので、`jq` でパイプして繋げられます。エスケープ（改行やクォート）を `jq` に任せられるのも利点です。
+
+渡し方は 2 種類あります。
+
+- `esa post/comment ... --body-file -`: **本文テキストだけ**を受け取る。`jq -r`（raw 出力）でテキストを組み立てる
+- `esa api ... --input -`: **ボディ JSON 全体**を受け取る。`jq -n`（新規生成）で `{post: …}` や `{comment: …}` を組み立てる
+
+```bash
+# 取得した JSON を jq -r でコメント本文に整形して投稿
+esa post get 123 \
+  | jq -r '"現在のタグ（\(.tags | length)個）: \(.tags | join(", "))"' \
+  | esa comment create 123 --body-file -
+
+# jq -n でボディ JSON 全体を組み立てて POST（--user なども載せられる）
+jq -n --arg body "LGTM :+1:" --arg user alice \
+  '{comment: {body_md: $body, user: $user}}' \
+  | esa api /v1/teams/{team}/posts/123/comments --input -
+
+# 取得 → 加工 → 書き戻し（既存タグに1つ追加して PATCH）
+esa post get 123 \
+  | jq '{post: {tags: (.tags + ["新タグ"])}}' \
+  | esa api /v1/teams/{team}/posts/123 -X PATCH --input -
+```
+
 ### 対象チームの指定
 
 post / comment 系コマンドはチームを対象に動きます。チームは次の順で解決されます:
