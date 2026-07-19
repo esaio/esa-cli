@@ -48,7 +48,7 @@
   "author": "esa LLC",
   "license": "MIT",
   "dependencies": {
-    "commander": "^14.0.0",
+    "commander": "^15.0.0",
     "openapi-fetch": "^0.17.0"
   },
   "devDependencies": {
