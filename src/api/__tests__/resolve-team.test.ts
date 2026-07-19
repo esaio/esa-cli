@@ -3,7 +3,9 @@ import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import type { paths } from "../../generated/api-types.js";
 
 const getDefaultTeam = vi.fn<() => string | undefined>();
-vi.mock("../../config/file-store.js", () => ({ getDefaultTeam }));
+// getLanguage は i18n 初期化（言語判定）が参照するため mock に含める。
+const getLanguage = vi.fn<() => string | undefined>();
+vi.mock("../../config/file-store.js", () => ({ getDefaultTeam, getLanguage }));
 
 const { resolveTeam } = await import("../resolve-team.js");
 
@@ -63,7 +65,7 @@ test("errors when there are multiple teams and none is chosen", async () => {
   getDefaultTeam.mockReturnValue(undefined);
   const { client } = makeClient(["a", "b"]);
 
-  await expect(resolveTeam(client)).rejects.toThrow(/複数のチーム/);
+  await expect(resolveTeam(client)).rejects.toThrow(/multiple teams/);
 });
 
 test("errors when the user belongs to no team", async () => {
@@ -71,7 +73,7 @@ test("errors when the user belongs to no team", async () => {
   const { client } = makeClient([]);
 
   await expect(resolveTeam(client)).rejects.toThrow(
-    /所属しているチームがありません/,
+    /do not belong to any team/,
   );
 });
 
@@ -81,7 +83,7 @@ test("propagates a 401 from GET /v1/teams instead of swallowing it", async () =>
   getDefaultTeam.mockReturnValue(undefined);
   const { client } = makeClient([], 401);
 
-  await expect(resolveTeam(client)).rejects.toThrow(/認証に失敗しました/);
+  await expect(resolveTeam(client)).rejects.toThrow(/Authentication failed/);
 });
 
 test("ignores a whitespace-only ESA_TEAM and falls through", async () => {

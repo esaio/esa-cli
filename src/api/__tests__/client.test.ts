@@ -103,7 +103,7 @@ test("throws when there is no auth", async () => {
   stubOkFetch();
 
   await expect(createEsaClient().GET("/v1/user")).rejects.toThrow(
-    /認証情報がありません/,
+    /No credentials/,
   );
 });
 
@@ -207,6 +207,6 @@ test("wraps a network failure in a friendly error", async () => {
   );
 
   await expect(createEsaClient().GET("/v1/user")).rejects.toThrow(
-    /接続に失敗しました/,
+    /Failed to connect/,
   );
 });

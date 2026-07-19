@@ -1,6 +1,7 @@
 import type { Client } from "openapi-fetch";
 import { getDefaultTeam } from "../config/file-store.js";
 import type { paths } from "../generated/api-types.js";
+import { t } from "../i18n/index.js";
 import { unwrap } from "./response.js";
 
 /**
@@ -28,11 +29,11 @@ export async function resolveTeam(
   const teams = data.teams ?? [];
   if (teams.length === 1) return teams[0].name;
   if (teams.length === 0) {
-    throw new Error("所属しているチームがありません。");
+    throw new Error(t("resolveTeam.noTeams"));
   }
   throw new Error(
-    `複数のチームに所属しています。--team で指定するか、` +
-      `\`esa config set default-team <name>\` で既定を設定してください。\n` +
-      `所属チーム: ${teams.map((t) => t.name).join(", ")}`,
+    t("resolveTeam.multipleTeams", {
+      teams: teams.map((team) => team.name).join(", "),
+    }),
   );
 }

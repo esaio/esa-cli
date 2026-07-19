@@ -8,29 +8,28 @@ import {
   loadTokens,
 } from "../auth/token-store.js";
 import { getOAuthConfig } from "../config/index.js";
+import { t } from "../i18n/index.js";
 
 export function registerAuthCommand(program: Command): void {
-  const auth = program
-    .command("auth")
-    .description("Authenticate esa-cli with esa.io");
+  const auth = program.command("auth").description(t("auth.desc"));
 
   auth
     .command("login")
-    .description("Log in to esa.io via OAuth (browser)")
+    .description(t("auth.loginDesc"))
     .action(async () => {
       const oauth = getOAuthConfig();
       const tokens = await login(oauth);
       console.error(
-        `認証に成功しました。トークンを ${backendLabel(getBackend())} に保存しました。`,
+        t("auth.loginSuccess", { backend: backendLabel(getBackend()) }),
       );
       if (tokens.scope) {
-        console.error(`許可されたスコープ: ${tokens.scope}`);
+        console.error(t("auth.loginScope", { scope: tokens.scope }));
       }
     });
 
   auth
     .command("logout")
-    .description("Log out and remove the stored token")
+    .description(t("auth.logoutDesc"))
     .action(async () => {
       const tokens = loadTokens();
 
@@ -43,32 +42,26 @@ export function registerAuthCommand(program: Command): void {
           await revoke(getOAuthConfig(), tokens);
         } catch (error) {
           const msg = error instanceof Error ? error.message : String(error);
-          console.error(
-            `トークンの失効に失敗しました（削除は続行します）: ${msg}`,
-          );
+          console.error(t("auth.revokeFailed", { error: msg }));
         }
       }
       await deleteTokens();
       console.error(
-        tokens != null
-          ? "ログアウトしました。"
-          : "保存されたトークンを削除しました。",
+        tokens != null ? t("auth.logoutDone") : t("auth.tokenDeleted"),
       );
     });
 
   auth
     .command("refresh")
-    .description("Refresh the OAuth access token using the refresh token")
+    .description(t("auth.refreshDesc"))
     .action(async () => {
       const current = resolveAuth();
       if (current.method !== "oauth") {
-        throw new Error(
-          "OAuth でログインしていません。`esa auth login` を実行してください。",
-        );
+        throw new Error(t("auth.notLoggedIn"));
       }
       const next = await refresh(getOAuthConfig(), current.tokens);
       console.error(
-        `トークンを更新しました（${backendLabel(getBackend())}）。`,
+        t("auth.refreshDone", { backend: backendLabel(getBackend()) }),
       );
       const now = Math.floor(Date.now() / 1000);
       const expiresIn = next.expires_at != null ? next.expires_at - now : null;
@@ -92,7 +85,7 @@ export function registerAuthCommand(program: Command): void {
 
   auth
     .command("status")
-    .description("Show the current authentication status")
+    .description(t("auth.statusDesc"))
     .action(() => {
       const auth = resolveAuth();
       if (auth.method === "none") {

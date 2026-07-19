@@ -71,7 +71,7 @@ test("`post list` rejects an invalid --page before any network call", async () =
   vi.spyOn(console, "log").mockImplementation(() => {});
 
   await expect(run(["post", "list", "--page", "abc"])).rejects.toThrow(
-    /--page.*整数/,
+    /--page.*positive integer/,
   );
   expect(resolveTeam).not.toHaveBeenCalled();
   expect(get).not.toHaveBeenCalled();
@@ -95,7 +95,9 @@ test("`post get` calls GET with the post number in the path", async () => {
 test("`post get` rejects a non-numeric post number before any network call", async () => {
   vi.spyOn(console, "log").mockImplementation(() => {});
 
-  await expect(run(["post", "get", "abc"])).rejects.toThrow(/記事ID.*整数/);
+  await expect(run(["post", "get", "abc"])).rejects.toThrow(
+    /post number.*positive integer/,
+  );
   expect(resolveTeam).not.toHaveBeenCalled();
   expect(get).not.toHaveBeenCalled();
 });

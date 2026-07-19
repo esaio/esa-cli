@@ -1,3 +1,5 @@
+import { t } from "../i18n/index.js";
+
 export type ApiResult<T> = {
   data?: T;
   error?: unknown;
@@ -14,9 +16,7 @@ export function unwrap<T>(result: ApiResult<T>): T {
   if (response.ok) return result.data as T;
 
   if (response.status === 401) {
-    throw new Error(
-      "認証に失敗しました (401)。`esa auth login` で再ログインするか、ESA_ACCESS_TOKEN を確認してください。",
-    );
+    throw new Error(t("apiResponse.authFailed"));
   }
 
   const detail =
@@ -26,6 +26,6 @@ export function unwrap<T>(result: ApiResult<T>): T {
         : JSON.stringify(error)
       : response.statusText;
   throw new Error(
-    `API リクエストに失敗しました (${response.status}): ${detail}`,
+    t("apiResponse.requestFailed", { status: response.status, detail }),
   );
 }

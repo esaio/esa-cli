@@ -1,4 +1,5 @@
 import { type OAuthConfig, REQUEST_TIMEOUT_MS } from "../config/index.js";
+import { t } from "../i18n/index.js";
 import { startCallbackServer } from "./callback.js";
 import { fetchMetadata } from "./discovery.js";
 import { openBrowser } from "./open-browser.js";
@@ -61,7 +62,7 @@ async function readError(response: Response): Promise<string> {
  * 取得したトークンを OS 資格情報ストアに保存する。
  */
 export async function login(oauth: OAuthConfig): Promise<TokenSet> {
-  console.error("認可サーバーの情報を取得しています...");
+  console.error(t("oauth.fetchingMetadata"));
   const metadata = await fetchMetadata(oauth.apiBaseUrl);
 
   const { verifier, challenge } = generatePkce();
@@ -80,11 +81,11 @@ export async function login(oauth: OAuthConfig): Promise<TokenSet> {
     authUrl.searchParams.set("code_challenge_method", "S256");
     authUrl.searchParams.set("state", state);
 
-    console.error("ブラウザで認可画面を開きます...");
-    console.error(`開かない場合は次の URL を開いてください:\n${authUrl}\n`);
+    console.error(t("oauth.openingBrowser"));
+    console.error(t("oauth.openUrlManually", { url: authUrl.toString() }));
     openBrowser(authUrl.toString());
 
-    console.error("ブラウザでの認可を待機しています...");
+    console.error(t("oauth.waiting"));
     const code = await server.codePromise;
 
     const params = new URLSearchParams();
@@ -97,7 +98,7 @@ export async function login(oauth: OAuthConfig): Promise<TokenSet> {
     const response = await postForm(metadata.token_endpoint, params);
     if (!response.ok) {
       throw new Error(
-        `トークンの取得に失敗しました: ${await readError(response)}`,
+        t("oauth.tokenFetchFailed", { error: await readError(response) }),
       );
     }
 
@@ -118,7 +119,7 @@ export async function refresh(
   tokens: TokenSet,
 ): Promise<TokenSet> {
   if (!tokens.refresh_token) {
-    throw new Error("refresh_token がありません。再ログインしてください。");
+    throw new Error(t("oauth.noRefreshToken"));
   }
   const metadata = await fetchMetadata(oauth.apiBaseUrl);
 
@@ -130,7 +131,7 @@ export async function refresh(
   const response = await postForm(metadata.token_endpoint, params);
   if (!response.ok) {
     throw new Error(
-      `トークンの更新に失敗しました: ${await readError(response)}`,
+      t("oauth.tokenRefreshFailed", { error: await readError(response) }),
     );
   }
 

@@ -7,6 +7,7 @@ const CONFIG_FILE = "config.json";
 /** 設定ファイル (~/.config/esa-cli/config.json) の内容。トークンとは別ファイル。 */
 export type FileConfig = {
   default_team?: string;
+  language?: string;
 };
 
 export function readFileConfig(configDir = DEFAULT_CONFIG_DIR): FileConfig {
@@ -36,6 +37,9 @@ export function readFileConfig(configDir = DEFAULT_CONFIG_DIR): FileConfig {
   if (typeof record.default_team === "string") {
     config.default_team = record.default_team;
   }
+  if (typeof record.language === "string") {
+    config.language = record.language;
+  }
   return config;
 }
 
@@ -62,5 +66,20 @@ export function setDefaultTeam(
 ): void {
   const config = readFileConfig(configDir);
   config.default_team = team;
+  writeFileConfig(config, configDir);
+}
+
+export function getLanguage(
+  configDir = DEFAULT_CONFIG_DIR,
+): string | undefined {
+  return readFileConfig(configDir).language;
+}
+
+export function setLanguage(
+  language: string,
+  configDir = DEFAULT_CONFIG_DIR,
+): void {
+  const config = readFileConfig(configDir);
+  config.language = language;
   writeFileConfig(config, configDir);
 }

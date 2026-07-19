@@ -1,4 +1,5 @@
 import { REQUEST_TIMEOUT_MS } from "../config/index.js";
+import { t } from "../i18n/index.js";
 
 /** OAuth 2.0 Authorization Server Metadata (RFC 8414) のうち利用する範囲。 */
 export type AuthorizationServerMetadata = {
@@ -24,12 +25,10 @@ function validateEndpoint(
   try {
     url = new URL(value);
   } catch {
-    throw new Error(
-      `認可サーバーのメタデータの ${field} が URL ではありません: ${value}`,
-    );
+    throw new Error(t("discovery.notUrl", { field, value }));
   }
   if (url.protocol !== "https:" && !allowHttp) {
-    throw new Error(`${field} は HTTPS である必要があります: ${value}`);
+    throw new Error(t("discovery.notHttps", { field, value }));
   }
 }
 
@@ -40,7 +39,7 @@ function requireEndpoint(
 ): string {
   const value = metadata[field];
   if (typeof value !== "string" || value === "") {
-    throw new Error(`認可サーバーのメタデータに ${field} がありません`);
+    throw new Error(t("discovery.missingField", { field }));
   }
   validateEndpoint(value, field, allowHttp);
   return value;
@@ -73,9 +72,7 @@ export async function fetchMetadata(
   try {
     base = new URL(apiBaseUrl);
   } catch {
-    throw new Error(
-      `API のベース URL が不正です（ESA_API_BASE_URL を確認してください）: ${apiBaseUrl}`,
-    );
+    throw new Error(t("baseUrl.invalid", { url: apiBaseUrl }));
   }
 
   const url = `${apiBaseUrl}${WELL_KNOWN_PATH}`;
@@ -87,13 +84,14 @@ export async function fetchMetadata(
     });
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
-    throw new Error(
-      `認可サーバーのメタデータを取得できませんでした (${url}): ${msg}`,
-    );
+    throw new Error(t("discovery.fetchFailed", { url, error: msg }));
   }
   if (!response.ok) {
     throw new Error(
-      `認可サーバーのメタデータを取得できませんでした (${url}): ${response.status} ${response.statusText}`,
+      t("discovery.fetchFailed", {
+        url,
+        error: `${response.status} ${response.statusText}`,
+      }),
     );
   }
 
@@ -129,7 +127,7 @@ export async function fetchMetadata(
   const pkceMethods = metadata.code_challenge_methods_supported;
   if (pkceMethods && !pkceMethods.includes("S256")) {
     throw new Error(
-      `認可サーバーが PKCE (S256) に対応していません: ${pkceMethods.join(", ")}`,
+      t("discovery.pkceUnsupported", { methods: pkceMethods.join(", ") }),
     );
   }
 
