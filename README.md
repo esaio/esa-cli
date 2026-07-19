@@ -44,8 +44,9 @@ esa auth logout     # トークンを失効・削除
 
 ```bash
 esa user                    # 認証ユーザーの情報 (GET /v1/user)
-esa team list               # 所属チーム一覧 (GET /v1/teams)
-esa team list --role owner  # 権限で絞り込み (member | owner)
+esa team list                        # 所属チーム一覧 (GET /v1/teams)
+esa team list --role owner           # 権限で絞り込み (member | owner)
+esa team list --page 2 --per-page 50 # ページング
 
 esa post list               # 記事一覧 (GET /v1/teams/{team}/posts)
 esa post list -q "wip:true" # 検索クエリで絞り込み

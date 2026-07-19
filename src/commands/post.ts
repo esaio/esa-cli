@@ -53,7 +53,7 @@ export function registerPostCommand(program: Command): void {
     .option("--team <name>", "対象チーム")
     .action(async (number: string, options: { team?: string }) => {
       // 記事番号の検証をネットワークより先に行う。
-      const postNumber = positiveInt(number, "number");
+      const postNumber = positiveInt(number, "記事ID");
 
       const client = createEsaClient();
       const team = await resolveTeam(client, options.team);

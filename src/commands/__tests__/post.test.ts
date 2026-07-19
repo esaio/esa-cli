@@ -95,7 +95,7 @@ test("`post get` calls GET with the post number in the path", async () => {
 test("`post get` rejects a non-numeric post number before any network call", async () => {
   vi.spyOn(console, "log").mockImplementation(() => {});
 
-  await expect(run(["post", "get", "abc"])).rejects.toThrow(/number.*整数/);
+  await expect(run(["post", "get", "abc"])).rejects.toThrow(/記事ID.*整数/);
   expect(resolveTeam).not.toHaveBeenCalled();
   expect(get).not.toHaveBeenCalled();
 });
