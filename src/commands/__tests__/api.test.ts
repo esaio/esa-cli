@@ -49,7 +49,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-test("`api` GETs the endpoint by default and prints the response", async () => {
+test("`api` GETs the path by default and prints the response", async () => {
   const log = vi.spyOn(console, "log").mockImplementation(() => {});
 
   await run(["api", "/v1/user"]);
@@ -108,7 +108,7 @@ test("`api -H` adds request headers", async () => {
   });
 });
 
-test("`api` rejects an endpoint without a leading slash before network", async () => {
+test("`api` rejects a path without a leading slash before network", async () => {
   await expect(run(["api", "v1/user"])).rejects.toThrow(/must start with/);
   expect(get).not.toHaveBeenCalled();
 });

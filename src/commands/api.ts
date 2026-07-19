@@ -81,18 +81,18 @@ type ApiOptions = {
 export function registerApiCommand(program: Command): void {
   program
     .command("api")
-    .argument("<endpoint>", t("api.endpointArg"))
+    .argument("<path>", t("api.pathArg"))
     .description(t("api.desc"))
     .option("-X, --method <verb>", t("api.methodOpt"))
     .option("-f, --field <key=value>", t("api.fieldOpt"), collect, [])
     .option("-H, --header <key:value>", t("api.headerOpt"), collect, [])
     .option("--input <file>", t("api.inputOpt"))
     .option("--team <name>", t("api.teamOpt"))
-    .action(async (endpointArg: string, options: ApiOptions) => {
+    .action(async (pathArg: string, options: ApiOptions) => {
       // 入力の検証・ローカル読み込みはネットワーク（resolveTeam / リクエスト）
       // より先に済ませる。
-      if (!endpointArg.startsWith("/")) {
-        throw new Error(t("api.invalidEndpoint", { endpoint: endpointArg }));
+      if (!pathArg.startsWith("/")) {
+        throw new Error(t("api.invalidPath", { path: pathArg }));
       }
       const query = parseFields(options.field);
       const headers = parseHeaders(options.header);
@@ -114,10 +114,10 @@ export function registerApiCommand(program: Command): void {
 
       const client = createEsaClient();
       // パスに {team} があるときだけチームを解決する（不要な GET /teams を避ける）。
-      let endpoint = endpointArg;
-      if (endpoint.includes("{team}")) {
+      let path = pathArg;
+      if (path.includes("{team}")) {
         const team = await resolveTeam(client, options.team);
-        endpoint = endpoint.replaceAll("{team}", team);
+        path = path.replaceAll("{team}", team);
       }
 
       const init: NonNullable<Parameters<ClientMethod>[1]> = {};
@@ -129,7 +129,7 @@ export function registerApiCommand(program: Command): void {
       // が呼び出し可能なプロパティになっている。createPathBasedClient に替えると
       // この動的ディスパッチは壊れる点に注意。
       const dispatch = client as unknown as Record<string, ClientMethod>;
-      const result = await dispatch[method](endpoint, init);
+      const result = await dispatch[method](path, init);
       const data = unwrap(result);
       // 204 など本文の無い成功では stdout に何も出さない。
       if (data !== undefined) print(data);
