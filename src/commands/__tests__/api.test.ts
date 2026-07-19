@@ -136,3 +136,27 @@ test("`api` rejects an invalid JSON body before network", async () => {
   ).rejects.toThrow(/not valid JSON/);
   expect(postReq).not.toHaveBeenCalled();
 });
+
+test("`api` still defaults to POST when --input is empty", async () => {
+  readFileSync.mockReturnValue("");
+  vi.spyOn(console, "log").mockImplementation(() => {});
+
+  await run(["api", "/v1/teams/t/posts", "--input", "-"]);
+
+  expect(get).not.toHaveBeenCalled();
+  expect(postReq).toHaveBeenCalledWith("/v1/teams/t/posts", {});
+});
+
+test("`api` rejects a header with an empty name before network", async () => {
+  await expect(run(["api", "/v1/user", "-H", ":value"])).rejects.toThrow(
+    /Invalid --header/,
+  );
+  expect(get).not.toHaveBeenCalled();
+});
+
+test("`api` rejects a field with an empty key before network", async () => {
+  await expect(run(["api", "/v1/user", "-f", "=value"])).rejects.toThrow(
+    /Invalid --field/,
+  );
+  expect(get).not.toHaveBeenCalled();
+});

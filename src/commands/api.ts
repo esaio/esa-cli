@@ -5,7 +5,7 @@ import { resolveTeam } from "../api/resolve-team.js";
 import { unwrap } from "../api/response.js";
 import { t } from "../i18n/index.js";
 
-// esa API がボディを受け付ける HTTP メソッド。GET/HEAD/OPTIONS を除く。
+// esa api が許可する HTTP メソッド一覧。
 const ALLOWED_METHODS = [
   "GET",
   "POST",
@@ -37,7 +37,7 @@ function parseFields(fields: string[]): Record<string, string> {
   const out: Record<string, string> = {};
   for (const field of fields) {
     const eq = field.indexOf("=");
-    if (eq < 0) throw new Error(t("api.invalidField", { field }));
+    if (eq <= 0) throw new Error(t("api.invalidField", { field }));
     out[field.slice(0, eq)] = field.slice(eq + 1);
   }
   return out;
@@ -48,8 +48,9 @@ function parseHeaders(headers: string[]): Record<string, string> {
   const out: Record<string, string> = {};
   for (const header of headers) {
     const colon = header.indexOf(":");
-    if (colon < 0) throw new Error(t("api.invalidHeader", { header }));
-    out[header.slice(0, colon).trim()] = header.slice(colon + 1).trim();
+    const name = colon < 0 ? "" : header.slice(0, colon).trim();
+    if (name === "") throw new Error(t("api.invalidHeader", { header }));
+    out[name] = header.slice(colon + 1).trim();
   }
   return out;
 }
@@ -97,9 +98,10 @@ export function registerApiCommand(program: Command): void {
       const headers = parseHeaders(options.header);
       const body =
         options.input !== undefined ? readBody(options.input) : undefined;
-      // メソッド未指定なら GET、ただし本文があれば POST（gh api と同じ）。
+      // メソッド未指定なら GET、ただし --input を明示したら POST（gh api と同じ）。
+      // 中身が空でも --input があれば POST 扱いにする（body の有無では判定しない）。
       const method = (
-        options.method ?? (body !== undefined ? "POST" : "GET")
+        options.method ?? (options.input !== undefined ? "POST" : "GET")
       ).toUpperCase();
       if (!ALLOWED_METHODS.includes(method)) {
         throw new Error(
@@ -123,6 +125,9 @@ export function registerApiCommand(program: Command): void {
       if (body !== undefined) init.body = body;
       if (Object.keys(headers).length > 0) init.headers = headers;
 
+      // createEsaClient はメソッド型クライアント（createClient）なので GET/POST…
+      // が呼び出し可能なプロパティになっている。createPathBasedClient に替えると
+      // この動的ディスパッチは壊れる点に注意。
       const dispatch = client as unknown as Record<string, ClientMethod>;
       const result = await dispatch[method](endpoint, init);
       const data = unwrap(result);
