@@ -93,6 +93,6 @@ test("throws without calling the endpoint when there is no refresh_token", async
 
   await expect(
     refresh(OAUTH, { ...CURRENT, refresh_token: undefined }),
-  ).rejects.toThrow(/refresh_token がありません/);
+  ).rejects.toThrow(/No refresh_token/);
   expect(fetchSpy).not.toHaveBeenCalled();
 });

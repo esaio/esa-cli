@@ -1,4 +1,5 @@
 import { CONFIG_DIR as DEFAULT_CONFIG_DIR } from "../config/paths.js";
+import { t } from "../i18n/index.js";
 import {
   credentialManagerDelete,
   credentialManagerLoad,
@@ -54,7 +55,7 @@ export function backendLabel(backend: Backend): string {
     case "secret-service":
       return "Linux Secret Service";
     case "encrypted-file":
-      return "暗号化ファイル (~/.config/esa-cli)";
+      return t("tokenStore.encryptedFileLabel");
   }
 }
 
@@ -82,7 +83,10 @@ export async function saveTokens(
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     throw new Error(
-      `トークンの保存に失敗しました (${backendLabel(backend)}): ${msg}`,
+      t("tokenStore.saveFailed", {
+        backend: backendLabel(backend),
+        error: msg,
+      }),
     );
   }
 }
@@ -114,7 +118,10 @@ export function loadTokens(
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     console.error(
-      `警告: トークンデータのパースに失敗しました (${backendLabel(backend)}): ${msg}。\`esa auth login\` で再ログインしてください。`,
+      t("tokenStore.parseWarning", {
+        backend: backendLabel(backend),
+        error: msg,
+      }),
     );
     return null;
   }

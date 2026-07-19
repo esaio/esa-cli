@@ -4,6 +4,7 @@ import { type ResolvedAuth, resolveAuth } from "../auth/resolve-auth.js";
 import type { TokenSet } from "../auth/types.js";
 import { config, getOAuthConfig } from "../config/index.js";
 import type { paths } from "../generated/api-types.js";
+import { t } from "../i18n/index.js";
 
 // 期限のこの秒数前になったら、送信前にトークンを更新する。
 const REFRESH_MARGIN_SECONDS = 60;
@@ -32,9 +33,7 @@ const authMiddleware: Middleware = {
     const auth = resolveAuth();
     let token = bearerOf(auth);
     if (token == null) {
-      throw new Error(
-        "認証情報がありません。`esa auth login` でログインするか、ESA_ACCESS_TOKEN を設定してください。",
-      );
+      throw new Error(t("apiClient.noAuth"));
     }
 
     // OAuth は期限切れで 401 になる前に、送信前に更新する（プロアクティブ）。
@@ -55,7 +54,7 @@ const authMiddleware: Middleware = {
   onError({ error }) {
     // fetch 自体の失敗（DNS・タイムアウト等）を分かりやすいメッセージにする。
     const detail = error instanceof Error ? error.message : String(error);
-    return new Error(`esa API への接続に失敗しました: ${detail}`);
+    return new Error(t("apiClient.connectionFailed", { error: detail }));
   },
 };
 

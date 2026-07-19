@@ -1,4 +1,5 @@
 import packageJson from "../../package.json" with { type: "json" };
+import { t } from "../i18n/index.js";
 
 /** client_secret を持たない public client のため、公開しても問題ない値。 */
 const DEFAULT_CLIENT_ID =
@@ -20,7 +21,6 @@ const DEFAULT_SCOPE = [
 export const config = {
   cli: {
     name: "esa",
-    description: "Official CLI for esa.io",
     version: packageJson.version,
     // esa API リクエストの User-Agent。esa 側でクライアントを識別するため。
     userAgent: `esa-cli/${packageJson.version} (official)`,
@@ -51,16 +51,12 @@ function validateApiBaseUrl(apiBaseUrl: string): void {
   try {
     url = new URL(apiBaseUrl);
   } catch {
-    throw new Error(
-      `API のベース URL が不正です（ESA_API_BASE_URL を確認してください）: ${apiBaseUrl}`,
-    );
+    throw new Error(t("baseUrl.invalid", { url: apiBaseUrl }));
   }
 
   // ws:// などで思わぬ通信をしないよう http/https に限定する。
   if (url.protocol !== "http:" && url.protocol !== "https:") {
-    throw new Error(
-      `API のベース URL は http/https のみ対応しています: ${apiBaseUrl}`,
-    );
+    throw new Error(t("baseUrl.notHttp", { url: apiBaseUrl }));
   }
 
   const host = url.hostname;
@@ -75,9 +71,7 @@ function validateApiBaseUrl(apiBaseUrl: string): void {
 
   if (host === "api.esa.io" && url.protocol === "https:") return;
 
-  throw new Error(
-    `許可されていない API のベース URL です（api.esa.io または localhost のみ）: ${apiBaseUrl}`,
-  );
+  throw new Error(t("baseUrl.notAllowed", { url: apiBaseUrl }));
 }
 
 export function getOAuthConfig(): OAuthConfig {

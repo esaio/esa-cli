@@ -69,6 +69,21 @@ esa config get default-team        # 設定値を表示
 esa post list --team docs          # 明示指定
 ```
 
+### 表示言語（i18n）
+
+メッセージと `--help` は日本語（`ja`）と英語（`en`）に対応しています。
+使用言語は次の順で決まります（判定できない場合は既定の **英語**）:
+
+1. 環境変数 `ESA_LANG`（`en` / `ja`）
+2. 設定ファイルの `language`（`esa config set language ja`）
+3. OS のロケール（`LC_ALL` / `LC_MESSAGES` / `LANG`。例: `ja_JP.UTF-8` → `ja`）
+
+```bash
+ESA_LANG=ja esa --help        # 一時的に日本語で実行
+esa config set language ja    # 既定を日本語にする
+esa config get language       # 設定値を表示
+```
+
 ### 認証の優先順位
 
 API リクエストの認証は次の順で選ばれます:
@@ -94,6 +109,7 @@ API リクエストの認証は次の順で選ばれます:
 | `ESA_API_BASE_URL` | API のベース URL。discovery の取得元でもある | `https://api.esa.io` |
 | `ESA_ACCESS_TOKEN` | OAuth を使わずアクセストークンを直接指定 | （未設定） |
 | `ESA_TEAM` | post 系コマンドの対象チーム（`--team` の既定） | （未設定） |
+| `ESA_LANG` | 表示言語（`en` / `ja`）。最優先で使われる | OS ロケール→`en` |
 
 ## Scripts
 
@@ -120,12 +136,16 @@ src/
     user.ts              # `esa user`
     team.ts              # `esa team list`
     post.ts              # `esa post list` / `esa post get`
-    config.ts            # `esa config set/get`（既定チーム等）
+    config.ts            # `esa config set/get`（既定チーム・表示言語）
     parse.ts             # オプション・引数の共通バリデーション
   api/                   # esa API クライアント
     client.ts            # openapi-fetch クライアント（認証・送信前のトークン更新）
     resolve-team.ts      # 対象チームの解決（--team / ESA_TEAM / 既定 / 単一所属）
     response.ts          # レスポンスの取り出しとエラー整形
+  i18n/                  # 表示言語（i18next）
+    index.ts             # i18next の初期化と翻訳関数 t
+    resolve-language.ts  # 使用言語の判定（ESA_LANG / 設定 / OS ロケール）
+    locales/             # 言語リソース（en / ja）
   auth/                  # OAuth 認証とトークン保存
     oauth.ts             # Authorization Code + PKCE フロー
     discovery.ts         # 認可サーバーのメタデータ取得 (RFC 8414)

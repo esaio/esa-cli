@@ -3,6 +3,7 @@ import { createEsaClient } from "../api/client.js";
 import { resolveTeam } from "../api/resolve-team.js";
 import { unwrap } from "../api/response.js";
 import type { paths } from "../generated/api-types.js";
+import { t } from "../i18n/index.js";
 import { positiveInt } from "./parse.js";
 
 type PostsQuery = NonNullable<
@@ -17,18 +18,15 @@ type ListOptions = {
 };
 
 export function registerPostCommand(program: Command): void {
-  const post = program.command("post").description("Work with posts");
+  const post = program.command("post").description(t("post.desc"));
 
   post
     .command("list")
-    .description("List posts in a team (GET /v1/teams/{team_name}/posts)")
-    .option(
-      "--team <name>",
-      "対象チーム（省略時は ESA_TEAM / 既定チーム / 単一所属を使用）",
-    )
-    .option("--page <number>", "ページ番号")
-    .option("--per-page <number>", "1ページあたりの件数")
-    .option("-q, --query <query>", "検索クエリ")
+    .description(t("post.listDesc"))
+    .option("--team <name>", t("post.listTeamOpt"))
+    .option("--page <number>", t("post.pageOpt"))
+    .option("--per-page <number>", t("post.perPageOpt"))
+    .option("-q, --query <query>", t("post.queryOpt"))
     .action(async (options: ListOptions) => {
       // 入力の検証はネットワーク（resolveTeam の GET /v1/teams）より先に行う。
       const query: PostsQuery = {};
@@ -48,12 +46,12 @@ export function registerPostCommand(program: Command): void {
 
   post
     .command("get")
-    .argument("<number>", "記事番号")
-    .description("Get a post (GET /v1/teams/{team_name}/posts/{post_number})")
-    .option("--team <name>", "対象チーム")
+    .argument("<number>", t("post.numberArg"))
+    .description(t("post.getDesc"))
+    .option("--team <name>", t("post.getTeamOpt"))
     .action(async (number: string, options: { team?: string }) => {
       // 記事番号の検証をネットワークより先に行う。
-      const postNumber = positiveInt(number, "記事ID");
+      const postNumber = positiveInt(number, t("post.idLabel"));
 
       const client = createEsaClient();
       const team = await resolveTeam(client, options.team);

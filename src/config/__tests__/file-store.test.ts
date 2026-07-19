@@ -4,8 +4,10 @@ import { join } from "node:path";
 import { afterEach, beforeEach, expect, test } from "vitest";
 import {
   getDefaultTeam,
+  getLanguage,
   readFileConfig,
   setDefaultTeam,
+  setLanguage,
 } from "../file-store.js";
 
 let dir: string;
@@ -64,4 +66,23 @@ test("ignores a non-string default_team", async () => {
   await mkdir(dir, { recursive: true });
   await writeFile(join(dir, "config.json"), '{"default_team": 123}');
   expect(getDefaultTeam(dir)).toBeUndefined();
+});
+
+test("set then get round-trips the language", () => {
+  setLanguage("ja", dir);
+  expect(getLanguage(dir)).toBe("ja");
+});
+
+test("language and default_team coexist without clobbering", () => {
+  setDefaultTeam("docs", dir);
+  setLanguage("ja", dir);
+  expect(getDefaultTeam(dir)).toBe("docs");
+  expect(getLanguage(dir)).toBe("ja");
+});
+
+test("ignores a non-string language", async () => {
+  const { writeFile, mkdir } = await import("node:fs/promises");
+  await mkdir(dir, { recursive: true });
+  await writeFile(join(dir, "config.json"), '{"language": 123}');
+  expect(getLanguage(dir)).toBeUndefined();
 });

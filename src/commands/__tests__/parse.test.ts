@@ -6,14 +6,16 @@ test("parses a positive integer", () => {
 });
 
 test("rejects a non-numeric value", () => {
-  expect(() => positiveInt("abc", "--page")).toThrow(/--page.*整数/);
+  expect(() => positiveInt("abc", "--page")).toThrow(
+    /--page.*positive integer/,
+  );
 });
 
 test("rejects zero and negatives", () => {
-  expect(() => positiveInt("0", "n")).toThrow(/整数/);
-  expect(() => positiveInt("-1", "n")).toThrow(/整数/);
+  expect(() => positiveInt("0", "n")).toThrow(/positive integer/);
+  expect(() => positiveInt("-1", "n")).toThrow(/positive integer/);
 });
 
 test("rejects a decimal", () => {
-  expect(() => positiveInt("1.5", "n")).toThrow(/整数/);
+  expect(() => positiveInt("1.5", "n")).toThrow(/positive integer/);
 });

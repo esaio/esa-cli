@@ -56,7 +56,7 @@ test("explains how to recover when the keyring is locked", () => {
     );
   });
 
-  expect(() => secretServiceSave("x")).toThrow(/アンロック/);
+  expect(() => secretServiceSave("x")).toThrow(/keyring is locked/);
   expect(() => secretServiceSave("x")).toThrow(/esa auth login/);
 });
 

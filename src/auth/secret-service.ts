@@ -1,4 +1,5 @@
 import { execFileSync } from "node:child_process";
+import { t } from "../i18n/index.js";
 
 const SERVICE = "esa-cli";
 const ACCOUNT = "oauth-tokens";
@@ -41,11 +42,7 @@ function describeSaveFailure(error: unknown): string {
     stderr || (error instanceof Error ? error.message : String(error));
 
   if (/locked/i.test(stderr)) {
-    return [
-      detail,
-      "キーリングがロックされています。「パスワードと鍵」(seahorse) でログインキーリングをアンロックするか、",
-      "自動ログインを無効にしてログインし直してから、再度 `esa auth login` を実行してください。",
-    ].join("\n");
+    return [detail, t("secretService.locked")].join("\n");
   }
   return detail;
 }

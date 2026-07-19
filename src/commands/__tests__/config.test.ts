@@ -3,10 +3,14 @@ import { afterEach, beforeEach, expect, test, vi } from "vitest";
 
 const getDefaultTeam = vi.fn<() => string | undefined>();
 const setDefaultTeam = vi.fn<(team: string) => void>();
+const getLanguage = vi.fn<() => string | undefined>();
+const setLanguage = vi.fn<(language: string) => void>();
 
 vi.mock("../../config/file-store.js", () => ({
   getDefaultTeam,
   setDefaultTeam,
+  getLanguage,
+  setLanguage,
 }));
 
 const { registerConfigCommand } = await import("../config.js");
@@ -21,6 +25,8 @@ function run(args: string[]): Promise<Command> {
 beforeEach(() => {
   getDefaultTeam.mockReset();
   setDefaultTeam.mockReset();
+  getLanguage.mockReset();
+  setLanguage.mockReset();
 });
 
 afterEach(() => {
@@ -37,14 +43,14 @@ test("`config set default-team` stores the value", async () => {
 
 test("`config set` rejects an unknown key", async () => {
   await expect(run(["config", "set", "bogus", "x"])).rejects.toThrow(
-    /未知の設定キー/,
+    /Unknown config key/,
   );
   expect(setDefaultTeam).not.toHaveBeenCalled();
 });
 
 test("`config set` rejects a whitespace-only value", async () => {
   await expect(run(["config", "set", "default-team", "  "])).rejects.toThrow(
-    /値が空/,
+    /is empty/,
   );
   expect(setDefaultTeam).not.toHaveBeenCalled();
 });
@@ -81,6 +87,32 @@ test("`config get` without a key errors (key is required)", async () => {
 
 test("`config get` rejects an unknown key", async () => {
   await expect(run(["config", "get", "bogus"])).rejects.toThrow(
-    /未知の設定キー/,
+    /Unknown config key/,
   );
+});
+
+test("`config set language` stores a supported language", async () => {
+  vi.spyOn(console, "error").mockImplementation(() => {});
+
+  await run(["config", "set", "language", "ja"]);
+
+  expect(setLanguage).toHaveBeenCalledWith("ja");
+  expect(setDefaultTeam).not.toHaveBeenCalled();
+});
+
+test("`config set language` rejects an unsupported language", async () => {
+  await expect(run(["config", "set", "language", "fr"])).rejects.toThrow(
+    /must be one of/,
+  );
+  expect(setLanguage).not.toHaveBeenCalled();
+});
+
+test("`config get language` prints the value", async () => {
+  getLanguage.mockReturnValue("ja");
+  const log = vi.spyOn(console, "log").mockImplementation(() => {});
+
+  await run(["config", "get", "language"]);
+
+  expect(log).toHaveBeenCalledWith("ja");
+  expect(getDefaultTeam).not.toHaveBeenCalled();
 });

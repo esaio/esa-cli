@@ -2,6 +2,7 @@ import type { Command } from "commander";
 import { createEsaClient } from "../api/client.js";
 import { unwrap } from "../api/response.js";
 import type { paths } from "../generated/api-types.js";
+import { t } from "../i18n/index.js";
 import { positiveInt } from "./parse.js";
 
 type TeamsQuery = NonNullable<paths["/v1/teams"]["get"]["parameters"]["query"]>;
@@ -13,14 +14,14 @@ type ListOptions = {
 };
 
 export function registerTeamCommand(program: Command): void {
-  const team = program.command("team").description("Work with teams");
+  const team = program.command("team").description(t("team.desc"));
 
   team
     .command("list")
-    .description("List teams you belong to (GET /v1/teams)")
-    .option("--page <number>", "ページ番号")
-    .option("--per-page <number>", "1ページあたりの件数")
-    .option("--role <role>", "権限で絞り込み (member | owner)")
+    .description(t("team.listDesc"))
+    .option("--page <number>", t("team.pageOpt"))
+    .option("--per-page <number>", t("team.perPageOpt"))
+    .option("--role <role>", t("team.roleOpt"))
     .action(async (options: ListOptions) => {
       const query: TeamsQuery = {};
       if (options.page) query.page = positiveInt(options.page, "--page");

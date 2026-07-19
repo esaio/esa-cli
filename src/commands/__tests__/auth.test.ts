@@ -226,7 +226,7 @@ describe("esa auth refresh", () => {
 
     await expect(
       program.parseAsync(["auth", "refresh"], { from: "user" }),
-    ).rejects.toThrow(/OAuth でログインしていません/);
+    ).rejects.toThrow(/not logged in with OAuth/);
     expect(refresh).not.toHaveBeenCalled();
   });
 });

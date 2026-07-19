@@ -1,4 +1,5 @@
 import { execFileSync } from "node:child_process";
+import { t } from "../i18n/index.js";
 
 const TARGET = "esa-cli";
 const USERNAME = "oauth-tokens";
@@ -90,7 +91,10 @@ export function credentialManagerSave(data: string): void {
   const bytes = Buffer.from(data, "utf-8");
   if (bytes.length > CRED_MAX_BLOB_SIZE) {
     throw new Error(
-      `データサイズ (${bytes.length} bytes) が Windows Credential Manager の上限 (${CRED_MAX_BLOB_SIZE} bytes) を超えています`,
+      t("credentialManager.tooLarge", {
+        size: bytes.length,
+        max: CRED_MAX_BLOB_SIZE,
+      }),
     );
   }
   const b64 = bytes.toString("base64");
