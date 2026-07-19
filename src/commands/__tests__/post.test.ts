@@ -265,20 +265,34 @@ test("`post archive` moves the current category under Archived/", async () => {
     {
       params: { path: { team_name: "resolved-team", post_number: 9 } },
       body: {
-        post: { category: "Archived/dev/docs", message: "Archive post" },
+        post: { category: "Archived/dev/docs", message: undefined },
       },
     },
   );
 });
 
-test("`post archive` is a no-op when already archived", async () => {
+test("`post archive -m` sends the given message", async () => {
+  get.mockResolvedValue(ok200({ number: 9, category: "dev" }));
+  vi.spyOn(console, "log").mockImplementation(() => {});
+
+  await run(["post", "archive", "9", "-m", "retire"]);
+
+  expect(patch.mock.calls[0][1].body.post.message).toBe("retire");
+});
+
+test("`post archive` is a no-op but still prints the post when already archived", async () => {
   get.mockResolvedValue(ok200({ number: 9, category: "Archived/dev" }));
   const err = vi.spyOn(console, "error").mockImplementation(() => {});
+  const log = vi.spyOn(console, "log").mockImplementation(() => {});
 
   await run(["post", "archive", "9"]);
 
   expect(patch).not.toHaveBeenCalled();
   expect(err.mock.calls[0][0]).toMatch(/already archived/);
+  expect(JSON.parse(log.mock.calls[0][0] as string)).toEqual({
+    number: 9,
+    category: "Archived/dev",
+  });
 });
 
 test("`post delete --yes` deletes without confirmation", async () => {

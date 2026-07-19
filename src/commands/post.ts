@@ -305,14 +305,17 @@ export function registerPostCommand(program: Command): void {
           "/v1/teams/{team_name}/posts/{post_number}",
           { params: { path: { team_name: team, post_number: postNumber } } },
         );
-        const current = unwrap(got).category ?? "";
+        const post = unwrap(got);
+        const current = post.category ?? "";
         if (current === "Archived" || current.startsWith("Archived/")) {
+          // 人間向けの通知は stderr、記事 JSON は stdout（`| jq` 用）に出す。
           console.error(
             t("post.alreadyArchived", {
               number: postNumber,
               category: current,
             }),
           );
+          print(post);
           return;
         }
 
@@ -322,10 +325,9 @@ export function registerPostCommand(program: Command): void {
           {
             params: { path: { team_name: team, post_number: postNumber } },
             body: {
-              post: {
-                category: archived,
-                message: options.message ?? "Archive post",
-              },
+              // message は既定を付けず、--message 指定時のみ送る（未指定なら
+              // esa 側の既定に委ねる。保存データを実行時の言語で変えない）。
+              post: { category: archived, message: options.message },
             },
           },
         );
