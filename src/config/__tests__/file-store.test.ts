@@ -40,3 +40,10 @@ test("treats a corrupted config file as empty", async () => {
   await writeFile(join(dir, "config.json"), "{ not json");
   expect(readFileConfig(dir)).toEqual({});
 });
+
+test("propagates a non-ENOENT read error instead of swallowing it", async () => {
+  const { mkdir } = await import("node:fs/promises");
+  // config.json をディレクトリにすると readFileSync が EISDIR で失敗する。
+  await mkdir(join(dir, "config.json"), { recursive: true });
+  expect(() => readFileConfig(dir)).toThrow();
+});

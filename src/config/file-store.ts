@@ -10,11 +10,18 @@ export type FileConfig = {
 };
 
 export function readFileConfig(configDir = DEFAULT_CONFIG_DIR): FileConfig {
+  let raw: string;
   try {
-    const raw = readFileSync(join(configDir, CONFIG_FILE), "utf-8");
+    raw = readFileSync(join(configDir, CONFIG_FILE), "utf-8");
+  } catch (error) {
+    // 未作成（ENOENT）は空設定として扱う。権限エラー等は握りつぶさず伝える。
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return {};
+    throw error;
+  }
+  try {
     return JSON.parse(raw) as FileConfig;
   } catch {
-    // 未作成・壊れている場合は空設定として扱う。
+    // 壊れた JSON は空設定として扱い、処理を止めない。
     return {};
   }
 }

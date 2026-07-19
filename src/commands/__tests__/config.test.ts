@@ -42,6 +42,21 @@ test("`config set` rejects an unknown key", async () => {
   expect(setDefaultTeam).not.toHaveBeenCalled();
 });
 
+test("`config set` rejects a whitespace-only value", async () => {
+  await expect(run(["config", "set", "default-team", "  "])).rejects.toThrow(
+    /値が空/,
+  );
+  expect(setDefaultTeam).not.toHaveBeenCalled();
+});
+
+test("`config set` trims surrounding whitespace before saving", async () => {
+  vi.spyOn(console, "error").mockImplementation(() => {});
+
+  await run(["config", "set", "default-team", "  docs  "]);
+
+  expect(setDefaultTeam).toHaveBeenCalledWith("docs");
+});
+
 test("`config get default-team` prints the value", async () => {
   getDefaultTeam.mockReturnValue("docs");
   const log = vi.spyOn(console, "log").mockImplementation(() => {});

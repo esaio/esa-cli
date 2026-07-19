@@ -21,8 +21,13 @@ export function registerConfigCommand(program: Command): void {
     .description("Set a config value")
     .action((key: string, value: string) => {
       assertKnownKey(key);
-      setDefaultTeam(value);
-      console.error(`${key} を ${value} に設定しました。`);
+      // 前後の空白を除き、空文字は保存しない（resolveTeam の trim と揃える）。
+      const trimmed = value.trim();
+      if (!trimmed) {
+        throw new Error(`${key} の値が空です。`);
+      }
+      setDefaultTeam(trimmed);
+      console.error(`${key} を ${trimmed} に設定しました。`);
     });
 
   config
