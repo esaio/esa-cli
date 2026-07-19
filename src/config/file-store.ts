@@ -18,12 +18,25 @@ export function readFileConfig(configDir = DEFAULT_CONFIG_DIR): FileConfig {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") return {};
     throw error;
   }
+  let parsed: unknown;
   try {
-    return JSON.parse(raw) as FileConfig;
+    parsed = JSON.parse(raw);
   } catch {
     // 壊れた JSON は空設定として扱い、処理を止めない。
     return {};
   }
+
+  // 有効だが期待した形でない JSON（null・配列・プリミティブ、default_team が
+  // 文字列以外）でも後続で TypeError にならないよう、形と型を検証して取り込む。
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+    return {};
+  }
+  const record = parsed as Record<string, unknown>;
+  const config: FileConfig = {};
+  if (typeof record.default_team === "string") {
+    config.default_team = record.default_team;
+  }
+  return config;
 }
 
 export function writeFileConfig(

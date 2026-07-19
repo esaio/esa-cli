@@ -47,3 +47,21 @@ test("propagates a non-ENOENT read error instead of swallowing it", async () => 
   await mkdir(join(dir, "config.json"), { recursive: true });
   expect(() => readFileConfig(dir)).toThrow();
 });
+
+test.each(["null", '"a string"', "[1, 2]", "42"])(
+  "treats valid-but-non-object JSON (%s) as empty",
+  async (content) => {
+    const { writeFile, mkdir } = await import("node:fs/promises");
+    await mkdir(dir, { recursive: true });
+    await writeFile(join(dir, "config.json"), content);
+    expect(readFileConfig(dir)).toEqual({});
+    expect(getDefaultTeam(dir)).toBeUndefined();
+  },
+);
+
+test("ignores a non-string default_team", async () => {
+  const { writeFile, mkdir } = await import("node:fs/promises");
+  await mkdir(dir, { recursive: true });
+  await writeFile(join(dir, "config.json"), '{"default_team": 123}');
+  expect(getDefaultTeam(dir)).toBeUndefined();
+});
