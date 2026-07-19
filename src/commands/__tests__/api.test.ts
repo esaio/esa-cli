@@ -137,6 +137,13 @@ test("`api` rejects an unsupported method before network", async () => {
   expect(get).not.toHaveBeenCalled();
 });
 
+test("`api` rejects methods esa API v1 does not support (e.g. OPTIONS)", async () => {
+  await expect(run(["api", "/v1/user", "-X", "OPTIONS"])).rejects.toThrow(
+    /Unsupported --method/,
+  );
+  expect(get).not.toHaveBeenCalled();
+});
+
 test("`api` rejects a malformed -f field before network", async () => {
   await expect(run(["api", "/v1/user", "-f", "noequals"])).rejects.toThrow(
     /Invalid --field/,

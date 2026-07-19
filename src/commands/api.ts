@@ -5,16 +5,9 @@ import { resolveTeam } from "../api/resolve-team.js";
 import { unwrap } from "../api/response.js";
 import { t } from "../i18n/index.js";
 
-// esa api が許可する HTTP メソッド一覧。
-const ALLOWED_METHODS = [
-  "GET",
-  "POST",
-  "PUT",
-  "PATCH",
-  "DELETE",
-  "HEAD",
-  "OPTIONS",
-];
+// esa API v1 がサポートする HTTP メソッド（GET/POST/PUT/PATCH/DELETE）。
+// https://docs.esa.io/posts/102
+const ALLOWED_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE"];
 
 // openapi-fetch のメソッド関数を任意パスで呼ぶための最小シグネチャ。型付き
 // クライアントはリテラルパスを要求するので、ここでは動的ディスパッチする。
