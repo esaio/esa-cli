@@ -128,7 +128,8 @@ export const en = {
     headerOpt: "Extra request header as key:value (repeatable)",
     inputOpt: "Request body from a JSON file (- for stdin)",
     teamOpt: "Team used to fill the {team} placeholder in the path",
-    invalidPath: "Path must start with /: {{path}}",
+    invalidPath:
+      "Path must start with a single / (// is not allowed): {{path}}",
     invalidField: "Invalid --field (expected key=value): {{field}}",
     invalidHeader: "Invalid --header (expected key:value): {{header}}",
     invalidMethod: "Unsupported --method: {{method}} (allowed: {{allowed}})",

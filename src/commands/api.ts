@@ -91,7 +91,10 @@ export function registerApiCommand(program: Command): void {
     .action(async (pathArg: string, options: ApiOptions) => {
       // 入力の検証・ローカル読み込みはネットワーク（resolveTeam / リクエスト）
       // より先に済ませる。
-      if (!pathArg.startsWith("/")) {
+      // 単一の "/" 始まりのみ許可する。"//host/…" のスキーム相対形は URL 解決の
+      // 実装次第で別ホストと解釈される余地があるため拒否する（ベース URL は
+      // api.esa.io/localhost に固定済みだが、多層防御として弾いておく）。
+      if (!pathArg.startsWith("/") || pathArg.startsWith("//")) {
         throw new Error(t("api.invalidPath", { path: pathArg }));
       }
       const query = parseFields(options.field);
@@ -129,7 +132,18 @@ export function registerApiCommand(program: Command): void {
       // が呼び出し可能なプロパティになっている。createPathBasedClient に替えると
       // この動的ディスパッチは壊れる点に注意。
       const dispatch = client as unknown as Record<string, ClientMethod>;
-      const result = await dispatch[method](path, init);
+      // 許可メソッドでもクライアント側に関数が無ければ、生の TypeError ではなく
+      // --method と同じ分かりやすいエラーで落とす。
+      const call = dispatch[method];
+      if (typeof call !== "function") {
+        throw new Error(
+          t("api.invalidMethod", {
+            method,
+            allowed: ALLOWED_METHODS.join(", "),
+          }),
+        );
+      }
+      const result = await call(path, init);
       const data = unwrap(result);
       // 204 など本文の無い成功では stdout に何も出さない。
       if (data !== undefined) print(data);

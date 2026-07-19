@@ -113,6 +113,22 @@ test("`api` rejects a path without a leading slash before network", async () => 
   expect(get).not.toHaveBeenCalled();
 });
 
+test("`api` rejects a scheme-relative // path before network", async () => {
+  await expect(run(["api", "//evil.example/path"])).rejects.toThrow(
+    /must start with/,
+  );
+  expect(get).not.toHaveBeenCalled();
+});
+
+test("`api` reports a friendly error when the method is missing on the client", async () => {
+  // The client mock has no PUT; the guard should surface the --method error
+  // rather than a raw TypeError.
+  await expect(run(["api", "/v1/user", "-X", "PUT"])).rejects.toThrow(
+    /Unsupported --method/,
+  );
+  expect(get).not.toHaveBeenCalled();
+});
+
 test("`api` rejects an unsupported method before network", async () => {
   await expect(run(["api", "/v1/user", "-X", "BREW"])).rejects.toThrow(
     /Unsupported --method/,

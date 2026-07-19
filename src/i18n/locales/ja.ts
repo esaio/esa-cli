@@ -133,7 +133,7 @@ export const ja: Resources = {
     headerOpt: "追加のリクエストヘッダを key:value で指定（繰り返し可）",
     inputOpt: "リクエスト本文を JSON ファイルから読み込みます（- で標準入力）",
     teamOpt: "パス中の {team} プレースホルダに使うチーム",
-    invalidPath: "パスは / で始めてください: {{path}}",
+    invalidPath: "パスは単一の / で始めてください（// は不可）: {{path}}",
     invalidField: "--field の形式が不正です（key=value を期待）: {{field}}",
     invalidHeader: "--header の形式が不正です（key:value を期待）: {{header}}",
     invalidMethod:
