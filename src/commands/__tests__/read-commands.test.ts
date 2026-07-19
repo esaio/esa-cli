@@ -56,7 +56,7 @@ test("`tag list` rejects an invalid --page before any network call", async () =>
   expect(get).not.toHaveBeenCalled();
 });
 
-test("`category list` passes the path filters as query params", async () => {
+test("`category list` always sends v=2 and passes the path filters", async () => {
   vi.spyOn(console, "log").mockImplementation(() => {});
 
   await run([
@@ -73,25 +73,58 @@ test("`category list` passes the path filters as query params", async () => {
   expect(get).toHaveBeenCalledWith("/v1/teams/{team_name}/categories/paths", {
     params: {
       path: { team_name: "resolved-team" },
-      query: { prefix: "dev/", match: "docs", exact_match: "dev/docs" },
+      query: { v: 2, prefix: "dev/", match: "docs", exact_match: "dev/docs" },
     },
   });
 });
 
-test("`category list` enables v=2 only when paging is requested", async () => {
+test("`category list --page` returns just that page (v=2)", async () => {
   vi.spyOn(console, "log").mockImplementation(() => {});
 
   await run(["category", "list", "--page", "2"]);
 
-  expect(get.mock.calls[0][1].params.query).toEqual({ page: 2, v: 2 });
+  expect(get.mock.calls[0][1].params.query).toEqual({ v: 2, page: 2 });
 });
 
-test("`category list` returns all (no v) when paging is omitted", async () => {
-  vi.spyOn(console, "log").mockImplementation(() => {});
+test("`category list --all` walks every page and combines the results", async () => {
+  get
+    .mockResolvedValueOnce(
+      ok200({ categories: [{ full_name: "a" }], next_page: 2, total_count: 2 }),
+    )
+    .mockResolvedValueOnce(
+      ok200({
+        categories: [{ full_name: "b" }],
+        next_page: null,
+        total_count: 2,
+      }),
+    );
+  const log = vi.spyOn(console, "log").mockImplementation(() => {});
 
-  await run(["category", "list", "--prefix", "dev/"]);
+  await run(["category", "list", "--all"]);
 
-  expect(get.mock.calls[0][1].params.query).toEqual({ prefix: "dev/" });
+  expect(get).toHaveBeenCalledTimes(2);
+  expect(get.mock.calls[0][1].params.query).toEqual({
+    v: 2,
+    per_page: 100,
+    page: 1,
+  });
+  expect(get.mock.calls[1][1].params.query).toEqual({
+    v: 2,
+    per_page: 100,
+    page: 2,
+  });
+  expect(JSON.parse(log.mock.calls[0][0] as string)).toEqual({
+    categories: [{ full_name: "a" }, { full_name: "b" }],
+    total_count: 2,
+  });
+});
+
+test("`category list --all --page` is rejected before any network call", async () => {
+  await expect(
+    run(["category", "list", "--all", "--page", "2"]),
+  ).rejects.toThrow(/Cannot use --all/);
+  expect(resolveTeam).not.toHaveBeenCalled();
+  expect(get).not.toHaveBeenCalled();
 });
 
 test("`member list` passes valid sort and order through", async () => {

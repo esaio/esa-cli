@@ -146,6 +146,8 @@ export const en = {
     suffixOpt: "Only paths ending with this string",
     matchOpt: "Only paths containing this string",
     exactMatchOpt: "Only the path exactly matching this string",
+    allOpt: "Fetch every page and return all category paths at once",
+    allPageConflict: "Cannot use --all with --page.",
   },
   tag: {
     desc: "Work with tags",

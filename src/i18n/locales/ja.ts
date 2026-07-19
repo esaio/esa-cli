@@ -151,6 +151,8 @@ export const ja: Resources = {
     suffixOpt: "指定した文字列で終わるパスのみ",
     matchOpt: "指定した文字列を含むパスのみ",
     exactMatchOpt: "指定したパスと完全一致するもののみ",
+    allOpt: "全ページを取得して全カテゴリパスを一度に返します",
+    allPageConflict: "--all と --page は同時に指定できません。",
   },
   tag: {
     desc: "タグを操作します",

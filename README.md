@@ -91,7 +91,8 @@ esa comment delete 456 --yes # 確認をスキップ（非対話環境では --y
 カテゴリ・タグ・メンバーの一覧も取得できます。
 
 ```bash
-esa category list                 # カテゴリパス一覧 (GET /v1/teams/{team}/categories/paths)
+esa category list                 # カテゴリパス一覧（ページング。GET /v1/teams/{team}/categories/paths）
+esa category list --all           # 全ページを辿って全カテゴリパスをまとめて取得
 esa category list --prefix dev/   # 前方一致で絞り込み（--suffix / --match / --exact-match も可）
 esa tag list                      # タグ一覧 (GET /v1/teams/{team}/tags)
 esa member list                   # メンバー一覧 (GET /v1/teams/{team}/members)
