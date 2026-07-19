@@ -88,6 +88,27 @@ esa comment delete 456       # 確認プロンプトの後に削除
 esa comment delete 456 --yes # 確認をスキップ（非対話環境では --yes 必須）
 ```
 
+### 任意の API を叩く（`esa api`）
+
+専用コマンドが用意されていないエンドポイントには、`esa api` で直接アクセスできます（`gh api` 相当のエスケープハッチ）。認証・ベース URL・トークン更新は既存の仕組みをそのまま使います。レスポンスは JSON で stdout に出ます。
+
+```bash
+esa api /v1/user                                  # GET（既定）
+esa api /v1/teams/{team}/posts -f q=wip:true -f per_page=5  # -f はクエリ、{team} は自動解決
+esa api /v1/teams/{team}/comments/456 -X DELETE   # メソッドを明示
+
+# 本文は生 JSON を --input（- で標準入力）で渡す。--input があれば既定で POST
+echo '{"post":{"name":"Hi","wip":false}}' \
+  | esa api /v1/teams/{team}/posts --input -
+esa api /v1/teams/{team}/comments/456 -X PATCH --input body.json
+```
+
+- `-X, --method`: HTTP メソッド。省略時は GET（`--input` があれば POST）
+- `-f, --field key=value`: クエリパラメータ（繰り返し可）
+- `--input <file>`: リクエスト本文の JSON（`-` で標準入力）
+- `-H, --header key:value`: 追加ヘッダ（繰り返し可）
+- パス中の `{team}` は対象チーム（下記の解決順、`--team` でも指定可）に置換されます
+
 ### 対象チームの指定
 
 post / comment 系コマンドはチームを対象に動きます。チームは次の順で解決されます:
@@ -172,6 +193,7 @@ src/
     team.ts              # `esa team list`
     post.ts              # `esa post` コマンド群（list/search/get/create/update/append/prepend/archive/delete）
     comment.ts           # `esa comment` コマンド群（list/get/create/update/delete）
+    api.ts               # `esa api` 任意エンドポイント（gh api 相当のエスケープハッチ）
     body-input.ts        # 本文の入力（--body / --body-file / 標準入力）
     confirm.ts           # y/N の確認プロンプト（delete で使用）
     config.ts            # `esa config set/get`（既定チーム・表示言語）

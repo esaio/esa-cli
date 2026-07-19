@@ -125,6 +125,21 @@ export const ja: Resources = {
     deleteCanceled: "削除をキャンセルしました。",
     deleteDone: "コメント #{{id}} を削除しました。",
   },
+  api: {
+    desc: "任意の esa API エンドポイントを呼びます（エスケープハッチ）",
+    endpointArg: "/ で始まる API パス（例: /v1/teams/{team}/posts）",
+    methodOpt: "HTTP メソッド（既定は GET、--input 指定時は POST）",
+    fieldOpt: "クエリパラメータを key=value で指定（繰り返し可）",
+    headerOpt: "追加のリクエストヘッダを key:value で指定（繰り返し可）",
+    inputOpt: "リクエスト本文を JSON ファイルから読み込みます（- で標準入力）",
+    teamOpt: "パス中の {team} プレースホルダに使うチーム",
+    invalidEndpoint: "エンドポイントは / で始めてください: {{endpoint}}",
+    invalidField: "--field の形式が不正です（key=value を期待）: {{field}}",
+    invalidHeader: "--header の形式が不正です（key:value を期待）: {{header}}",
+    invalidMethod:
+      "対応していない --method です: {{method}}（指定可能: {{allowed}}）",
+    invalidJson: "リクエスト本文が正しい JSON ではありません。",
+  },
   parse: {
     notPositiveInt: "{{name}} は 1 以上の整数で指定してください: {{value}}",
   },
