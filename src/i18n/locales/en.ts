@@ -91,6 +91,35 @@ export const en = {
     deleteCanceled: "Canceled.",
     deleteDone: "Deleted post #{{number}}.",
   },
+  comment: {
+    desc: "Work with comments",
+    listDesc:
+      "List comments in a team (GET /v1/teams/{team_name}/comments), or in a post with --post",
+    listPostOpt: "List comments on this post number instead of the whole team",
+    getDesc: "Get a comment (GET /v1/teams/{team_name}/comments/{comment_id})",
+    createDesc:
+      "Create a comment on a post (POST /v1/teams/{team_name}/posts/{post_number}/comments)",
+    updateDesc:
+      "Update a comment (PATCH /v1/teams/{team_name}/comments/{comment_id})",
+    deleteDesc:
+      "Delete a comment (DELETE /v1/teams/{team_name}/comments/{comment_id})",
+    idArg: "Comment ID",
+    createPostArg: "Post number to comment on",
+    idLabel: "comment ID",
+    teamOpt: "Target team",
+    pageOpt: "Page number",
+    perPageOpt: "Items per page",
+    stargazersOpt: "Include stargazers in the response",
+    bodyOpt: "Body in Markdown",
+    bodyFileOpt: "Read the body from a file (use - for stdin)",
+    userOpt: "Post as this user's screen_name (requires owner permission)",
+    yesOpt: "Skip the confirmation prompt",
+    deleteConfirm: 'Delete comment #{{id}} "{{preview}}"? [y/N]:',
+    deleteConfirmRequired:
+      "Deletion requires confirmation. Pass --yes in a non-interactive environment.",
+    deleteCanceled: "Canceled.",
+    deleteDone: "Deleted comment #{{id}}.",
+  },
   parse: {
     notPositiveInt: "{{name}} must be a positive integer (>= 1): {{value}}",
   },

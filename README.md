@@ -71,9 +71,26 @@ esa post delete 123         # 確認プロンプトの後に削除
 esa post delete 123 --yes   # 確認をスキップ（非対話環境では --yes 必須）
 ```
 
+記事へのコメントも操作できます。本文（Markdown）は記事と同じく `--body` / `--body-file`（`-` で標準入力）で渡します。
+
+```bash
+esa comment list            # チーム全体のコメント一覧 (GET /v1/teams/{team}/comments)
+esa comment list --post 123 # 特定の記事のコメントに絞り込み
+esa comment get 456         # コメントを1件取得
+esa comment get 456 --stargazers # スターしたメンバーも含める
+
+esa comment create 123 --body "コメント本文"        # 記事 123 にコメント
+cat review.md | esa comment create 123 --body-file - # 標準入力から本文
+esa comment update 456 --body "修正後の本文"         # コメントを更新
+esa comment create 123 --body "代理投稿" --user alice # 別ユーザーとして投稿（owner 権限）
+
+esa comment delete 456       # 確認プロンプトの後に削除
+esa comment delete 456 --yes # 確認をスキップ（非対話環境では --yes 必須）
+```
+
 ### 対象チームの指定
 
-post 系コマンドはチームを対象に動きます。チームは次の順で解決されます:
+post / comment 系コマンドはチームを対象に動きます。チームは次の順で解決されます:
 
 1. `--team <name>` フラグ
 2. 環境変数 `ESA_TEAM`
@@ -154,6 +171,7 @@ src/
     user.ts              # `esa user`
     team.ts              # `esa team list`
     post.ts              # `esa post` コマンド群（list/search/get/create/update/append/prepend/archive/delete）
+    comment.ts           # `esa comment` コマンド群（list/get/create/update/delete）
     body-input.ts        # 本文の入力（--body / --body-file / 標準入力）
     confirm.ts           # y/N の確認プロンプト（delete で使用）
     config.ts            # `esa config set/get`（既定チーム・表示言語）

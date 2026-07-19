@@ -1,5 +1,6 @@
 import type { Command } from "commander";
 import { registerAuthCommand } from "./auth.js";
+import { registerCommentCommand } from "./comment.js";
 import { registerConfigCommand } from "./config.js";
 import { registerPostCommand } from "./post.js";
 import { registerTeamCommand } from "./team.js";
@@ -10,5 +11,6 @@ export function registerCommands(program: Command): void {
   registerUserCommand(program);
   registerTeamCommand(program);
   registerPostCommand(program);
+  registerCommentCommand(program);
   registerConfigCommand(program);
 }

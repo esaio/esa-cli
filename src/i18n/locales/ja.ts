@@ -94,6 +94,37 @@ export const ja: Resources = {
     deleteCanceled: "削除をキャンセルしました。",
     deleteDone: "記事 #{{number}} を削除しました。",
   },
+  comment: {
+    desc: "コメントを操作します",
+    listDesc:
+      "チームのコメント一覧を表示します (GET /v1/teams/{team_name}/comments)。--post で記事に絞り込みます",
+    listPostOpt: "チーム全体ではなく、指定した記事番号のコメントを表示します",
+    getDesc:
+      "コメントを1件取得します (GET /v1/teams/{team_name}/comments/{comment_id})",
+    createDesc:
+      "記事にコメントを作成します (POST /v1/teams/{team_name}/posts/{post_number}/comments)",
+    updateDesc:
+      "コメントを更新します (PATCH /v1/teams/{team_name}/comments/{comment_id})",
+    deleteDesc:
+      "コメントを削除します (DELETE /v1/teams/{team_name}/comments/{comment_id})",
+    idArg: "コメントID",
+    createPostArg: "コメントを付ける記事番号",
+    idLabel: "コメントID",
+    teamOpt: "対象チーム",
+    pageOpt: "ページ番号",
+    perPageOpt: "1ページあたりの件数",
+    stargazersOpt: "レスポンスにスターしたメンバーを含めます",
+    bodyOpt: "本文（Markdown）",
+    bodyFileOpt: "本文をファイルから読み込みます（- で標準入力）",
+    userOpt:
+      "指定した screen_name のユーザーとして投稿します（owner 権限が必要）",
+    yesOpt: "確認プロンプトをスキップします",
+    deleteConfirm: "コメント #{{id}}「{{preview}}」を削除しますか？ [y/N]:",
+    deleteConfirmRequired:
+      "削除には確認が必要です。非対話環境では --yes を指定してください。",
+    deleteCanceled: "削除をキャンセルしました。",
+    deleteDone: "コメント #{{id}} を削除しました。",
+  },
   parse: {
     notPositiveInt: "{{name}} は 1 以上の整数で指定してください: {{value}}",
   },
