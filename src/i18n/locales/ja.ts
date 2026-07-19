@@ -114,6 +114,7 @@ export const ja: Resources = {
       "キーリングがロックされています。「パスワードと鍵」(seahorse) でログインキーリングをアンロックするか、\n自動ログインを無効にしてログインし直してから、再度 `esa auth login` を実行してください。",
   },
   callback: {
+    notFound: "見つかりません",
     successTitle: "認証が完了しました",
     successBody: "このタブを閉じてターミナルに戻ってください。",
     canceledBrowser: "認可がキャンセルされました: {{error}}",

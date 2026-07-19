@@ -113,6 +113,7 @@ export const en = {
       'The keyring is locked. Unlock the login keyring in "Passwords and Keys" (seahorse), or disable automatic login and sign in again, then run `esa auth login`.',
   },
   callback: {
+    notFound: "Not Found",
     successTitle: "Authentication complete",
     successBody: "You can close this tab and return to your terminal.",
     canceledBrowser: "Authorization was canceled: {{error}}",

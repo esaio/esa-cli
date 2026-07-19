@@ -4,8 +4,9 @@ import { ja } from "./locales/ja.js";
 import { DEFAULT_LANGUAGE, resolveLanguage } from "./resolve-language.js";
 
 // インライン resource のみ・非同期 backend なしのため initAsync:false で
-// 同期初期化する（init 直後から t() が使える）。CLI は HTML を組み立てないので
-// エスケープは無効化する。
+// 同期初期化する（init 直後から t() が使える）。補間値はブラウザの HTML には
+// 静的な文言しか埋め込まず（callback.ts）、ユーザー入力は text/plain で返すため、
+// HTML エスケープは無効化する（CLI 出力に実体参照が混ざらないように）。
 i18next.init({
   lng: resolveLanguage(),
   fallbackLng: DEFAULT_LANGUAGE,

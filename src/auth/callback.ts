@@ -36,7 +36,7 @@ export function startCallbackServer(
     const url = new URL(req.url ?? "/", "http://127.0.0.1");
     if (url.pathname !== "/callback") {
       res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
-      res.end("Not Found");
+      res.end(t("callback.notFound"));
       return;
     }
 
