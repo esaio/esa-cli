@@ -57,12 +57,24 @@ test("`post list` resolves the team and calls GET with the team path", async () 
   });
 });
 
-test("`post list` rejects an invalid --page before calling the API", async () => {
+test("`post list` passes --page as a number in the query", async () => {
+  vi.spyOn(console, "log").mockImplementation(() => {});
+
+  await run(["post", "list", "--page", "2"]);
+
+  expect(get).toHaveBeenCalledWith("/v1/teams/{team_name}/posts", {
+    params: { path: { team_name: "resolved-team" }, query: { page: 2 } },
+  });
+});
+
+test("`post list` rejects an invalid --page before any network call", async () => {
   vi.spyOn(console, "log").mockImplementation(() => {});
 
   await expect(run(["post", "list", "--page", "abc"])).rejects.toThrow(
     /--page.*整数/,
   );
+  expect(resolveTeam).not.toHaveBeenCalled();
+  expect(get).not.toHaveBeenCalled();
 });
 
 test("`post get` calls GET with the post number in the path", async () => {
@@ -80,9 +92,10 @@ test("`post get` calls GET with the post number in the path", async () => {
   );
 });
 
-test("`post get` rejects a non-numeric post number", async () => {
+test("`post get` rejects a non-numeric post number before any network call", async () => {
   vi.spyOn(console, "log").mockImplementation(() => {});
 
   await expect(run(["post", "get", "abc"])).rejects.toThrow(/number.*整数/);
+  expect(resolveTeam).not.toHaveBeenCalled();
   expect(get).not.toHaveBeenCalled();
 });

@@ -27,16 +27,12 @@ export function registerConfigCommand(program: Command): void {
 
   config
     .command("get")
-    .argument("[key]", `設定キー（省略で全件）`)
-    .description("Show config values")
-    .action((key?: string) => {
-      if (key) assertKnownKey(key);
-      console.log(
-        JSON.stringify(
-          { [KEY_DEFAULT_TEAM]: getDefaultTeam() ?? null },
-          null,
-          2,
-        ),
-      );
+    .argument("<key>", `設定キー（${KEY_DEFAULT_TEAM}）`)
+    .description("Get a config value")
+    .action((key: string) => {
+      assertKnownKey(key);
+      const value = getDefaultTeam();
+      // 未設定なら何も出力しない（exit 0）。設定済みなら値のみ出す。
+      if (value != null) console.log(value);
     });
 }

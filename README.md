@@ -64,7 +64,7 @@ post 系コマンドはチームを対象に動きます。チームは次の順
 
 ```bash
 esa config set default-team docs   # 既定チームを設定
-esa config get                     # 現在の設定を表示
+esa config get default-team        # 設定値を表示
 esa post list --team docs          # 明示指定
 ```
 

@@ -42,24 +42,30 @@ test("`config set` rejects an unknown key", async () => {
   expect(setDefaultTeam).not.toHaveBeenCalled();
 });
 
-test("`config get` prints the current default team as JSON", async () => {
+test("`config get default-team` prints the value", async () => {
   getDefaultTeam.mockReturnValue("docs");
   const log = vi.spyOn(console, "log").mockImplementation(() => {});
 
-  await run(["config", "get"]);
+  await run(["config", "get", "default-team"]);
 
-  expect(JSON.parse(log.mock.calls[0][0] as string)).toEqual({
-    "default-team": "docs",
-  });
+  expect(log).toHaveBeenCalledWith("docs");
 });
 
-test("`config get` prints null when unset", async () => {
+test("`config get default-team` prints nothing when unset", async () => {
   getDefaultTeam.mockReturnValue(undefined);
   const log = vi.spyOn(console, "log").mockImplementation(() => {});
 
-  await run(["config", "get"]);
+  await run(["config", "get", "default-team"]);
 
-  expect(JSON.parse(log.mock.calls[0][0] as string)).toEqual({
-    "default-team": null,
-  });
+  expect(log).not.toHaveBeenCalled();
+});
+
+test("`config get` without a key errors (key is required)", async () => {
+  await expect(run(["config", "get"])).rejects.toThrow();
+});
+
+test("`config get` rejects an unknown key", async () => {
+  await expect(run(["config", "get", "bogus"])).rejects.toThrow(
+    /未知の設定キー/,
+  );
 });

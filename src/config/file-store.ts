@@ -1,8 +1,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { homedir } from "node:os";
 import { join } from "node:path";
+import { CONFIG_DIR as DEFAULT_CONFIG_DIR } from "./paths.js";
 
-const DEFAULT_CONFIG_DIR = join(homedir(), ".config", "esa-cli");
 const CONFIG_FILE = "config.json";
 
 /** 設定ファイル (~/.config/esa-cli/config.json) の内容。トークンとは別ファイル。 */

@@ -15,10 +15,13 @@ export async function resolveTeam(
   client: Client<paths>,
   flagTeam?: string,
 ): Promise<string> {
-  if (flagTeam) return flagTeam;
-  if (process.env.ESA_TEAM) return process.env.ESA_TEAM;
+  // 空文字（ESA_TEAM="" など）は未指定として次の候補へ進める。
+  const flag = flagTeam?.trim();
+  if (flag) return flag;
+  const env = process.env.ESA_TEAM?.trim();
+  if (env) return env;
 
-  const configured = getDefaultTeam();
+  const configured = getDefaultTeam()?.trim();
   if (configured) return configured;
 
   const data = unwrap(await client.GET("/v1/teams"));

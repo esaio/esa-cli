@@ -8,10 +8,11 @@ vi.mock("../../config/file-store.js", () => ({ getDefaultTeam }));
 const { resolveTeam } = await import("../resolve-team.js");
 
 /** GET /v1/teams のレスポンスを差し替えたダミー client。 */
-function makeClient(names: string[]) {
+function makeClient(names: string[], status = 200) {
   const get = vi.fn(async () => ({
-    data: { teams: names.map((name) => ({ name })) },
-    response: new Response(null, { status: 200 }),
+    data:
+      status === 200 ? { teams: names.map((name) => ({ name })) } : undefined,
+    response: new Response(null, { status }),
   }));
   const client = { GET: get } as unknown as Client<paths>;
   return { client, get };
@@ -72,4 +73,21 @@ test("errors when the user belongs to no team", async () => {
   await expect(resolveTeam(client)).rejects.toThrow(
     /所属しているチームがありません/,
   );
+});
+
+test("propagates a 401 from GET /v1/teams instead of swallowing it", async () => {
+  // ローカル判定に頼らず、認証エラーは握りつぶさず伝える
+  // （「所属チームなし」に化けさせない）。
+  getDefaultTeam.mockReturnValue(undefined);
+  const { client } = makeClient([], 401);
+
+  await expect(resolveTeam(client)).rejects.toThrow(/401/);
+});
+
+test("ignores an empty ESA_TEAM and falls through", async () => {
+  process.env.ESA_TEAM = "";
+  getDefaultTeam.mockReturnValue("config-team");
+  const { client } = makeClient(["a", "b"]);
+
+  expect(await resolveTeam(client)).toBe("config-team");
 });
