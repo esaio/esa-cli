@@ -181,6 +181,22 @@ test("`post create` rejects --body and --body-file together before network", asy
   expect(postReq).not.toHaveBeenCalled();
 });
 
+test("`post create` rejects a name that is empty after the slash split", async () => {
+  await expect(run(["post", "create", "foo/"])).rejects.toThrow(
+    /Post name is empty/,
+  );
+  expect(resolveTeam).not.toHaveBeenCalled();
+  expect(postReq).not.toHaveBeenCalled();
+});
+
+test("`post update --name` rejects a name that is empty after the slash split", async () => {
+  await expect(run(["post", "update", "5", "--name", "foo/"])).rejects.toThrow(
+    /Post name is empty/,
+  );
+  expect(resolveTeam).not.toHaveBeenCalled();
+  expect(patch).not.toHaveBeenCalled();
+});
+
 test("`post update` patches only the provided fields (wip stays undefined)", async () => {
   vi.spyOn(console, "log").mockImplementation(() => {});
 
@@ -257,16 +273,16 @@ test("`post archive` moves the current category under Archived/", async () => {
 
 test("`post archive` is a no-op when already archived", async () => {
   get.mockResolvedValue(ok200({ number: 9, category: "Archived/dev" }));
-  const log = vi.spyOn(console, "log").mockImplementation(() => {});
+  const err = vi.spyOn(console, "error").mockImplementation(() => {});
 
   await run(["post", "archive", "9"]);
 
   expect(patch).not.toHaveBeenCalled();
-  expect(log.mock.calls[0][0]).toMatch(/already archived/);
+  expect(err.mock.calls[0][0]).toMatch(/already archived/);
 });
 
 test("`post delete --yes` deletes without confirmation", async () => {
-  const log = vi.spyOn(console, "log").mockImplementation(() => {});
+  const err = vi.spyOn(console, "error").mockImplementation(() => {});
 
   await run(["post", "delete", "5", "--yes"]);
 
@@ -275,7 +291,7 @@ test("`post delete --yes` deletes without confirmation", async () => {
     "/v1/teams/{team_name}/posts/{post_number}",
     { params: { path: { team_name: "resolved-team", post_number: 5 } } },
   );
-  expect(log.mock.calls[0][0]).toMatch(/Deleted post #5/);
+  expect(err.mock.calls[0][0]).toMatch(/Deleted post #5/);
 });
 
 test("`post delete` requires --yes in a non-interactive environment", async () => {

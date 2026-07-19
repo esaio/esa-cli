@@ -83,6 +83,7 @@ export const en = {
     bodyConflict: "Cannot use --body and --body-file together.",
     bodyRequired: "Body is required (--body or --body-file).",
     wipConflict: "Cannot use --wip and --ship together.",
+    emptyName: "Post name is empty.",
     alreadyArchived: "Post #{{number}} is already archived ({{category}}).",
     deleteConfirm: 'Delete post #{{number}} "{{name}}"? [y/N]:',
     deleteConfirmRequired:

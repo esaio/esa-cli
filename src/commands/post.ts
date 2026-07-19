@@ -151,10 +151,12 @@ export function registerPostCommand(program: Command): void {
     .option("--ship", t("post.shipOpt"))
     .option("-m, --message <message>", t("post.messageOpt"))
     .action(async (nameArg: string, options: CreateOptions) => {
-      // 本文・WIP・タグの検証をネットワークより先に行う。
+      // 本文・WIP・記事名の検証をネットワークより先に行う。
       const bodyMd = readBody(options);
       const wip = resolveWip(options);
       const { name, category } = splitNameCategory(nameArg, options.category);
+      // "foo/" のように分割後の名前が空になる入力は不正として弾く。
+      if (!name) throw new Error(t("post.emptyName"));
 
       const client = createEsaClient();
       const team = await resolveTeam(client, options.team);
@@ -162,7 +164,7 @@ export function registerPostCommand(program: Command): void {
         params: { path: { team_name: team } },
         body: {
           post: {
-            name: name ?? nameArg,
+            name,
             body_md: bodyMd,
             category,
             tags: parseTags(options.tags),
@@ -204,6 +206,10 @@ export function registerPostCommand(program: Command): void {
         options.name,
         options.category,
       );
+      // --name を指定したのに分割後が空（"foo/" など）なら弾く。未指定なら不変。
+      if (options.name !== undefined && !name) {
+        throw new Error(t("post.emptyName"));
+      }
 
       const client = createEsaClient();
       const team = await resolveTeam(client, options.team);
@@ -301,7 +307,7 @@ export function registerPostCommand(program: Command): void {
         );
         const current = unwrap(got).category ?? "";
         if (current === "Archived" || current.startsWith("Archived/")) {
-          console.log(
+          console.error(
             t("post.alreadyArchived", {
               number: postNumber,
               category: current,
@@ -367,7 +373,7 @@ export function registerPostCommand(program: Command): void {
           { params: { path: { team_name: team, post_number: postNumber } } },
         );
         unwrap(result); // 204 No Content。エラー時はここで投げる。
-        console.log(t("post.deleteDone", { number: postNumber }));
+        console.error(t("post.deleteDone", { number: postNumber }));
       },
     );
 }
