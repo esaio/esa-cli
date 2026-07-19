@@ -90,7 +90,7 @@ esa comment delete 456 --yes # 確認をスキップ（非対話環境では --y
 
 ### 任意の API を叩く（`esa api`）
 
-専用コマンドが用意されていないエンドポイントには、`esa api` で直接アクセスできます（`gh api` 相当のエスケープハッチ）。認証・ベース URL・トークン更新は既存の仕組みをそのまま使います。レスポンスは JSON で stdout に出ます。
+専用コマンドが用意されていない API パスには、`esa api` で直接アクセスできます（任意パスへのエスケープハッチ）。認証・ベース URL・トークン更新は既存の仕組みをそのまま使います。レスポンスは JSON で stdout に出ます。
 
 ```bash
 esa api /v1/user                                  # GET（既定）
@@ -219,7 +219,7 @@ src/
     team.ts              # `esa team list`
     post.ts              # `esa post` コマンド群（list/search/get/create/update/append/prepend/archive/delete）
     comment.ts           # `esa comment` コマンド群（list/get/create/update/delete）
-    api.ts               # `esa api` 任意エンドポイント（gh api 相当のエスケープハッチ）
+    api.ts               # `esa api` 任意パスへのエスケープハッチ
     body-input.ts        # 本文の入力（--body / --body-file / 標準入力）
     confirm.ts           # y/N の確認プロンプト（delete で使用）
     config.ts            # `esa config set/get`（既定チーム・表示言語）

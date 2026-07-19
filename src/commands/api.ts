@@ -94,8 +94,8 @@ export function registerApiCommand(program: Command): void {
       const headers = parseHeaders(options.header);
       const body =
         options.input !== undefined ? readBody(options.input) : undefined;
-      // メソッド未指定なら GET、ただし --input を明示したら POST（gh api と同じ）。
-      // 中身が空でも --input があれば POST 扱いにする（body の有無では判定しない）。
+      // メソッド未指定なら GET、ただし --input を明示したら POST。中身が空でも
+      // --input があれば POST 扱いにする（body の有無では判定しない）。
       const method = (
         options.method ?? (options.input !== undefined ? "POST" : "GET")
       ).toUpperCase();
