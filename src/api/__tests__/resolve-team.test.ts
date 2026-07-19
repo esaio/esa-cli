@@ -77,15 +77,16 @@ test("errors when the user belongs to no team", async () => {
 
 test("propagates a 401 from GET /v1/teams instead of swallowing it", async () => {
   // ローカル判定に頼らず、認証エラーは握りつぶさず伝える
-  // （「所属チームなし」に化けさせない）。
+  // （「所属チームなし」に化けさせない）。unwrap の 401 メッセージが届くこと。
   getDefaultTeam.mockReturnValue(undefined);
   const { client } = makeClient([], 401);
 
-  await expect(resolveTeam(client)).rejects.toThrow(/401/);
+  await expect(resolveTeam(client)).rejects.toThrow(/認証に失敗しました/);
 });
 
-test("ignores an empty ESA_TEAM and falls through", async () => {
-  process.env.ESA_TEAM = "";
+test("ignores a whitespace-only ESA_TEAM and falls through", async () => {
+  // trim して空になる値は未指定として扱う。
+  process.env.ESA_TEAM = "  ";
   getDefaultTeam.mockReturnValue("config-team");
   const { client } = makeClient(["a", "b"]);
 

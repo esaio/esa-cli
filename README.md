@@ -141,6 +141,7 @@ src/
     types.ts             # TokenSet 型
   config/                # 設定・環境変数
     index.ts
+    paths.ts             # 設定・トークンの保存先ディレクトリ
     file-store.ts        # 設定ファイル (~/.config/esa-cli/config.json) の読み書き
   generated/             # openapi.yaml から生成した API 型（npm run update-esa-api）
     api-types.ts
