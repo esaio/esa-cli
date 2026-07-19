@@ -61,6 +61,38 @@ export const ja: Resources = {
     numberArg: "記事番号",
     getTeamOpt: "対象チーム",
     idLabel: "記事ID",
+    searchDesc: "チームの記事を検索します (GET /v1/teams/{team_name}/posts)",
+    searchQueryArg: "検索クエリ",
+    createDesc: "記事を作成します (POST /v1/teams/{team_name}/posts)",
+    createNameArg:
+      '記事名（タイトル）。名前に "/" を含めるとカテゴリになります',
+    updateDesc:
+      "記事を更新します (PATCH /v1/teams/{team_name}/posts/{post_number})",
+    appendDesc: "記事本文の末尾に Markdown を追記します",
+    prependDesc: "記事本文の先頭に Markdown を追記します",
+    archiveDesc: "記事を Archived/ カテゴリに移してアーカイブします",
+    deleteDesc:
+      "記事を削除します (DELETE /v1/teams/{team_name}/posts/{post_number})",
+    nameOpt: "記事名（タイトル）",
+    categoryOpt: "カテゴリのパス（例: dev/docs）",
+    tagsOpt: "カンマ区切りのタグ（例: a,b,c）",
+    bodyOpt: "本文（Markdown）",
+    bodyFileOpt: "本文をファイルから読み込みます（- で標準入力）",
+    wipOpt: "WIP（作業中）にします",
+    shipOpt: "Ship します（WIP を解除します）",
+    messageOpt: "変更メッセージ",
+    yesOpt: "確認プロンプトをスキップします",
+    bodyConflict: "--body と --body-file は同時に指定できません。",
+    bodyRequired: "本文を指定してください（--body または --body-file）。",
+    wipConflict: "--wip と --ship は同時に指定できません。",
+    emptyName: "記事名が空です。",
+    alreadyArchived:
+      "記事 #{{number}} はすでにアーカイブ済みです（{{category}}）。",
+    deleteConfirm: "記事 #{{number}}「{{name}}」を削除しますか？ [y/N]:",
+    deleteConfirmRequired:
+      "削除には確認が必要です。非対話環境では --yes を指定してください。",
+    deleteCanceled: "削除をキャンセルしました。",
+    deleteDone: "記事 #{{number}} を削除しました。",
   },
   parse: {
     notPositiveInt: "{{name}} は 1 以上の整数で指定してください: {{value}}",

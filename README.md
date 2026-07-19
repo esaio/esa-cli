@@ -50,7 +50,25 @@ esa team list --page 2 --per-page 50 # ページング
 
 esa post list               # 記事一覧 (GET /v1/teams/{team}/posts)
 esa post list -q "wip:true" # 検索クエリで絞り込み
+esa post search "keyword"   # 記事を検索（list -q と同じエンドポイント）
 esa post get 123            # 記事を1件取得
+```
+
+記事の作成・更新・追記・アーカイブ・削除もできます。本文（Markdown）は `--body` でインライン指定するか、`--body-file <path>`（`-` で標準入力）で渡します。
+
+```bash
+# 作成。名前に "/" を含めるとカテゴリになる（--category でも指定可）
+esa post create "dev/docs/新しい記事" --body "本文" --tags a,b
+cat note.md | esa post create "タイトル" --body-file -  # 標準入力から本文
+esa post create "タイトル" --ship                        # WIP を解除して作成（既定は WIP）
+
+esa post update 123 --name "改題" --ship  # タイトル変更＋Ship（指定した項目のみ更新）
+esa post append 123 --body "末尾に追記"    # 本文の末尾に追記
+esa post prepend 123 --body-file intro.md # 本文の先頭に追記
+
+esa post archive 123        # Archived/ カテゴリに移してアーカイブ
+esa post delete 123         # 確認プロンプトの後に削除
+esa post delete 123 --yes   # 確認をスキップ（非対話環境では --yes 必須）
 ```
 
 ### 対象チームの指定
@@ -135,7 +153,9 @@ src/
     auth.ts              # `esa auth` コマンド群（login/logout/refresh/status）
     user.ts              # `esa user`
     team.ts              # `esa team list`
-    post.ts              # `esa post list` / `esa post get`
+    post.ts              # `esa post` コマンド群（list/search/get/create/update/append/prepend/archive/delete）
+    body-input.ts        # 本文の入力（--body / --body-file / 標準入力）
+    confirm.ts           # y/N の確認プロンプト（delete で使用）
     config.ts            # `esa config set/get`（既定チーム・表示言語）
     parse.ts             # オプション・引数の共通バリデーション
   api/                   # esa API クライアント
