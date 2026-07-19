@@ -1,5 +1,4 @@
-import { homedir } from "node:os";
-import { join } from "node:path";
+import { CONFIG_DIR as DEFAULT_CONFIG_DIR } from "../config/paths.js";
 import {
   credentialManagerDelete,
   credentialManagerLoad,
@@ -30,8 +29,6 @@ export type Backend =
   | "credential-manager"
   | "secret-service"
   | "encrypted-file";
-
-const DEFAULT_CONFIG_DIR = join(homedir(), ".config", "esa-cli");
 
 let cachedBackend: Backend | undefined;
 
