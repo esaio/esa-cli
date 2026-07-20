@@ -329,3 +329,88 @@ test("`post delete` prompts and aborts when the user declines", async () => {
   expect(confirm).toHaveBeenCalledWith(expect.stringContaining("Doomed"));
   expect(del).not.toHaveBeenCalled();
 });
+
+test("`post revisions` calls the revisions endpoint with paging", async () => {
+  vi.spyOn(console, "log").mockImplementation(() => {});
+
+  await run(["post", "revisions", "9", "--per-page", "5"]);
+
+  expect(get).toHaveBeenCalledWith(
+    "/v1/teams/{team_name}/posts/{post_number}/revisions",
+    {
+      params: {
+        path: { team_name: "resolved-team", post_number: 9 },
+        query: { per_page: 5 },
+      },
+    },
+  );
+});
+
+test("`post revisions` rejects a non-numeric post number before network", async () => {
+  await expect(run(["post", "revisions", "abc"])).rejects.toThrow(
+    /positive integer/,
+  );
+  expect(resolveTeam).not.toHaveBeenCalled();
+  expect(get).not.toHaveBeenCalled();
+});
+
+test("`post duplicate` fetches the prefill then creates a WIP copy", async () => {
+  get.mockResolvedValue(ok200({ post: { name: "dev/Copy", body_md: "hi" } }));
+  postReq.mockResolvedValue(ok200({ number: 42 }));
+  vi.spyOn(console, "log").mockImplementation(() => {});
+
+  await run(["post", "duplicate", "7"]);
+
+  expect(get).toHaveBeenCalledWith("/v1/teams/{team_name}/posts/new", {
+    params: {
+      path: { team_name: "resolved-team" },
+      query: { parent_post_id: 7 },
+    },
+  });
+  expect(postReq).toHaveBeenCalledWith("/v1/teams/{team_name}/posts", {
+    params: { path: { team_name: "resolved-team" } },
+    body: { post: { name: "dev/Copy", body_md: "hi", wip: true } },
+  });
+});
+
+test("`post duplicate --target-team` creates the copy in the target team", async () => {
+  get.mockResolvedValue(ok200({ post: { name: "Copy", body_md: "hi" } }));
+  vi.spyOn(console, "log").mockImplementation(() => {});
+
+  await run(["post", "duplicate", "7", "--target-team", "other"]);
+
+  // 複製元の解決はソースチーム、作成先は --target-team。
+  expect(postReq).toHaveBeenCalledWith("/v1/teams/{team_name}/posts", {
+    params: { path: { team_name: "other" } },
+    body: { post: { name: "Copy", body_md: "hi", wip: true } },
+  });
+});
+
+test("`post rollback` posts to the rollback endpoint", async () => {
+  postReq.mockResolvedValue(ok200({ number: 9 }));
+  vi.spyOn(console, "log").mockImplementation(() => {});
+
+  await run(["post", "rollback", "9", "3", "--ship", "-m", "戻す"]);
+
+  expect(postReq).toHaveBeenCalledWith(
+    "/v1/teams/{team_name}/posts/{post_number}/revisions/{revision_number}/rollback",
+    {
+      params: {
+        path: {
+          team_name: "resolved-team",
+          post_number: 9,
+          revision_number: 3,
+        },
+      },
+      body: { post: { wip: false, message: "戻す" } },
+    },
+  );
+});
+
+test("`post rollback` rejects a non-numeric revision before network", async () => {
+  await expect(run(["post", "rollback", "9", "abc"])).rejects.toThrow(
+    /positive integer/,
+  );
+  expect(resolveTeam).not.toHaveBeenCalled();
+  expect(postReq).not.toHaveBeenCalled();
+});

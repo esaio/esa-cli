@@ -16,6 +16,10 @@ type BacklinksQuery = NonNullable<
   paths["/v1/teams/{team_name}/posts/{post_number}/backlinks"]["get"]["parameters"]["query"]
 >;
 
+type RevisionsQuery = NonNullable<
+  paths["/v1/teams/{team_name}/posts/{post_number}/revisions"]["get"]["parameters"]["query"]
+>;
+
 type ListOptions = {
   team?: string;
   page?: string;
@@ -154,6 +158,36 @@ export function registerPostCommand(program: Command): void {
       const team = await resolveTeam(client, options.team);
       const result = await client.GET(
         "/v1/teams/{team_name}/posts/{post_number}/backlinks",
+        {
+          params: {
+            path: { team_name: team, post_number: postNumber },
+            query,
+          },
+        },
+      );
+      print(unwrap(result));
+    });
+
+  post
+    .command("revisions")
+    .argument("<number>", t("post.numberArg"))
+    .description(t("post.revisionsDesc"))
+    .option("--team <name>", t("post.getTeamOpt"))
+    .option("--page <number>", t("post.pageOpt"))
+    .option("--per-page <number>", t("post.perPageOpt"))
+    .action(async (number: string, options: ListOptions) => {
+      // 記事番号・ページ指定の検証をネットワークより先に行う。
+      const postNumber = positiveInt(number, t("post.idLabel"));
+      const query: RevisionsQuery = {};
+      if (options.page) query.page = positiveInt(options.page, "--page");
+      if (options.perPage) {
+        query.per_page = positiveInt(options.perPage, "--per-page");
+      }
+
+      const client = createEsaClient();
+      const team = await resolveTeam(client, options.team);
+      const result = await client.GET(
+        "/v1/teams/{team_name}/posts/{post_number}/revisions",
         {
           params: {
             path: { team_name: team, post_number: postNumber },
@@ -363,6 +397,85 @@ export function registerPostCommand(program: Command): void {
               // esa 側の既定に委ねる。保存データを実行時の言語で変えない）。
               post: { category: archived, message: options.message },
             },
+          },
+        );
+        print(unwrap(result));
+      },
+    );
+
+  post
+    .command("duplicate")
+    .argument("<number>", t("post.numberArg"))
+    .description(t("post.duplicateDesc"))
+    .option("--team <name>", t("post.getTeamOpt"))
+    .option("--target-team <name>", t("post.targetTeamOpt"))
+    .action(
+      async (
+        number: string,
+        options: { team?: string; targetTeam?: string },
+      ) => {
+        const postNumber = positiveInt(number, t("post.idLabel"));
+
+        const client = createEsaClient();
+        const team = await resolveTeam(client, options.team);
+        // esa にはネイティブな複製 API が無いので、複製時のデフォルト値
+        // （タイトル・本文）を /posts/new?parent_post_id で取得してから作る。
+        const prefill = await client.GET("/v1/teams/{team_name}/posts/new", {
+          params: {
+            path: { team_name: team },
+            query: { parent_post_id: postNumber },
+          },
+        });
+        const newPost = unwrap(prefill).post;
+        // 複製先は既定で複製元と同じチーム。--target-team で別チームにも複製できる。
+        const targetTeam = options.targetTeam ?? team;
+        const result = await client.POST("/v1/teams/{team_name}/posts", {
+          params: { path: { team_name: targetTeam } },
+          // タイトルにカテゴリが含まれるので name だけで復元される。タグは
+          // /posts/new が返さないため引き継がれない（esa の仕様）。WIP で作る。
+          body: {
+            post: { name: newPost.name, body_md: newPost.body_md, wip: true },
+          },
+        });
+        print(unwrap(result));
+      },
+    );
+
+  post
+    .command("rollback")
+    .argument("<number>", t("post.numberArg"))
+    .argument("<revision>", t("post.revisionArg"))
+    .description(t("post.rollbackDesc"))
+    .option("--team <name>", t("post.getTeamOpt"))
+    .option("--wip", t("post.wipOpt"))
+    .option("--ship", t("post.shipOpt"))
+    .option("-m, --message <message>", t("post.messageOpt"))
+    .action(
+      async (
+        number: string,
+        revision: string,
+        options: WipOptions & { team?: string; message?: string },
+      ) => {
+        // 記事番号・リビジョン番号・WIP の検証をネットワークより先に行う。
+        const postNumber = positiveInt(number, t("post.idLabel"));
+        const revisionNumber = positiveInt(revision, t("post.revisionLabel"));
+        const wip = resolveWip(options);
+
+        const client = createEsaClient();
+        const team = await resolveTeam(client, options.team);
+        const result = await client.POST(
+          "/v1/teams/{team_name}/posts/{post_number}/revisions/{revision_number}/rollback",
+          {
+            params: {
+              path: {
+                team_name: team,
+                post_number: postNumber,
+                revision_number: revisionNumber,
+              },
+            },
+            // wip / message は指定時のみ送る。未指定なら esa 側の既定に委ねる
+            // （wip は指定リビジョンの状態を継承、message は既定文言）。
+            body: { post: { wip, message: options.message } },
           },
         );
         print(unwrap(result));

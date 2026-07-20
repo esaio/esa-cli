@@ -61,6 +61,9 @@ export const ja: Resources = {
     getDesc:
       "記事を1件取得します (GET /v1/teams/{team_name}/posts/{post_number})",
     numberArg: "記事番号",
+    revisionArg: "リビジョン番号",
+    revisionLabel: "リビジョン番号",
+    targetTeamOpt: "複製先のチーム（省略時は複製元と同じチーム）",
     getTeamOpt: "対象チーム",
     idLabel: "記事ID",
     searchDesc: "チームの記事を検索します (GET /v1/teams/{team_name}/posts)",
@@ -75,6 +78,12 @@ export const ja: Resources = {
     archiveDesc: "記事を Archived/ カテゴリに移してアーカイブします",
     backlinksDesc:
       "この記事を参照している記事の一覧を表示します (GET /v1/teams/{team_name}/posts/{post_number}/backlinks)",
+    revisionsDesc:
+      "記事のリビジョン一覧を表示します (GET /v1/teams/{team_name}/posts/{post_number}/revisions)",
+    duplicateDesc:
+      "記事を新しい WIP 記事として複製します（既定は同じチーム。--target-team で別チームにも複製可）",
+    rollbackDesc:
+      "記事を指定リビジョンに戻します (POST /v1/teams/{team_name}/posts/{post_number}/revisions/{revision_number}/rollback)",
     deleteDesc:
       "記事を削除します (DELETE /v1/teams/{team_name}/posts/{post_number})",
     nameOpt: "記事名（タイトル）",
