@@ -12,6 +12,10 @@ type PostsQuery = NonNullable<
   paths["/v1/teams/{team_name}/posts"]["get"]["parameters"]["query"]
 >;
 
+type BacklinksQuery = NonNullable<
+  paths["/v1/teams/{team_name}/posts/{post_number}/backlinks"]["get"]["parameters"]["query"]
+>;
+
 type ListOptions = {
   team?: string;
   page?: string;
@@ -126,6 +130,36 @@ export function registerPostCommand(program: Command): void {
       const result = await client.GET(
         "/v1/teams/{team_name}/posts/{post_number}",
         { params: { path: { team_name: team, post_number: postNumber } } },
+      );
+      print(unwrap(result));
+    });
+
+  post
+    .command("backlinks")
+    .argument("<number>", t("post.numberArg"))
+    .description(t("post.backlinksDesc"))
+    .option("--team <name>", t("post.getTeamOpt"))
+    .option("--page <number>", t("post.pageOpt"))
+    .option("--per-page <number>", t("post.perPageOpt"))
+    .action(async (number: string, options: ListOptions) => {
+      // 記事番号・ページ指定の検証をネットワークより先に行う。
+      const postNumber = positiveInt(number, t("post.idLabel"));
+      const query: BacklinksQuery = {};
+      if (options.page) query.page = positiveInt(options.page, "--page");
+      if (options.perPage) {
+        query.per_page = positiveInt(options.perPage, "--per-page");
+      }
+
+      const client = createEsaClient();
+      const team = await resolveTeam(client, options.team);
+      const result = await client.GET(
+        "/v1/teams/{team_name}/posts/{post_number}/backlinks",
+        {
+          params: {
+            path: { team_name: team, post_number: postNumber },
+            query,
+          },
+        },
       );
       print(unwrap(result));
     });

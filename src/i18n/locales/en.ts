@@ -44,6 +44,8 @@ export const en = {
   team: {
     desc: "Work with teams",
     listDesc: "List teams you belong to (GET /v1/teams)",
+    statsDesc: "Show team stats (GET /v1/teams/{team_name}/stats)",
+    teamOpt: "Target team",
     pageOpt: "Page number",
     perPageOpt: "Items per page",
     roleOpt: "Filter by role (member | owner)",
@@ -69,6 +71,8 @@ export const en = {
     appendDesc: "Append Markdown to the end of a post's body",
     prependDesc: "Prepend Markdown to the start of a post's body",
     archiveDesc: "Archive a post by moving it under the Archived/ category",
+    backlinksDesc:
+      "List posts linking to a post (GET /v1/teams/{team_name}/posts/{post_number}/backlinks)",
     deleteDesc:
       "Delete a post (DELETE /v1/teams/{team_name}/posts/{post_number})",
     nameOpt: "Post name (title)",
@@ -139,9 +143,15 @@ export const en = {
     desc: "Work with categories",
     listDesc:
       "List category paths in a team (GET /v1/teams/{team_name}/categories/paths)",
+    browseDesc:
+      "Browse a category and its subcategories, or the top level if no path is given (GET /v1/teams/{team_name}/categories[/top])",
+    pathArg: "Category path to browse (omit for the top level; e.g. dev/docs)",
     teamOpt: "Target team",
     pageOpt: "Page number",
     perPageOpt: "Items per page",
+    includeOpt: "Additional info to include (posts | parent_categories)",
+    descendantPostsOpt:
+      "Include descendant posts too (only with --include posts)",
     prefixOpt: "Only paths starting with this string",
     suffixOpt: "Only paths ending with this string",
     matchOpt: "Only paths containing this string",

@@ -12,6 +12,8 @@ vi.mock("../../api/resolve-team.js", () => ({ resolveTeam }));
 const { registerCategoryCommand } = await import("../category.js");
 const { registerTagCommand } = await import("../tag.js");
 const { registerMemberCommand } = await import("../member.js");
+const { registerTeamCommand } = await import("../team.js");
+const { registerPostCommand } = await import("../post.js");
 
 function run(args: string[]): Promise<Command> {
   const program = new Command();
@@ -19,6 +21,8 @@ function run(args: string[]): Promise<Command> {
   registerCategoryCommand(program);
   registerTagCommand(program);
   registerMemberCommand(program);
+  registerTeamCommand(program);
+  registerPostCommand(program);
   return program.parseAsync(args, { from: "user" });
 }
 
@@ -146,4 +150,100 @@ test("`member list` ignores an invalid --sort value", async () => {
   await run(["member", "list", "--sort", "bogus"]);
 
   expect(get.mock.calls[0][1].params.query).toEqual({});
+});
+
+test("`category browse` sends the path as select with include and descendant posts", async () => {
+  vi.spyOn(console, "log").mockImplementation(() => {});
+
+  await run([
+    "category",
+    "browse",
+    "dev/docs",
+    "--include",
+    "posts",
+    "--descendant-posts",
+  ]);
+
+  expect(get).toHaveBeenCalledWith("/v1/teams/{team_name}/categories", {
+    params: {
+      path: { team_name: "resolved-team" },
+      query: {
+        select: "dev/docs",
+        include: "posts",
+        descendant_posts: true,
+      },
+    },
+  });
+});
+
+test("`category browse` ignores an invalid --include value", async () => {
+  vi.spyOn(console, "log").mockImplementation(() => {});
+
+  await run(["category", "browse", "dev/docs", "--include", "bogus"]);
+
+  expect(get.mock.calls[0][1].params.query).toEqual({ select: "dev/docs" });
+});
+
+test("`category browse` drops --descendant-posts unless --include posts is set", async () => {
+  vi.spyOn(console, "log").mockImplementation(() => {});
+
+  await run(["category", "browse", "dev/docs", "--descendant-posts"]);
+
+  expect(get.mock.calls[0][1].params.query).toEqual({ select: "dev/docs" });
+});
+
+test("`category browse` without a path calls the top endpoint (no query)", async () => {
+  vi.spyOn(console, "log").mockImplementation(() => {});
+
+  await run(["category", "browse", "--team", "docs"]);
+
+  expect(resolveTeam).toHaveBeenCalledWith(expect.anything(), "docs");
+  expect(get).toHaveBeenCalledWith("/v1/teams/{team_name}/categories/top", {
+    params: { path: { team_name: "resolved-team" } },
+  });
+});
+
+test("`category browse` without a path ignores filter options", async () => {
+  vi.spyOn(console, "log").mockImplementation(() => {});
+
+  await run(["category", "browse", "--include", "posts", "--page", "2"]);
+
+  expect(get).toHaveBeenCalledWith("/v1/teams/{team_name}/categories/top", {
+    params: { path: { team_name: "resolved-team" } },
+  });
+});
+
+test("`team stats` resolves the team and calls the stats endpoint", async () => {
+  vi.spyOn(console, "log").mockImplementation(() => {});
+
+  await run(["team", "stats"]);
+
+  expect(resolveTeam).toHaveBeenCalledWith(expect.anything(), undefined);
+  expect(get).toHaveBeenCalledWith("/v1/teams/{team_name}/stats", {
+    params: { path: { team_name: "resolved-team" } },
+  });
+});
+
+test("`post backlinks` sends the post number and paging query", async () => {
+  vi.spyOn(console, "log").mockImplementation(() => {});
+
+  await run(["post", "backlinks", "42", "--per-page", "10"]);
+
+  expect(get).toHaveBeenCalledWith(
+    "/v1/teams/{team_name}/posts/{post_number}/backlinks",
+    {
+      params: {
+        path: { team_name: "resolved-team", post_number: 42 },
+        query: { per_page: 10 },
+      },
+    },
+  );
+});
+
+test("`post backlinks` rejects a non-numeric post number before any network call", async () => {
+  await expect(run(["post", "backlinks", "abc"])).rejects.toThrow(
+    /positive integer/,
+  );
+  expect(resolveTeam).not.toHaveBeenCalled();
+  expect(get).not.toHaveBeenCalled();
 });
