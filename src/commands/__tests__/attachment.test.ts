@@ -157,6 +157,17 @@ test("`attachment download` errors when the file has no signed URL", async () =>
   expect(fetchMock).not.toHaveBeenCalled();
 });
 
+test("`attachment download` throws when the fetch fails", async () => {
+  fetchMock.mockResolvedValue(
+    new Response(null, { status: 404, statusText: "Not Found" }),
+  );
+
+  await expect(
+    run(["attachment", "download", "/uploads/x.png"]),
+  ).rejects.toThrow(/404/);
+  expect(writeFile).not.toHaveBeenCalled();
+});
+
 test("`attachment download` rejects an out-of-range --expires-in before any network call", async () => {
   await expect(
     run(["attachment", "download", "/uploads/x.png", "--expires-in", "0"]),
