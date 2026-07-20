@@ -64,8 +64,10 @@ export function createEsaClient(): Client<paths> {
   const { apiBaseUrl } = getOAuthConfig(); // apiBaseUrl はここで検証される
   const client = createClient<paths>({
     baseUrl: apiBaseUrl,
-    fetch: (input: Request) =>
-      fetchWithTimeout(input, undefined, REQUEST_TIMEOUT_MS),
+    // openapi-fetch は fetch(request, requestInitExt) と 2 引数で呼ぶため、
+    // 第 2 引数を素通しして fetch 互換を保つ。
+    fetch: (input: Request, init?: RequestInit) =>
+      fetchWithTimeout(input, init, REQUEST_TIMEOUT_MS),
   });
   client.use(userAgentMiddleware);
   client.use(authMiddleware);
