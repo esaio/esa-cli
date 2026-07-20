@@ -186,6 +186,23 @@ export const en = {
     sortOpt: "Sort by (posts_count | joined | last_accessed)",
     orderOpt: "Sort order (desc | asc)",
   },
+  attachment: {
+    desc: "Work with attachments",
+    signDesc:
+      "Get signed URLs for attachments (POST /v1/teams/{team_name}/signed_urls)",
+    downloadDesc: "Download an attachment to a file or stdout",
+    urlArg:
+      "Attachment URL or path (e.g. https://files.esa.io/... or /uploads/...)",
+    teamOpt: "Target team",
+    expiresInOpt: "Signed URL lifetime in seconds (1-604800; default 60)",
+    outputOpt: "Write to this file (default: stdout)",
+    expiresInRange:
+      "--expires-in must be between 1 and 604800 seconds: {{value}}",
+    notFound: "Attachment not found: {{url}}",
+    fetchFailed:
+      "Failed to download the attachment ({{status}} {{statusText}}).",
+    saved: "Saved {{bytes}} bytes to {{path}}.",
+  },
   parse: {
     notPositiveInt: "{{name}} must be a positive integer (>= 1): {{value}}",
   },
