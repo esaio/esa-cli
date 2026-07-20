@@ -5,15 +5,22 @@ import { t } from "../i18n/index.js";
 const DEFAULT_CLIENT_ID =
   "b29aa0a592d3eb6651db57a39994b57b2670613bd1b48b5937d97d34278bb133";
 
-/** post 操作を中心とした実用セット。delete 系は含めない。 */
+/**
+ * esa-cli が提供するコマンドが必要とするスコープ一式。esa では read / write /
+ * delete が別スコープなので、delete コマンドには delete:* が要る。revision は
+ * 独立リソースで、post revisions に read:revision が要る。
+ */
 const DEFAULT_SCOPE = [
   "read:post",
   "write:post",
+  "delete:post",
   "read:comment",
   "write:comment",
+  "delete:comment",
   "read:category",
   "read:tag",
   "read:attachment",
+  "read:revision",
   "read:member",
   "read:team",
   "read:user",

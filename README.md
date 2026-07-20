@@ -211,7 +211,7 @@ API リクエストの認証は次の順で選ばれます:
 
 | 変数 | 説明 | 既定値 |
 | --- | --- | --- |
-| `ESA_OAUTH_SCOPE` | 要求するスコープ（スペース区切り） | `read:post write:post read:comment write:comment read:category read:tag read:attachment read:member read:team read:user` |
+| `ESA_OAUTH_SCOPE` | 要求するスコープ（スペース区切り） | `read:post write:post delete:post read:comment write:comment delete:comment read:category read:tag read:attachment read:revision read:member read:team read:user` |
 | `ESA_OAUTH_CLIENT_ID` | public app の client_id を上書き | 内蔵の公式 public app |
 | `ESA_API_BASE_URL` | API のベース URL。discovery の取得元でもある | `https://api.esa.io` |
 | `ESA_ACCESS_TOKEN` | OAuth を使わずアクセストークンを直接指定 | （未設定） |
