@@ -143,8 +143,8 @@ export const en = {
     desc: "Work with categories",
     listDesc:
       "List category paths in a team (GET /v1/teams/{team_name}/categories/paths)",
-    getDesc:
-      "Get a category and its subcategories (GET /v1/teams/{team_name}/categories)",
+    browseDesc:
+      "Browse a category and its subcategories (GET /v1/teams/{team_name}/categories)",
     topDesc:
       "List top-level categories (GET /v1/teams/{team_name}/categories/top)",
     pathArg: "Category path (e.g. dev/docs)",

@@ -121,9 +121,9 @@ export function registerCategoryCommand(program: Command): void {
     });
 
   category
-    .command("get")
+    .command("browse")
     .argument("<path>", t("category.pathArg"))
-    .description(t("category.getDesc"))
+    .description(t("category.browseDesc"))
     .option("--team <name>", t("category.teamOpt"))
     .option("--page <number>", t("category.pageOpt"))
     .option("--per-page <number>", t("category.perPageOpt"))

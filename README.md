@@ -96,8 +96,8 @@ esa category list                 # カテゴリパス一覧（ページング�
 esa category list --all           # 全ページを辿って全カテゴリパスをまとめて取得
 esa category list --prefix dev/   # 前方一致で絞り込み（--suffix / --match / --exact-match も可）
 esa category top                  # トップレベルのカテゴリ一覧 (GET /v1/teams/{team}/categories/top)
-esa category get dev/docs         # カテゴリ配下のサブカテゴリを取得 (GET /v1/teams/{team}/categories)
-esa category get dev/docs --include posts --descendant-posts # 配下の記事も含める
+esa category browse dev/docs      # カテゴリの中身（配下のサブカテゴリなど）を表示 (GET /v1/teams/{team}/categories)
+esa category browse dev/docs --include posts --descendant-posts # 配下の記事も含める
 esa tag list                      # タグ一覧 (GET /v1/teams/{team}/tags)
 esa member list                   # メンバー一覧 (GET /v1/teams/{team}/members)
 esa member list --sort posts_count --order desc # 投稿数の多い順に並べる
@@ -235,7 +235,7 @@ src/
     team.ts              # `esa team` コマンド群（list/stats）
     post.ts              # `esa post` コマンド群（list/search/get/backlinks/create/update/append/prepend/archive/delete）
     comment.ts           # `esa comment` コマンド群（list/get/create/update/delete）
-    category.ts          # `esa category` コマンド群（list/get/top）
+    category.ts          # `esa category` コマンド群（list/browse/top）
     tag.ts               # `esa tag list`（タグ一覧）
     member.ts            # `esa member list`（メンバー一覧）
     api.ts               # `esa api` 任意パスへのエスケープハッチ

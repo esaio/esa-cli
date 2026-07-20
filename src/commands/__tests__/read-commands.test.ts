@@ -152,12 +152,12 @@ test("`member list` ignores an invalid --sort value", async () => {
   expect(get.mock.calls[0][1].params.query).toEqual({});
 });
 
-test("`category get` sends the path as select with include and descendant posts", async () => {
+test("`category browse` sends the path as select with include and descendant posts", async () => {
   vi.spyOn(console, "log").mockImplementation(() => {});
 
   await run([
     "category",
-    "get",
+    "browse",
     "dev/docs",
     "--include",
     "posts",
@@ -176,18 +176,18 @@ test("`category get` sends the path as select with include and descendant posts"
   });
 });
 
-test("`category get` ignores an invalid --include value", async () => {
+test("`category browse` ignores an invalid --include value", async () => {
   vi.spyOn(console, "log").mockImplementation(() => {});
 
-  await run(["category", "get", "dev/docs", "--include", "bogus"]);
+  await run(["category", "browse", "dev/docs", "--include", "bogus"]);
 
   expect(get.mock.calls[0][1].params.query).toEqual({ select: "dev/docs" });
 });
 
-test("`category get` drops --descendant-posts unless --include posts is set", async () => {
+test("`category browse` drops --descendant-posts unless --include posts is set", async () => {
   vi.spyOn(console, "log").mockImplementation(() => {});
 
-  await run(["category", "get", "dev/docs", "--descendant-posts"]);
+  await run(["category", "browse", "dev/docs", "--descendant-posts"]);
 
   expect(get.mock.calls[0][1].params.query).toEqual({ select: "dev/docs" });
 });

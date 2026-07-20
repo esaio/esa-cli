@@ -148,8 +148,8 @@ export const ja: Resources = {
     desc: "カテゴリを操作します",
     listDesc:
       "チームのカテゴリパス一覧を表示します (GET /v1/teams/{team_name}/categories/paths)",
-    getDesc:
-      "カテゴリとその配下のサブカテゴリを取得します (GET /v1/teams/{team_name}/categories)",
+    browseDesc:
+      "カテゴリの中身（配下のサブカテゴリなど）を表示します (GET /v1/teams/{team_name}/categories)",
     topDesc:
       "トップレベルのカテゴリ一覧を表示します (GET /v1/teams/{team_name}/categories/top)",
     pathArg: "カテゴリのパス（例: dev/docs）",
