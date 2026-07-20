@@ -4,7 +4,7 @@ import { resolveTeam } from "../api/resolve-team.js";
 import { unwrap } from "../api/response.js";
 import type { components, paths } from "../generated/api-types.js";
 import { t } from "../i18n/index.js";
-import { positiveInt } from "./parse.js";
+import { positiveInt, serverEnum } from "./parse.js";
 
 type PathsQuery = NonNullable<
   paths["/v1/teams/{team_name}/categories/paths"]["get"]["parameters"]["query"]
@@ -139,12 +139,10 @@ export function registerCategoryCommand(program: Command): void {
         if (options.perPage) {
           query.per_page = positiveInt(options.perPage, "--per-page");
         }
-        if (
-          options.include === "posts" ||
-          options.include === "parent_categories"
-        ) {
-          query.include = options.include;
-        }
+        const include = serverEnum<NonNullable<CategoriesQuery["include"]>>(
+          options.include,
+        );
+        if (include !== undefined) query.include = include;
         // descendant_posts は include=posts のときだけ有効なので、それに合わせる。
         if (options.descendantPosts && query.include === "posts") {
           query.descendant_posts = true;

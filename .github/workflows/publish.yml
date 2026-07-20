@@ -1,6 +1,10 @@
 name: Publish
 
 on:
+  # Version Bump の git push は actions/checkout が保持する GITHUB_TOKEN を使うため、
+  # そのタグ push から別 workflow は起動しない。workflow_run は自動リリース、
+  # push.tags は人間や外部 credential が直接タグを push する場合を担当する。
+  # https://docs.github.com/actions/concepts/security/github_token#when-github_token-triggers-workflow-runs
   push:
     tags: ["v*"]
   workflow_run:

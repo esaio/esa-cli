@@ -2,9 +2,10 @@ import createClient, { type Client, type Middleware } from "openapi-fetch";
 import { refresh } from "../auth/oauth.js";
 import { type ResolvedAuth, resolveAuth } from "../auth/resolve-auth.js";
 import type { TokenSet } from "../auth/types.js";
-import { config, getOAuthConfig } from "../config/index.js";
+import { config, getOAuthConfig, REQUEST_TIMEOUT_MS } from "../config/index.js";
 import type { paths } from "../generated/api-types.js";
 import { t } from "../i18n/index.js";
+import { fetchWithTimeout } from "../network/fetch.js";
 
 // 期限のこの秒数前になったら、送信前にトークンを更新する。
 const REFRESH_MARGIN_SECONDS = 60;
@@ -61,7 +62,13 @@ const authMiddleware: Middleware = {
 /** esa API を叩く openapi-fetch クライアントを生成する。 */
 export function createEsaClient(): Client<paths> {
   const { apiBaseUrl } = getOAuthConfig(); // apiBaseUrl はここで検証される
-  const client = createClient<paths>({ baseUrl: apiBaseUrl });
+  const client = createClient<paths>({
+    baseUrl: apiBaseUrl,
+    // openapi-fetch は fetch(request, requestInitExt) と 2 引数で呼ぶため、
+    // 第 2 引数を素通しして fetch 互換を保つ。
+    fetch: (input: Request, init?: RequestInit) =>
+      fetchWithTimeout(input, init, REQUEST_TIMEOUT_MS),
+  });
   client.use(userAgentMiddleware);
   client.use(authMiddleware);
   return client;

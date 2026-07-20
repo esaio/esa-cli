@@ -53,7 +53,7 @@ function parseTags(tags?: string): string[] | undefined {
 
 /**
  * 記事名に "/" が含まれ、かつ --category 未指定なら、末尾をタイトル・残りを
- * カテゴリとして分割する（esa の慣習。mcp-server の normalizePostName と同じ）。
+ * カテゴリとして分割する（esa の慣習）。
  */
 function splitNameCategory(
   name: string | undefined,

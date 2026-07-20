@@ -47,7 +47,7 @@ export type OAuthConfig = {
  * ここで検証することで、API クライアントと auth コマンド
  * （login/logout/refresh）の両方が守られる。
  */
-function validateApiBaseUrl(apiBaseUrl: string): void {
+function normalizeApiBaseUrl(apiBaseUrl: string): string {
   let url: URL;
   try {
     url = new URL(apiBaseUrl);
@@ -60,6 +60,11 @@ function validateApiBaseUrl(apiBaseUrl: string): void {
     throw new Error(t("baseUrl.notHttp", { url: apiBaseUrl }));
   }
 
+  // base URL は後続で API パスと連結するため、query/hash/userinfo は許可しない。
+  if (url.username || url.password || url.search || url.hash) {
+    throw new Error(t("baseUrl.invalid", { url: apiBaseUrl }));
+  }
+
   const host = url.hostname;
   // RFC 6761: localhost とそのサブドメインは loopback に解決される。
   // IPv6 ループバックの hostname は WHATWG URL では "[::1]"（角括弧付き）。
@@ -68,20 +73,23 @@ function validateApiBaseUrl(apiBaseUrl: string): void {
     host.endsWith(".localhost") ||
     host === "127.0.0.1" ||
     host === "[::1]";
-  if (isLoopback) return; // ローカル開発（http/https どちらも可）
+  if (!isLoopback && !(host === "api.esa.io" && url.protocol === "https:")) {
+    throw new Error(t("baseUrl.notAllowed", { url: apiBaseUrl }));
+  }
 
-  if (host === "api.esa.io" && url.protocol === "https:") return;
-
-  throw new Error(t("baseUrl.notAllowed", { url: apiBaseUrl }));
+  // openapi-fetch と discovery は base URL に "/v1/..." 等を連結するため、
+  // 末尾の slash を除いて二重 slash を防ぐ。localhost の path prefix は保つ。
+  const pathname = url.pathname.replace(/\/+$/, "");
+  return `${url.origin}${pathname}`;
 }
 
 export function getOAuthConfig(): OAuthConfig {
   const apiBaseUrl = config.esa.apiBaseUrl;
-  validateApiBaseUrl(apiBaseUrl);
+  const normalizedApiBaseUrl = normalizeApiBaseUrl(apiBaseUrl);
   return {
     clientId: process.env.ESA_OAUTH_CLIENT_ID || DEFAULT_CLIENT_ID,
     scope: process.env.ESA_OAUTH_SCOPE || DEFAULT_SCOPE,
-    apiBaseUrl,
+    apiBaseUrl: normalizedApiBaseUrl,
   };
 }
 

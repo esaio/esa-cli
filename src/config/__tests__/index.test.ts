@@ -23,6 +23,31 @@ test("uses the default https base URL", async () => {
   expect(getOAuthConfig().apiBaseUrl).toBe("https://api.esa.io");
 });
 
+test("removes trailing slashes before API paths are appended", async () => {
+  process.env.ESA_API_BASE_URL = "https://api.esa.io///";
+  const getOAuthConfig = await loadGetOAuthConfig();
+  expect(getOAuthConfig().apiBaseUrl).toBe("https://api.esa.io");
+});
+
+test("preserves a normalized localhost path prefix", async () => {
+  process.env.ESA_API_BASE_URL = "http://localhost:3000/esa/";
+  const getOAuthConfig = await loadGetOAuthConfig();
+  expect(getOAuthConfig().apiBaseUrl).toBe("http://localhost:3000/esa");
+});
+
+test.each([
+  "https://api.esa.io?tenant=other",
+  "https://api.esa.io#fragment",
+  "https://user:pass@api.esa.io",
+])(
+  "rejects base URL components that would break path joining: %s",
+  async (url) => {
+    process.env.ESA_API_BASE_URL = url;
+    const getOAuthConfig = await loadGetOAuthConfig();
+    expect(() => getOAuthConfig()).toThrow(/ESA_API_BASE_URL/);
+  },
+);
+
 test("rejects a non-HTTPS external base URL (would leak tokens)", async () => {
   process.env.ESA_API_BASE_URL = "http://evil.example.com";
   const getOAuthConfig = await loadGetOAuthConfig();
@@ -38,7 +63,7 @@ test("rejects an HTTPS third-party host (would still leak tokens over TLS)", asy
 test("rejects a userinfo-spoofed host (hostname is the real host)", async () => {
   process.env.ESA_API_BASE_URL = "https://api.esa.io@evil.com";
   const getOAuthConfig = await loadGetOAuthConfig();
-  expect(() => getOAuthConfig()).toThrow(/not allowed/);
+  expect(() => getOAuthConfig()).toThrow(/ESA_API_BASE_URL/);
 });
 
 test("rejects http on api.esa.io (production must be HTTPS)", async () => {

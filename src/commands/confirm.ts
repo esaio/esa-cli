@@ -9,7 +9,6 @@ type ConfirmStreams = {
 /**
  * y/N の確認を取る。プロンプトは stderr、入力は stdin から読む。
  * "y" / "yes"（大文字小文字問わず）のみ true。それ以外は false（既定は No）。
- * input/output はテスト用に差し替え可能。
  */
 export async function confirm(
   message: string,

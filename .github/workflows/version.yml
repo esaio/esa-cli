@@ -50,5 +50,7 @@ jobs:
 
       - name: Push changes and tags
         run: |
+          # GITHUB_TOKEN による push は Publish の push.tags を起動しない。
+          # Version Bump 完了後の workflow_run が自動リリースを開始する。
           git push origin HEAD
           git push origin --tags

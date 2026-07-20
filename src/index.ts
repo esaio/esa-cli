@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { Command } from "commander";
+import { formatCliError } from "./cli-error.js";
 import { registerCommands } from "./commands/index.js";
 import { config } from "./config/index.js";
 import { t } from "./i18n/index.js";
@@ -14,6 +15,6 @@ program
 registerCommands(program);
 
 program.parseAsync(process.argv).catch((error) => {
-  console.error(error);
-  process.exit(1);
+  console.error(formatCliError(error, process.env.ESA_DEBUG === "1"));
+  process.exitCode = 1;
 });

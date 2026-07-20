@@ -4,7 +4,7 @@ import { resolveTeam } from "../api/resolve-team.js";
 import { unwrap } from "../api/response.js";
 import type { paths } from "../generated/api-types.js";
 import { t } from "../i18n/index.js";
-import { positiveInt } from "./parse.js";
+import { positiveInt, serverEnum } from "./parse.js";
 
 type MembersQuery = NonNullable<
   paths["/v1/teams/{team_name}/members"]["get"]["parameters"]["query"]
@@ -36,16 +36,12 @@ export function registerMemberCommand(program: Command): void {
       if (options.perPage) {
         query.per_page = positiveInt(options.perPage, "--per-page");
       }
-      if (
-        options.sort === "posts_count" ||
-        options.sort === "joined" ||
-        options.sort === "last_accessed"
-      ) {
-        query.sort = options.sort;
-      }
-      if (options.order === "desc" || options.order === "asc") {
-        query.order = options.order;
-      }
+      const sort = serverEnum<NonNullable<MembersQuery["sort"]>>(options.sort);
+      const order = serverEnum<NonNullable<MembersQuery["order"]>>(
+        options.order,
+      );
+      if (sort !== undefined) query.sort = sort;
+      if (order !== undefined) query.order = order;
 
       const client = createEsaClient();
       const team = await resolveTeam(client, options.team);
