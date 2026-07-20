@@ -1,5 +1,6 @@
 import type { Command } from "commander";
 import { registerApiCommand } from "./api.js";
+import { registerAttachmentCommand } from "./attachment.js";
 import { registerAuthCommand } from "./auth.js";
 import { registerCategoryCommand } from "./category.js";
 import { registerCommentCommand } from "./comment.js";
@@ -19,6 +20,7 @@ export function registerCommands(program: Command): void {
   registerCategoryCommand(program);
   registerTagCommand(program);
   registerMemberCommand(program);
+  registerAttachmentCommand(program);
   registerApiCommand(program);
   registerConfigCommand(program);
 }

@@ -190,6 +190,23 @@ export const ja: Resources = {
     sortOpt: "ソート基準 (posts_count | joined | last_accessed)",
     orderOpt: "ソート順 (desc | asc)",
   },
+  attachment: {
+    desc: "添付ファイルを操作します",
+    signDesc:
+      "添付ファイルの署名付きURLを取得します (GET /v1/teams/{team_name}/signed_urls)",
+    downloadDesc: "添付ファイルをファイルまたは標準出力にダウンロードします",
+    urlArg:
+      "添付ファイルのURLまたはパス (例: https://files.esa.io/... または /uploads/...)",
+    teamOpt: "対象チーム",
+    expiresInOpt: "署名付きURLの有効期限（秒、1〜604800、既定60）",
+    outputOpt: "書き出すファイル（既定: 標準出力）",
+    expiresInRange: "--expires-in は 1〜604800 秒で指定してください: {{value}}",
+    tooManyUrls: "sign で一度に指定できるURLは最大 {{max}} 件です。",
+    notFound: "添付ファイルが見つかりません: {{url}}",
+    fetchFailed:
+      "添付ファイルのダウンロードに失敗しました ({{status}} {{statusText}})。",
+    saved: "{{bytes}} バイトを {{path}} に保存しました。",
+  },
   parse: {
     notPositiveInt: "{{name}} は 1 以上の整数で指定してください: {{value}}",
   },
