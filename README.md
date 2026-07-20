@@ -53,6 +53,7 @@ esa post list -q "wip:true" # 検索クエリで絞り込み
 esa post search "keyword"   # 記事を検索（list -q と同じエンドポイント）
 esa post get 123            # 記事を1件取得
 esa post backlinks 123      # この記事を参照している記事の一覧
+esa post revisions 123      # リビジョン一覧（rollback 用の番号を調べる）
 ```
 
 記事の作成・更新・追記・アーカイブ・削除もできます。本文（Markdown）は `--body` でインライン指定するか、`--body-file <path>`（`-` で標準入力）で渡します。
@@ -66,6 +67,10 @@ esa post create "タイトル" --ship                        # WIP を解除し�
 esa post update 123 --name "改題" --ship  # タイトル変更＋Ship（指定した項目のみ更新）
 esa post append 123 --body "末尾に追記"    # 本文の末尾に追記
 esa post prepend 123 --body-file intro.md # 本文の先頭に追記
+
+esa post duplicate 123                    # WIP 記事として複製（既定は同じチーム）
+esa post duplicate 123 --target-team other # 別チームに複製
+esa post rollback 123 5                    # リビジョン 5 の内容に戻す（新リビジョンとして記録）
 
 esa post archive 123        # Archived/ カテゴリに移してアーカイブ
 esa post delete 123         # 確認プロンプトの後に削除
@@ -233,7 +238,7 @@ src/
     auth.ts              # `esa auth` コマンド群（login/logout/refresh/status）
     user.ts              # `esa user`
     team.ts              # `esa team` コマンド群（list/stats）
-    post.ts              # `esa post` コマンド群（list/search/get/backlinks/create/update/append/prepend/archive/delete）
+    post.ts              # `esa post` コマンド群（list/search/get/backlinks/revisions/create/update/append/prepend/duplicate/rollback/archive/delete）
     comment.ts           # `esa comment` コマンド群（list/get/create/update/delete）
     category.ts          # `esa category` コマンド群（list/browse）
     tag.ts               # `esa tag list`（タグ一覧）

@@ -60,6 +60,11 @@ export const en = {
     queryOpt: "Search query",
     getDesc: "Get a post (GET /v1/teams/{team_name}/posts/{post_number})",
     numberArg: "Post number",
+    revisionArg: "Revision number",
+    revisionLabel: "revision number",
+    sourceTeamOpt: "Source team to duplicate from",
+    targetTeamOpt:
+      "Destination team for the copy (defaults to the source team)",
     getTeamOpt: "Target team",
     idLabel: "post number",
     searchDesc: "Search posts in a team (GET /v1/teams/{team_name}/posts)",
@@ -73,6 +78,12 @@ export const en = {
     archiveDesc: "Archive a post by moving it under the Archived/ category",
     backlinksDesc:
       "List posts linking to a post (GET /v1/teams/{team_name}/posts/{post_number}/backlinks)",
+    revisionsDesc:
+      "List a post's revisions (GET /v1/teams/{team_name}/posts/{post_number}/revisions)",
+    duplicateDesc:
+      "Duplicate a post as a new WIP post (defaults to the same team; use --target-team for another)",
+    rollbackDesc:
+      "Roll a post back to a revision (POST /v1/teams/{team_name}/posts/{post_number}/revisions/{revision_number}/rollback)",
     deleteDesc:
       "Delete a post (DELETE /v1/teams/{team_name}/posts/{post_number})",
     nameOpt: "Post name (title)",
