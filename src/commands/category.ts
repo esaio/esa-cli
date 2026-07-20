@@ -142,7 +142,10 @@ export function registerCategoryCommand(program: Command): void {
       ) {
         query.include = options.include;
       }
-      if (options.descendantPosts) query.descendant_posts = true;
+      // descendant_posts は include=posts のときだけ有効なので、それに合わせて送る。
+      if (options.descendantPosts && query.include === "posts") {
+        query.descendant_posts = true;
+      }
 
       const client = createEsaClient();
       const team = await resolveTeam(client, options.team);

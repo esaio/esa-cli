@@ -12,6 +12,10 @@ type PostsQuery = NonNullable<
   paths["/v1/teams/{team_name}/posts"]["get"]["parameters"]["query"]
 >;
 
+type BacklinksQuery = NonNullable<
+  paths["/v1/teams/{team_name}/posts/{post_number}/backlinks"]["get"]["parameters"]["query"]
+>;
+
 type ListOptions = {
   team?: string;
   page?: string;
@@ -140,7 +144,7 @@ export function registerPostCommand(program: Command): void {
     .action(async (number: string, options: ListOptions) => {
       // 記事番号・ページ指定の検証をネットワークより先に行う。
       const postNumber = positiveInt(number, t("post.idLabel"));
-      const query: { page?: number; per_page?: number } = {};
+      const query: BacklinksQuery = {};
       if (options.page) query.page = positiveInt(options.page, "--page");
       if (options.perPage) {
         query.per_page = positiveInt(options.perPage, "--per-page");

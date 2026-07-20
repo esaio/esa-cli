@@ -184,6 +184,14 @@ test("`category get` ignores an invalid --include value", async () => {
   expect(get.mock.calls[0][1].params.query).toEqual({ select: "dev/docs" });
 });
 
+test("`category get` drops --descendant-posts unless --include posts is set", async () => {
+  vi.spyOn(console, "log").mockImplementation(() => {});
+
+  await run(["category", "get", "dev/docs", "--descendant-posts"]);
+
+  expect(get.mock.calls[0][1].params.query).toEqual({ select: "dev/docs" });
+});
+
 test("`category top` resolves the team and calls the top endpoint", async () => {
   vi.spyOn(console, "log").mockImplementation(() => {});
 
