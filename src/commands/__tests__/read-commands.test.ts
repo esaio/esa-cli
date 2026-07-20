@@ -192,12 +192,22 @@ test("`category browse` drops --descendant-posts unless --include posts is set",
   expect(get.mock.calls[0][1].params.query).toEqual({ select: "dev/docs" });
 });
 
-test("`category top` resolves the team and calls the top endpoint", async () => {
+test("`category browse` without a path calls the top endpoint (no query)", async () => {
   vi.spyOn(console, "log").mockImplementation(() => {});
 
-  await run(["category", "top", "--team", "docs"]);
+  await run(["category", "browse", "--team", "docs"]);
 
   expect(resolveTeam).toHaveBeenCalledWith(expect.anything(), "docs");
+  expect(get).toHaveBeenCalledWith("/v1/teams/{team_name}/categories/top", {
+    params: { path: { team_name: "resolved-team" } },
+  });
+});
+
+test("`category browse` without a path ignores filter options", async () => {
+  vi.spyOn(console, "log").mockImplementation(() => {});
+
+  await run(["category", "browse", "--include", "posts", "--page", "2"]);
+
   expect(get).toHaveBeenCalledWith("/v1/teams/{team_name}/categories/top", {
     params: { path: { team_name: "resolved-team" } },
   });

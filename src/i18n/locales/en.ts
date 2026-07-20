@@ -144,10 +144,8 @@ export const en = {
     listDesc:
       "List category paths in a team (GET /v1/teams/{team_name}/categories/paths)",
     browseDesc:
-      "Browse a category and its subcategories (GET /v1/teams/{team_name}/categories)",
-    topDesc:
-      "List top-level categories (GET /v1/teams/{team_name}/categories/top)",
-    pathArg: "Category path (e.g. dev/docs)",
+      "Browse a category and its subcategories, or the top level if no path is given (GET /v1/teams/{team_name}/categories[/top])",
+    pathArg: "Category path to browse (omit for the top level; e.g. dev/docs)",
     teamOpt: "Target team",
     pageOpt: "Page number",
     perPageOpt: "Items per page",

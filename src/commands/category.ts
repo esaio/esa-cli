@@ -122,48 +122,51 @@ export function registerCategoryCommand(program: Command): void {
 
   category
     .command("browse")
-    .argument("<path>", t("category.pathArg"))
+    .argument("[path]", t("category.pathArg"))
     .description(t("category.browseDesc"))
     .option("--team <name>", t("category.teamOpt"))
     .option("--page <number>", t("category.pageOpt"))
     .option("--per-page <number>", t("category.perPageOpt"))
     .option("--include <include>", t("category.includeOpt"))
     .option("--descendant-posts", t("category.descendantPostsOpt"))
-    .action(async (pathArg: string, options: GetOptions) => {
-      // 入力の検証はネットワーク（resolveTeam の GET /v1/teams）より先に行う。
-      const query: CategoriesQuery = { select: pathArg };
-      if (options.page) query.page = positiveInt(options.page, "--page");
-      if (options.perPage) {
-        query.per_page = positiveInt(options.perPage, "--per-page");
-      }
-      if (
-        options.include === "posts" ||
-        options.include === "parent_categories"
-      ) {
-        query.include = options.include;
-      }
-      // descendant_posts は include=posts のときだけ有効なので、それに合わせて送る。
-      if (options.descendantPosts && query.include === "posts") {
-        query.descendant_posts = true;
+    .action(async (pathArg: string | undefined, options: GetOptions) => {
+      // path 指定時のクエリを、ネットワーク（resolveTeam の GET /v1/teams）より
+      // 先に組み立て・検証する。path 未指定ならトップ階層で、クエリは使わない。
+      let query: CategoriesQuery | undefined;
+      if (pathArg !== undefined) {
+        query = { select: pathArg };
+        if (options.page) query.page = positiveInt(options.page, "--page");
+        if (options.perPage) {
+          query.per_page = positiveInt(options.perPage, "--per-page");
+        }
+        if (
+          options.include === "posts" ||
+          options.include === "parent_categories"
+        ) {
+          query.include = options.include;
+        }
+        // descendant_posts は include=posts のときだけ有効なので、それに合わせる。
+        if (options.descendantPosts && query.include === "posts") {
+          query.descendant_posts = true;
+        }
       }
 
       const client = createEsaClient();
       const team = await resolveTeam(client, options.team);
+
+      // path 未指定ならトップ階層。/categories/top はクエリを取らないため、
+      // 絞り込み系オプションは無視する。
+      if (query === undefined) {
+        const result = await client.GET(
+          "/v1/teams/{team_name}/categories/top",
+          { params: { path: { team_name: team } } },
+        );
+        console.log(JSON.stringify(unwrap(result), null, 2));
+        return;
+      }
+
       const result = await client.GET("/v1/teams/{team_name}/categories", {
         params: { path: { team_name: team }, query },
-      });
-      console.log(JSON.stringify(unwrap(result), null, 2));
-    });
-
-  category
-    .command("top")
-    .description(t("category.topDesc"))
-    .option("--team <name>", t("category.teamOpt"))
-    .action(async (options: { team?: string }) => {
-      const client = createEsaClient();
-      const team = await resolveTeam(client, options.team);
-      const result = await client.GET("/v1/teams/{team_name}/categories/top", {
-        params: { path: { team_name: team } },
       });
       console.log(JSON.stringify(unwrap(result), null, 2));
     });
