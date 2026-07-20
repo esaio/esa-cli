@@ -1,4 +1,7 @@
-import { writeFile } from "node:fs/promises";
+import { createWriteStream } from "node:fs";
+import { stat } from "node:fs/promises";
+import { Readable } from "node:stream";
+import { pipeline } from "node:stream/promises";
 import type { Command } from "commander";
 import { createEsaClient } from "../api/client.js";
 import { resolveTeam } from "../api/resolve-team.js";
@@ -85,14 +88,14 @@ export function registerAttachmentCommand(program: Command): void {
     .option("--expires-in <seconds>", t("attachment.expiresInOpt"))
     .option("-o, --output <path>", t("attachment.outputOpt"))
     .action(async (url: string, options: DownloadOptions) => {
-      // 入力の検証はネットワーク（resolveTeam の GET /v1/teams）より先に行う。
-      const expiresIn = options.expiresIn
-        ? expiresInSeconds(options.expiresIn)
-        : undefined;
-
       let fetchUrl = url;
       // 署名が必要なURLだけ signed_urls で解決する。img.esa.io などは直接取得。
+      // --expires-in は署名時のみ意味を持つので、この分岐の中で検証する。
       if (needsSignedUrl(url)) {
+        // 入力の検証はネットワーク（resolveTeam の GET /v1/teams）より先に行う。
+        const expiresIn = options.expiresIn
+          ? expiresInSeconds(options.expiresIn)
+          : undefined;
         const client = createEsaClient();
         const team = await resolveTeam(client, options.team);
         const query: SignedUrlsQuery = { urls: normalizeUrl(url), v: 2 };
@@ -108,7 +111,7 @@ export function registerAttachmentCommand(program: Command): void {
       }
 
       const response = await fetch(fetchUrl);
-      if (!response.ok) {
+      if (!response.ok || !response.body) {
         throw new Error(
           t("attachment.fetchFailed", {
             status: response.status,
@@ -116,19 +119,19 @@ export function registerAttachmentCommand(program: Command): void {
           }),
         );
       }
-      const buffer = Buffer.from(await response.arrayBuffer());
 
+      // 大きな添付でもメモリに載せないよう、応答をそのまま書き出しへ流す。
+      const source = Readable.fromWeb(response.body);
       if (options.output) {
-        await writeFile(options.output, buffer);
+        await pipeline(source, createWriteStream(options.output));
+        const { size } = await stat(options.output);
         // ファイル保存の報告は人間向けなので stderr。stdout はデータ専用に空ける。
         console.error(
-          t("attachment.saved", {
-            bytes: buffer.length,
-            path: options.output,
-          }),
+          t("attachment.saved", { bytes: size, path: options.output }),
         );
       } else {
-        process.stdout.write(buffer);
+        // process.stdout は閉じないよう end:false で流す。
+        await pipeline(source, process.stdout, { end: false });
       }
     });
 }
