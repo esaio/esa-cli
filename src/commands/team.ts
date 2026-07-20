@@ -4,7 +4,7 @@ import { resolveTeam } from "../api/resolve-team.js";
 import { unwrap } from "../api/response.js";
 import type { paths } from "../generated/api-types.js";
 import { t } from "../i18n/index.js";
-import { positiveInt } from "./parse.js";
+import { positiveInt, serverEnum } from "./parse.js";
 
 type TeamsQuery = NonNullable<paths["/v1/teams"]["get"]["parameters"]["query"]>;
 
@@ -29,9 +29,8 @@ export function registerTeamCommand(program: Command): void {
       if (options.perPage) {
         query.per_page = positiveInt(options.perPage, "--per-page");
       }
-      if (options.role === "member" || options.role === "owner") {
-        query.role = options.role;
-      }
+      const role = serverEnum<NonNullable<TeamsQuery["role"]>>(options.role);
+      if (role !== undefined) query.role = role;
 
       const client = createEsaClient();
       const result = await client.GET("/v1/teams", { params: { query } });

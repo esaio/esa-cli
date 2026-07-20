@@ -57,12 +57,14 @@ test("passes --page / --per-page as numbers and a valid --role", async () => {
   });
 });
 
-test("ignores an invalid --role value", async () => {
+test("passes an unknown --role value to the server for forward compatibility", async () => {
   vi.spyOn(console, "log").mockImplementation(() => {});
 
   await run(["team", "list", "--role", "bogus"]);
 
-  expect(get).toHaveBeenCalledWith("/v1/teams", { params: { query: {} } });
+  expect(get).toHaveBeenCalledWith("/v1/teams", {
+    params: { query: { role: "bogus" } },
+  });
 });
 
 test("rejects a non-numeric --page without calling the API", async () => {

@@ -65,11 +65,13 @@ follows a simple, command-oriented structure.
 
 5. **Configuration** (`src/config/index.ts`): Defines the API and OAuth config.
    `ESA_TEAM` is read by `src/api/resolve-team.ts`, and `ESA_LANG` is read by
-   `src/i18n/resolve-language.ts`. Relevant env vars:
+   `src/i18n/resolve-language.ts`. `ESA_DEBUG` is read by `src/index.ts`.
+   Relevant env vars:
    - `ESA_ACCESS_TOKEN`: use this access token directly instead of OAuth
    - `ESA_API_BASE_URL`: API base URL (defaults to `https://api.esa.io`); also the
      discovery source. Restricted to esa production (HTTPS) or loopback hosts.
-   - `ESA_TEAM`, `ESA_LANG`, `ESA_OAUTH_SCOPE`, `ESA_OAUTH_CLIENT_ID`
+   - `ESA_TEAM`, `ESA_LANG`, `ESA_OAUTH_SCOPE`, `ESA_OAUTH_CLIENT_ID`,
+     `ESA_DEBUG`
 
 6. **i18n** (`src/i18n/`): i18next-based messages and `--help` in English (`en`)
    and Japanese (`ja`). `en.ts` is the source of truth

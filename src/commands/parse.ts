@@ -8,3 +8,13 @@ export function positiveInt(value: string, name: string): number {
   }
   return n;
 }
+
+/**
+ * サーバー所有の列挙値をそのまま渡す。生成型より先にAPIへ値が追加されてもCLIが
+ * 黙って値を捨てないよう、妥当性の最終判断はサーバーに委ねる。
+ */
+export function serverEnum<T extends string>(
+  value: string | undefined,
+): T | undefined {
+  return value as T | undefined;
+}

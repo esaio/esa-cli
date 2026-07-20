@@ -11,6 +11,14 @@ export type CallbackServer = {
 
 const CALLBACK_TIMEOUT_MS = 5 * 60 * 1000;
 
+export type CallbackResult = {
+  status: number;
+  contentType: string;
+  body: string;
+  code?: string;
+  error?: Error;
+};
+
 /** 認証完了をブラウザに表示する HTML。lang 属性は現在の言語に合わせる。 */
 function successHtml(): string {
   return `<!doctype html>
@@ -19,6 +27,64 @@ function successHtml(): string {
 <h1>${t("callback.successTitle")}</h1>
 <p>${t("callback.successBody")}</p>
 </body></html>`;
+}
+
+/** HTTPサーバーから独立したcallback判定。分岐を副作用なしで検証できる。 */
+export function evaluateCallback(
+  requestUrl: string,
+  expectedState: string,
+): CallbackResult {
+  const url = new URL(requestUrl, "http://127.0.0.1");
+  if (url.pathname !== "/callback") {
+    return {
+      status: 404,
+      contentType: "text/plain; charset=utf-8",
+      body: t("callback.notFound"),
+    };
+  }
+
+  const oauthError = url.searchParams.get("error");
+  if (oauthError) {
+    const description = url.searchParams.get("error_description") ?? "";
+    return {
+      status: 400,
+      contentType: "text/plain; charset=utf-8",
+      body: t("callback.canceledBrowser", { error: oauthError }),
+      error: new Error(
+        t("callback.canceledError", {
+          error: oauthError,
+          description,
+        }).trim(),
+      ),
+    };
+  }
+
+  const state = url.searchParams.get("state");
+  if (state !== expectedState) {
+    return {
+      status: 400,
+      contentType: "text/plain; charset=utf-8",
+      body: t("callback.stateMismatchBrowser"),
+      error: new Error(t("callback.stateMismatchError")),
+    };
+  }
+
+  const code = url.searchParams.get("code");
+  if (!code) {
+    return {
+      status: 400,
+      contentType: "text/plain; charset=utf-8",
+      body: t("callback.noCodeBrowser"),
+      error: new Error(t("callback.noCodeError")),
+    };
+  }
+
+  return {
+    status: 200,
+    contentType: "text/html; charset=utf-8",
+    body: successHtml(),
+    code,
+  };
 }
 
 /** ループバックのランダムポートで待ち受ける (RFC 8252)。 */
@@ -33,47 +99,18 @@ export function startCallbackServer(
   });
 
   const server = createHttpServer((req, res) => {
-    const url = new URL(req.url ?? "/", "http://127.0.0.1");
-    if (url.pathname !== "/callback") {
-      res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
-      res.end(t("callback.notFound"));
-      return;
-    }
-
-    const error = url.searchParams.get("error");
-    if (error) {
-      const description = url.searchParams.get("error_description") ?? "";
-      res.writeHead(400, { "Content-Type": "text/plain; charset=utf-8" });
-      res.end(t("callback.canceledBrowser", { error }));
-      rejectCode(
-        new Error(t("callback.canceledError", { error, description }).trim()),
-      );
-      return;
-    }
-
-    const state = url.searchParams.get("state");
-    if (state !== expectedState) {
-      res.writeHead(400, { "Content-Type": "text/plain; charset=utf-8" });
-      res.end(t("callback.stateMismatchBrowser"));
-      rejectCode(new Error(t("callback.stateMismatchError")));
-      return;
-    }
-
-    const code = url.searchParams.get("code");
-    if (!code) {
-      res.writeHead(400, { "Content-Type": "text/plain; charset=utf-8" });
-      res.end(t("callback.noCodeBrowser"));
-      rejectCode(new Error(t("callback.noCodeError")));
-      return;
-    }
-
-    res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
-    res.end(successHtml());
-    resolveCode(code);
+    const result = evaluateCallback(req.url ?? "/", expectedState);
+    res.writeHead(result.status, { "Content-Type": result.contentType });
+    res.end(result.body);
+    if (result.error) rejectCode(result.error);
+    else if (result.code) resolveCode(result.code);
   });
 
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
+    const onListenError = (error: Error) => reject(error);
+    server.once("error", onListenError);
     server.listen(0, "127.0.0.1", () => {
+      server.off("error", onListenError);
       const { port } = server.address() as AddressInfo;
       const timeout = setTimeout(() => {
         server.close();

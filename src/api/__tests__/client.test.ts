@@ -22,6 +22,7 @@ vi.mock("../../config/index.js", () => ({
     },
   },
   getOAuthConfig,
+  REQUEST_TIMEOUT_MS: 10_000,
 }));
 
 const { createEsaClient } = await import("../client.js");
@@ -59,7 +60,7 @@ function json(body: unknown, status: number): Response {
 }
 
 function stubOkFetch() {
-  const fetchMock = vi.fn(async (_input: Request) =>
+  const fetchMock = vi.fn(async (_input: Request, _init?: RequestInit) =>
     json({ myself: true }, 200),
   );
   vi.stubGlobal("fetch", fetchMock);
@@ -96,6 +97,7 @@ test("sends the Bearer token and esa-cli User-Agent", async () => {
   const request = fetchMock.mock.calls[0][0];
   expect(request.headers.get("Authorization")).toBe("Bearer tok");
   expect(request.headers.get("User-Agent")).toBe("esa-cli/9.9.9 (official)");
+  expect(fetchMock.mock.calls[0][1]?.signal).toBeInstanceOf(AbortSignal);
 });
 
 test("throws when there is no auth", async () => {

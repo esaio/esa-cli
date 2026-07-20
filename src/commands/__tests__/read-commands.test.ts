@@ -144,12 +144,22 @@ test("`member list` passes valid sort and order through", async () => {
   });
 });
 
-test("`member list` ignores an invalid --sort value", async () => {
+test("`member list` passes unknown enum values through to the server", async () => {
   vi.spyOn(console, "log").mockImplementation(() => {});
 
-  await run(["member", "list", "--sort", "bogus"]);
+  await run([
+    "member",
+    "list",
+    "--sort",
+    "future_sort",
+    "--order",
+    "future_order",
+  ]);
 
-  expect(get.mock.calls[0][1].params.query).toEqual({});
+  expect(get.mock.calls[0][1].params.query).toEqual({
+    sort: "future_sort",
+    order: "future_order",
+  });
 });
 
 test("`category browse` sends the path as select with include and descendant posts", async () => {
@@ -176,12 +186,15 @@ test("`category browse` sends the path as select with include and descendant pos
   });
 });
 
-test("`category browse` ignores an invalid --include value", async () => {
+test("`category browse` passes an unknown --include value to the server", async () => {
   vi.spyOn(console, "log").mockImplementation(() => {});
 
   await run(["category", "browse", "dev/docs", "--include", "bogus"]);
 
-  expect(get.mock.calls[0][1].params.query).toEqual({ select: "dev/docs" });
+  expect(get.mock.calls[0][1].params.query).toEqual({
+    select: "dev/docs",
+    include: "bogus",
+  });
 });
 
 test("`category browse` drops --descendant-posts unless --include posts is set", async () => {
