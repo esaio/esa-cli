@@ -33,7 +33,7 @@ type ListOptions = {
   all?: boolean;
 };
 
-type GetOptions = {
+type BrowseOptions = {
   team?: string;
   page?: string;
   perPage?: string;
@@ -129,7 +129,7 @@ export function registerCategoryCommand(program: Command): void {
     .option("--per-page <number>", t("category.perPageOpt"))
     .option("--include <include>", t("category.includeOpt"))
     .option("--descendant-posts", t("category.descendantPostsOpt"))
-    .action(async (pathArg: string | undefined, options: GetOptions) => {
+    .action(async (pathArg: string | undefined, options: BrowseOptions) => {
       // path 指定時のクエリを、ネットワーク（resolveTeam の GET /v1/teams）より
       // 先に組み立て・検証する。path 未指定ならトップ階層で、クエリは使わない。
       let query: CategoriesQuery | undefined;
