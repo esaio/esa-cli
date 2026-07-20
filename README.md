@@ -107,7 +107,7 @@ esa tag list                      # タグ一覧 (GET /v1/teams/{team}/tags)
 esa member list                   # メンバー一覧 (GET /v1/teams/{team}/members)
 esa member list --sort posts_count --order desc # 投稿数の多い順に並べる
 esa team stats                    # チームの統計情報 (GET /v1/teams/{team}/stats)
-esa attachment sign /uploads/x.png # 添付ファイルの署名付きURLを取得 (POST /v1/teams/{team}/signed_urls)
+esa attachment sign /uploads/x.png # 添付ファイルの署名付きURLを取得 (GET /v1/teams/{team}/signed_urls)
 esa attachment sign /uploads/x.png --expires-in 3600 # 有効期限を1時間に
 esa attachment download https://files.esa.io/uploads/x.png -o ./x.png # 実体をファイルに保存
 esa attachment download /uploads/x.png > x.png # 標準出力に書き出してリダイレクト

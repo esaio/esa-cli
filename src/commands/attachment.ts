@@ -20,6 +20,10 @@ const SIGNED_URL_HOSTS = ["files.esa.io", "dl.esa.io"];
 const EXPIRES_IN_MIN = 1;
 const EXPIRES_IN_MAX = 604800;
 
+// GET /signed_urls は一度に最大10件まで（カンマ区切り）。署名は read 操作として
+// 扱いたいので、write 権限を要求する POST ではなく GET を使う。
+const MAX_SIGN_URLS = 10;
+
 /** 署名付きURLの有効期限（秒）を 1〜604800 の範囲で検証する。 */
 function expiresInSeconds(value: string): number {
   const n = Number(value);
@@ -66,16 +70,20 @@ export function registerAttachmentCommand(program: Command): void {
     .option("--expires-in <seconds>", t("attachment.expiresInOpt"))
     .action(async (urls: string[], options: SignOptions) => {
       // 入力の検証はネットワーク（resolveTeam の GET /v1/teams）より先に行う。
+      if (urls.length > MAX_SIGN_URLS) {
+        throw new Error(t("attachment.tooManyUrls", { max: MAX_SIGN_URLS }));
+      }
       const expiresIn = options.expiresIn
         ? expiresInSeconds(options.expiresIn)
         : undefined;
 
       const client = createEsaClient();
       const team = await resolveTeam(client, options.team);
-      const result = await client.POST("/v1/teams/{team_name}/signed_urls", {
-        params: { path: { team_name: team } },
-        // undefined のキーは JSON.stringify で落ちるため expires_in は省略される。
-        body: { urls, v: 2, expires_in: expiresIn },
+      // urls は URI としてサーバ側でパスに解決されるため、パス・フルURLのどちらでも可。
+      const query: SignedUrlsQuery = { urls: urls.join(","), v: 2 };
+      if (expiresIn !== undefined) query.expires_in = expiresIn;
+      const result = await client.GET("/v1/teams/{team_name}/signed_urls", {
+        params: { path: { team_name: team }, query },
       });
       console.log(JSON.stringify(unwrap(result), null, 2));
     });

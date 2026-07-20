@@ -5,11 +5,10 @@ import { Command } from "commander";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 
 const get = vi.fn();
-const postReq = vi.fn();
 const resolveTeam = vi.fn<() => Promise<string>>();
 
 vi.mock("../../api/client.js", () => ({
-  createEsaClient: () => ({ GET: get, POST: postReq }),
+  createEsaClient: () => ({ GET: get }),
 }));
 vi.mock("../../api/resolve-team.js", () => ({ resolveTeam }));
 
@@ -38,11 +37,6 @@ beforeEach(() => {
     .mockResolvedValue(
       ok200({ signed_urls: [["/uploads/x.png", "https://s3/signed"]] }),
     );
-  postReq
-    .mockReset()
-    .mockResolvedValue(
-      ok200({ signed_urls: [["/uploads/x.png", "https://s3/signed"]] }),
-    );
   resolveTeam.mockReset().mockResolvedValue("resolved-team");
   // 各呼び出しで本文（ストリーム）が未消費の新しい Response を返す。
   fetchMock
@@ -57,7 +51,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-test("`attachment sign` posts the URLs with v2 and prints the signed URLs", async () => {
+test("`attachment sign` gets signed URLs with v2 (comma-joined) and prints them", async () => {
   const log = vi.spyOn(console, "log").mockImplementation(() => {});
 
   await run([
@@ -70,12 +64,14 @@ test("`attachment sign` posts the URLs with v2 and prints the signed URLs", asyn
   ]);
 
   expect(resolveTeam).toHaveBeenCalledWith(expect.anything(), "docs");
-  expect(postReq).toHaveBeenCalledWith("/v1/teams/{team_name}/signed_urls", {
-    params: { path: { team_name: "resolved-team" } },
-    body: {
-      urls: ["/uploads/x.png", "https://files.esa.io/uploads/y.png"],
-      v: 2,
-      expires_in: undefined,
+  // 署名は read 操作なので GET を使う（POST は write:attachment を要求する）。
+  expect(get).toHaveBeenCalledWith("/v1/teams/{team_name}/signed_urls", {
+    params: {
+      path: { team_name: "resolved-team" },
+      query: {
+        urls: "/uploads/x.png,https://files.esa.io/uploads/y.png",
+        v: 2,
+      },
     },
   });
   expect(JSON.parse(log.mock.calls[0][0] as string)).toEqual({
@@ -88,9 +84,11 @@ test("`attachment sign` passes --expires-in through", async () => {
 
   await run(["attachment", "sign", "/uploads/x.png", "--expires-in", "3600"]);
 
-  expect(postReq).toHaveBeenCalledWith("/v1/teams/{team_name}/signed_urls", {
-    params: { path: { team_name: "resolved-team" } },
-    body: { urls: ["/uploads/x.png"], v: 2, expires_in: 3600 },
+  expect(get).toHaveBeenCalledWith("/v1/teams/{team_name}/signed_urls", {
+    params: {
+      path: { team_name: "resolved-team" },
+      query: { urls: "/uploads/x.png", v: 2, expires_in: 3600 },
+    },
   });
 });
 
@@ -99,7 +97,15 @@ test("`attachment sign` rejects an out-of-range --expires-in before any network 
     run(["attachment", "sign", "/uploads/x.png", "--expires-in", "604801"]),
   ).rejects.toThrow(/604800/);
   expect(resolveTeam).not.toHaveBeenCalled();
-  expect(postReq).not.toHaveBeenCalled();
+  expect(get).not.toHaveBeenCalled();
+});
+
+test("`attachment sign` rejects more than 10 URLs before any network call", async () => {
+  const urls = Array.from({ length: 11 }, (_, i) => `/uploads/${i}.png`);
+
+  await expect(run(["attachment", "sign", ...urls])).rejects.toThrow(/10/);
+  expect(resolveTeam).not.toHaveBeenCalled();
+  expect(get).not.toHaveBeenCalled();
 });
 
 test("`attachment download` signs a files.esa.io URL, fetches it, and writes the file", async () => {

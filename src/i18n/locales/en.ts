@@ -189,7 +189,7 @@ export const en = {
   attachment: {
     desc: "Work with attachments",
     signDesc:
-      "Get signed URLs for attachments (POST /v1/teams/{team_name}/signed_urls)",
+      "Get signed URLs for attachments (GET /v1/teams/{team_name}/signed_urls)",
     downloadDesc: "Download an attachment to a file or stdout",
     urlArg:
       "Attachment URL or path (e.g. https://files.esa.io/... or /uploads/...)",
@@ -198,6 +198,7 @@ export const en = {
     outputOpt: "Write to this file (default: stdout)",
     expiresInRange:
       "--expires-in must be between 1 and 604800 seconds: {{value}}",
+    tooManyUrls: "sign accepts at most {{max}} URLs at once.",
     notFound: "Attachment not found: {{url}}",
     fetchFailed:
       "Failed to download the attachment ({{status}} {{statusText}}).",
