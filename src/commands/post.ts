@@ -407,7 +407,7 @@ export function registerPostCommand(program: Command): void {
     .command("duplicate")
     .argument("<number>", t("post.numberArg"))
     .description(t("post.duplicateDesc"))
-    .option("--team <name>", t("post.getTeamOpt"))
+    .option("--team <name>", t("post.sourceTeamOpt"))
     .option("--target-team <name>", t("post.targetTeamOpt"))
     .action(
       async (
@@ -428,7 +428,8 @@ export function registerPostCommand(program: Command): void {
         });
         const newPost = unwrap(prefill).post;
         // 複製先は既定で複製元と同じチーム。--target-team で別チームにも複製できる。
-        const targetTeam = options.targetTeam ?? team;
+        // 空文字・空白のみの指定は未指定と同じく複製元へフォールバックさせる。
+        const targetTeam = options.targetTeam?.trim() || team;
         const result = await client.POST("/v1/teams/{team_name}/posts", {
           params: { path: { team_name: targetTeam } },
           // タイトルにカテゴリが含まれるので name だけで復元される。タグは

@@ -63,6 +63,7 @@ export const ja: Resources = {
     numberArg: "記事番号",
     revisionArg: "リビジョン番号",
     revisionLabel: "リビジョン番号",
+    sourceTeamOpt: "複製元のチーム",
     targetTeamOpt: "複製先のチーム（省略時は複製元と同じチーム）",
     getTeamOpt: "対象チーム",
     idLabel: "記事ID",

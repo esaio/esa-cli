@@ -62,6 +62,7 @@ export const en = {
     numberArg: "Post number",
     revisionArg: "Revision number",
     revisionLabel: "revision number",
+    sourceTeamOpt: "Source team to duplicate from",
     targetTeamOpt:
       "Destination team for the copy (defaults to the source team)",
     getTeamOpt: "Target team",

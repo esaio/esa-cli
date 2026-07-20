@@ -379,7 +379,13 @@ test("`post duplicate --target-team` creates the copy in the target team", async
 
   await run(["post", "duplicate", "7", "--target-team", "other"]);
 
-  // 複製元の解決はソースチーム、作成先は --target-team。
+  // 複製元の prefill はソースチーム（resolved-team）、作成先は --target-team。
+  expect(get).toHaveBeenCalledWith("/v1/teams/{team_name}/posts/new", {
+    params: {
+      path: { team_name: "resolved-team" },
+      query: { parent_post_id: 7 },
+    },
+  });
   expect(postReq).toHaveBeenCalledWith("/v1/teams/{team_name}/posts", {
     params: { path: { team_name: "other" } },
     body: { post: { name: "Copy", body_md: "hi", wip: true } },
