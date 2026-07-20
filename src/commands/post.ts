@@ -418,8 +418,8 @@ export function registerPostCommand(program: Command): void {
 
         const client = createEsaClient();
         const team = await resolveTeam(client, options.team);
-        // esa にはネイティブな複製 API が無いので、複製時のデフォルト値
-        // （タイトル・本文）を /posts/new?parent_post_id で取得してから作る。
+        // 複製時のデフォルト値（タイトル・本文）を /posts/new?parent_post_id で
+        // 取得してから新規作成する。
         const prefill = await client.GET("/v1/teams/{team_name}/posts/new", {
           params: {
             path: { team_name: team },
