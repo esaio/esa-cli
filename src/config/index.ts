@@ -13,6 +13,7 @@ const DEFAULT_SCOPE = [
   "write:comment",
   "read:category",
   "read:tag",
+  "read:attachment",
   "read:member",
   "read:team",
   "read:user",
