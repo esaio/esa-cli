@@ -52,6 +52,7 @@ esa post list               # 記事一覧 (GET /v1/teams/{team}/posts)
 esa post list -q "wip:true" # 検索クエリで絞り込み
 esa post search "keyword"   # 記事を検索（list -q と同じエンドポイント）
 esa post get 123            # 記事を1件取得
+esa post backlinks 123      # この記事を参照している記事の一覧
 ```
 
 記事の作成・更新・追記・アーカイブ・削除もできます。本文（Markdown）は `--body` でインライン指定するか、`--body-file <path>`（`-` で標準入力）で渡します。
@@ -94,9 +95,13 @@ esa comment delete 456 --yes # 確認をスキップ（非対話環境では --y
 esa category list                 # カテゴリパス一覧（ページング。GET /v1/teams/{team}/categories/paths）
 esa category list --all           # 全ページを辿って全カテゴリパスをまとめて取得
 esa category list --prefix dev/   # 前方一致で絞り込み（--suffix / --match / --exact-match も可）
+esa category top                  # トップレベルのカテゴリ一覧 (GET /v1/teams/{team}/categories/top)
+esa category get dev/docs         # カテゴリ配下のサブカテゴリを取得 (GET /v1/teams/{team}/categories)
+esa category get dev/docs --include posts --descendant-posts # 配下の記事も含める
 esa tag list                      # タグ一覧 (GET /v1/teams/{team}/tags)
 esa member list                   # メンバー一覧 (GET /v1/teams/{team}/members)
 esa member list --sort posts_count --order desc # 投稿数の多い順に並べる
+esa team stats                    # チームの統計情報 (GET /v1/teams/{team}/stats)
 ```
 
 ### 任意の API を叩く（`esa api`）
@@ -227,10 +232,10 @@ src/
     index.ts             # コマンド登録の集約
     auth.ts              # `esa auth` コマンド群（login/logout/refresh/status）
     user.ts              # `esa user`
-    team.ts              # `esa team list`
-    post.ts              # `esa post` コマンド群（list/search/get/create/update/append/prepend/archive/delete）
+    team.ts              # `esa team` コマンド群（list/stats）
+    post.ts              # `esa post` コマンド群（list/search/get/backlinks/create/update/append/prepend/archive/delete）
     comment.ts           # `esa comment` コマンド群（list/get/create/update/delete）
-    category.ts          # `esa category list`（カテゴリパス一覧）
+    category.ts          # `esa category` コマンド群（list/get/top）
     tag.ts               # `esa tag list`（タグ一覧）
     member.ts            # `esa member list`（メンバー一覧）
     api.ts               # `esa api` 任意パスへのエスケープハッチ

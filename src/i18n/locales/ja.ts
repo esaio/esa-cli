@@ -44,6 +44,8 @@ export const ja: Resources = {
   team: {
     desc: "チームを操作します",
     listDesc: "所属しているチームの一覧を表示します (GET /v1/teams)",
+    statsDesc: "チームの統計情報を表示します (GET /v1/teams/{team_name}/stats)",
+    teamOpt: "対象チーム",
     pageOpt: "ページ番号",
     perPageOpt: "1ページあたりの件数",
     roleOpt: "権限で絞り込み (member | owner)",
@@ -71,6 +73,8 @@ export const ja: Resources = {
     appendDesc: "記事本文の末尾に Markdown を追記します",
     prependDesc: "記事本文の先頭に Markdown を追記します",
     archiveDesc: "記事を Archived/ カテゴリに移してアーカイブします",
+    backlinksDesc:
+      "この記事を参照している記事の一覧を表示します (GET /v1/teams/{team_name}/posts/{post_number}/backlinks)",
     deleteDesc:
       "記事を削除します (DELETE /v1/teams/{team_name}/posts/{post_number})",
     nameOpt: "記事名（タイトル）",
@@ -144,9 +148,16 @@ export const ja: Resources = {
     desc: "カテゴリを操作します",
     listDesc:
       "チームのカテゴリパス一覧を表示します (GET /v1/teams/{team_name}/categories/paths)",
+    getDesc:
+      "カテゴリとその配下のサブカテゴリを取得します (GET /v1/teams/{team_name}/categories)",
+    topDesc:
+      "トップレベルのカテゴリ一覧を表示します (GET /v1/teams/{team_name}/categories/top)",
+    pathArg: "カテゴリのパス（例: dev/docs）",
     teamOpt: "対象チーム",
     pageOpt: "ページ番号",
     perPageOpt: "1ページあたりの件数",
+    includeOpt: "追加で含める情報 (posts | parent_categories)",
+    descendantPostsOpt: "子孫記事も含めます（--include posts のときのみ有効）",
     prefixOpt: "指定した文字列で始まるパスのみ",
     suffixOpt: "指定した文字列で終わるパスのみ",
     matchOpt: "指定した文字列を含むパスのみ",

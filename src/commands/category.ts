@@ -18,6 +18,10 @@ type PagedCategoryPaths = components["schemas"]["Pagination"] & {
 // --all で全ページを取得するときの1リクエストあたりの件数。esa の per_page 上限。
 const ALL_PER_PAGE = 100;
 
+type CategoriesQuery = NonNullable<
+  paths["/v1/teams/{team_name}/categories"]["get"]["parameters"]["query"]
+>;
+
 type ListOptions = {
   team?: string;
   page?: string;
@@ -27,6 +31,14 @@ type ListOptions = {
   match?: string;
   exactMatch?: string;
   all?: boolean;
+};
+
+type GetOptions = {
+  team?: string;
+  page?: string;
+  perPage?: string;
+  include?: string;
+  descendantPosts?: boolean;
 };
 
 export function registerCategoryCommand(program: Command): void {
@@ -105,6 +117,51 @@ export function registerCategoryCommand(program: Command): void {
         "/v1/teams/{team_name}/categories/paths",
         { params: { path: { team_name: team }, query } },
       );
+      console.log(JSON.stringify(unwrap(result), null, 2));
+    });
+
+  category
+    .command("get")
+    .argument("<path>", t("category.pathArg"))
+    .description(t("category.getDesc"))
+    .option("--team <name>", t("category.teamOpt"))
+    .option("--page <number>", t("category.pageOpt"))
+    .option("--per-page <number>", t("category.perPageOpt"))
+    .option("--include <include>", t("category.includeOpt"))
+    .option("--descendant-posts", t("category.descendantPostsOpt"))
+    .action(async (pathArg: string, options: GetOptions) => {
+      // 入力の検証はネットワーク（resolveTeam の GET /v1/teams）より先に行う。
+      const query: CategoriesQuery = { select: pathArg };
+      if (options.page) query.page = positiveInt(options.page, "--page");
+      if (options.perPage) {
+        query.per_page = positiveInt(options.perPage, "--per-page");
+      }
+      if (
+        options.include === "posts" ||
+        options.include === "parent_categories"
+      ) {
+        query.include = options.include;
+      }
+      if (options.descendantPosts) query.descendant_posts = true;
+
+      const client = createEsaClient();
+      const team = await resolveTeam(client, options.team);
+      const result = await client.GET("/v1/teams/{team_name}/categories", {
+        params: { path: { team_name: team }, query },
+      });
+      console.log(JSON.stringify(unwrap(result), null, 2));
+    });
+
+  category
+    .command("top")
+    .description(t("category.topDesc"))
+    .option("--team <name>", t("category.teamOpt"))
+    .action(async (options: { team?: string }) => {
+      const client = createEsaClient();
+      const team = await resolveTeam(client, options.team);
+      const result = await client.GET("/v1/teams/{team_name}/categories/top", {
+        params: { path: { team_name: team } },
+      });
       console.log(JSON.stringify(unwrap(result), null, 2));
     });
 }
