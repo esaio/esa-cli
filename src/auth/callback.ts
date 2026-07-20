@@ -29,7 +29,7 @@ function successHtml(): string {
 </body></html>`;
 }
 
-/** HTTPサーバーから独立したcallback判定。分岐を副作用なしで検証できる。 */
+/** callback リクエストの URL と期待 state から、応答内容と結果を決める。 */
 export function evaluateCallback(
   requestUrl: string,
   expectedState: string,
