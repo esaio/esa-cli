@@ -1,6 +1,7 @@
 import { REQUEST_TIMEOUT_MS } from "../config/index.js";
 import { t } from "../i18n/index.js";
 import { fetchWithTimeout } from "../network/fetch.js";
+import { isLoopbackHost } from "../network/loopback.js";
 
 /** OAuth 2.0 Authorization Server Metadata (RFC 8414) のうち利用する範囲。 */
 export type AuthorizationServerMetadata = {
@@ -56,16 +57,6 @@ function optionalEndpoint(
   if (typeof value !== "string" || value === "") return undefined;
   validateEndpoint(value, field, allowHttp);
   return value;
-}
-
-/** loopback ホストか（RFC 6761: localhost とそのサブドメイン、IPv4/IPv6 ループバック）。 */
-function isLoopbackHost(host: string): boolean {
-  return (
-    host === "localhost" ||
-    host.endsWith(".localhost") ||
-    host === "127.0.0.1" ||
-    host === "[::1]"
-  );
 }
 
 /**

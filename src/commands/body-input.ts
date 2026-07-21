@@ -6,6 +6,11 @@ export type BodyOptions = {
   bodyFile?: string;
 };
 
+/** ファイルから UTF-8 で読む。"-" は標準入力（fd 0）。 */
+export function readFileOrStdin(path: string): string {
+  return readFileSync(path === "-" ? 0 : path, "utf-8");
+}
+
 /**
  * 本文（Markdown）を --body / --body-file から読む。--body-file が "-" の
  * 場合は標準入力（fd 0）から読む。両方指定はエラー。どちらも無ければ undefined。
@@ -15,10 +20,7 @@ export function readBody(options: BodyOptions): string | undefined {
     throw new Error(t("post.bodyConflict"));
   }
   if (options.body !== undefined) return options.body;
-  if (options.bodyFile !== undefined) {
-    const source = options.bodyFile === "-" ? 0 : options.bodyFile;
-    return readFileSync(source, "utf-8");
-  }
+  if (options.bodyFile !== undefined) return readFileOrStdin(options.bodyFile);
   return undefined;
 }
 

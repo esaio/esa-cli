@@ -69,6 +69,16 @@ test("`feedback create --team` posts to the team endpoint", async () => {
   expect(options.body.feedback.message).toBe("チームの件");
 });
 
+test("`feedback create --team` resolves the team (trims whitespace)", async () => {
+  vi.spyOn(console, "error").mockImplementation(() => {});
+
+  await run(["feedback", "create", "-m", "x", "--team", "  docs  "]);
+
+  expect(postReq.mock.calls[0][1].params).toEqual({
+    path: { team_name: "docs" },
+  });
+});
+
 test("`feedback create` reads the message from a file via --message-file", async () => {
   vi.spyOn(console, "error").mockImplementation(() => {});
   const dir = mkdtempSync(join(tmpdir(), "esa-fb-"));

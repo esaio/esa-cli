@@ -1,5 +1,6 @@
 import packageJson from "../../package.json" with { type: "json" };
 import { t } from "../i18n/index.js";
+import { isLoopbackHost } from "../network/loopback.js";
 
 /** client_secret を持たない public client のため、公開しても問題ない値。 */
 const DEFAULT_CLIENT_ID =
@@ -74,13 +75,7 @@ function normalizeApiBaseUrl(apiBaseUrl: string): string {
   }
 
   const host = url.hostname;
-  // RFC 6761: localhost とそのサブドメインは loopback に解決される。
-  // IPv6 ループバックの hostname は WHATWG URL では "[::1]"（角括弧付き）。
-  const isLoopback =
-    host === "localhost" ||
-    host.endsWith(".localhost") ||
-    host === "127.0.0.1" ||
-    host === "[::1]";
+  const isLoopback = isLoopbackHost(host);
   if (!isLoopback && !(host === "api.esa.io" && url.protocol === "https:")) {
     throw new Error(t("baseUrl.notAllowed", { url: apiBaseUrl }));
   }

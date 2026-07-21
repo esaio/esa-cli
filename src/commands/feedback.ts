@@ -1,9 +1,10 @@
-import { readFileSync } from "node:fs";
 import type { Command } from "commander";
 import { createEsaClient } from "../api/client.js";
+import { resolveTeam } from "../api/resolve-team.js";
 import { unwrap } from "../api/response.js";
 import { config } from "../config/index.js";
 import { t } from "../i18n/index.js";
+import { readFileOrStdin } from "./body-input.js";
 
 type CreateOptions = {
   body?: string;
@@ -26,10 +27,7 @@ function readMessage(options: CreateOptions): string {
     throw new Error(t("feedback.messageConflict"));
   }
   if (inline.length === 1) return inline[0] as string;
-  if (file.length === 1) {
-    const path = file[0] as string;
-    return readFileSync(path === "-" ? 0 : path, "utf-8");
-  }
+  if (file.length === 1) return readFileOrStdin(file[0] as string);
   throw new Error(t("feedback.messageRequired"));
 }
 
@@ -49,11 +47,11 @@ export function registerFeedbackCommand(program: Command): void {
   feedback
     .command("create")
     .description(t("feedback.createDesc"))
+    .option("--team <name>", t("feedback.teamOpt"))
     .option("-m, --message <text>", t("feedback.messageOpt"))
     .option("--message-file <path>", t("feedback.messageFileOpt"))
     .option("--body <text>", t("feedback.bodyOpt"))
     .option("--body-file <path>", t("feedback.bodyFileOpt"))
-    .option("--team <name>", t("feedback.teamOpt"))
     .action(async (options: CreateOptions) => {
       // 入力の検証はネットワークより先に行う。
       const message = readMessage(options);
@@ -66,8 +64,9 @@ export function registerFeedbackCommand(program: Command): void {
 
       // --team を明示したときだけチームに紐づく。既定はチーム非依存の送信。
       if (options.team !== undefined) {
+        const team = await resolveTeam(client, options.team);
         const result = await client.POST("/v1/teams/{team_name}/feedbacks", {
-          params: { path: { team_name: options.team } },
+          params: { path: { team_name: team } },
           body: { feedback: body },
         });
         unwrap(result);
