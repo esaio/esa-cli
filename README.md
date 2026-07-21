@@ -120,9 +120,9 @@ esa attachment download https://files.esa.io/uploads/x.png -o ./x.png # 実体�
 esa attachment download /uploads/x.png > x.png        # 標準出力に書き出してリダイレクト
 ```
 
-> 署名の対象はセキュアチーム（セキュア添付）のファイルのみです。非セキュアチームの
-> 添付は公開 URL（`img.esa.io`）で配信されるため署名は不要で、
-> `esa attachment download <公開URL>` で直接取得できます。
+署名の対象はセキュアチーム（セキュア添付）のファイルのみです。非セキュアチームの
+添付は公開 URL（`img.esa.io`）で配信されるため署名は不要で、
+`esa attachment download <公開URL>` で直接取得できます。
 
 ### 任意の API を叩く（`esa api`）
 
