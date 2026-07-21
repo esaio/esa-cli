@@ -2705,6 +2705,113 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/v1/feedbacks": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * フィードバック送信
+     * @description esa.io 運営へのフィードバックを送信します。
+     *     チームに紐づかないフィードバックを送りたい場合に利用します。
+     */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          "application/json": {
+            feedback: components["schemas"]["FeedbackInput"];
+          };
+        };
+      };
+      responses: {
+        /** @description 送信成功（レスポンスボディはありません） */
+        201: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+        400: components["responses"]["BadRequestError"];
+        401: components["responses"]["UnauthorizedError"];
+        402: components["responses"]["PaymentRequiredError"];
+        403: components["responses"]["ForbiddenError"];
+        405: components["responses"]["MethodNotAllowedError"];
+        406: components["responses"]["NotAcceptableError"];
+        429: components["responses"]["TooManyRequestsError"];
+        500: components["responses"]["InternalServerError"];
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/teams/{team_name}/feedbacks": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * フィードバック送信（チーム指定）
+     * @description 指定したチームに紐づけて、esa.io 運営へのフィードバックを送信します。
+     */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          /** @description チーム名 */
+          team_name: components["parameters"]["team_name"];
+        };
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          "application/json": {
+            feedback: components["schemas"]["FeedbackInput"];
+          };
+        };
+      };
+      responses: {
+        /** @description 送信成功（レスポンスボディはありません） */
+        201: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+        400: components["responses"]["BadRequestError"];
+        401: components["responses"]["UnauthorizedError"];
+        402: components["responses"]["PaymentRequiredError"];
+        403: components["responses"]["ForbiddenError"];
+        404: components["responses"]["NotFoundError"];
+        405: components["responses"]["MethodNotAllowedError"];
+        406: components["responses"]["NotAcceptableError"];
+        429: components["responses"]["TooManyRequestsError"];
+        500: components["responses"]["InternalServerError"];
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/v1/user": {
     parameters: {
       query?: never;
@@ -3263,6 +3370,29 @@ export interface components {
     EmojiResult: {
       /** @description 作成された絵文字のコード */
       code: string;
+    };
+    FeedbackInput: {
+      /** @description フィードバックの本文 */
+      message: string;
+      /**
+       * Format: email
+       * @description 返信先のメールアドレス
+       */
+      email?: string;
+      /**
+       * @description クライアント固有の付随情報。任意のキーを持つ JSON オブジェクトをそのまま保存します。
+       *     スキーマは固定されておらず、送信元クライアントが実行環境やコンテキスト情報を
+       *     任意のキーで添付します。example はその一例です。
+       * @example {
+       *       "client_name": "esa-client",
+       *       "client_version": "1.0.0",
+       *       "os": "darwin",
+       *       "arch": "arm64"
+       *     }
+       */
+      meta?: {
+        [key: string]: unknown;
+      };
     };
     Category: {
       /** @description カテゴリ名 */

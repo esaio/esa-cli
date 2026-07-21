@@ -202,6 +202,21 @@ export const ja: Resources = {
       "添付ファイルのダウンロードに失敗しました ({{status}} {{statusText}})。",
     saved: "{{bytes}} バイトを {{path}} に保存しました。",
   },
+  feedback: {
+    desc: "esa.io にフィードバックを送信します",
+    createDesc:
+      "esa.io 運営にフィードバックを送信します (POST /v1/feedbacks。--team でチームに紐づけ可)",
+    messageOpt: "フィードバックの本文",
+    messageFileOpt: "本文をファイルから読み込みます（- で標準入力）",
+    bodyOpt: "--message の別名",
+    bodyFileOpt: "--message-file の別名",
+    teamOpt: "フィードバックを紐づけるチーム",
+    messageConflict:
+      "本文の指定は1つにしてください（--message / --message-file / --body / --body-file）。",
+    messageRequired:
+      "本文を指定してください（--message または --message-file）。",
+    sent: "フィードバックを送信しました。ありがとうございます！",
+  },
   parse: {
     notPositiveInt: "{{name}} は 1 以上の整数で指定してください: {{value}}",
   },

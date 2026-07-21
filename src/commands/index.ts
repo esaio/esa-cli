@@ -5,6 +5,7 @@ import { registerAuthCommand } from "./auth.js";
 import { registerCategoryCommand } from "./category.js";
 import { registerCommentCommand } from "./comment.js";
 import { registerConfigCommand } from "./config.js";
+import { registerFeedbackCommand } from "./feedback.js";
 import { registerMemberCommand } from "./member.js";
 import { registerPostCommand } from "./post.js";
 import { registerTagCommand } from "./tag.js";
@@ -21,6 +22,7 @@ export function registerCommands(program: Command): void {
   registerTagCommand(program);
   registerMemberCommand(program);
   registerAttachmentCommand(program);
+  registerFeedbackCommand(program);
   registerApiCommand(program);
   registerConfigCommand(program);
 }

@@ -198,6 +198,20 @@ export const en = {
       "Failed to download the attachment ({{status}} {{statusText}}).",
     saved: "Saved {{bytes}} bytes to {{path}}.",
   },
+  feedback: {
+    desc: "Send feedback to esa.io",
+    createDesc:
+      "Send feedback to the esa.io operators (POST /v1/feedbacks; pass --team to attach it to a team)",
+    messageOpt: "Feedback message",
+    messageFileOpt: "Read the message from a file (use - for stdin)",
+    bodyOpt: "Alias for --message",
+    bodyFileOpt: "Alias for --message-file",
+    teamOpt: "Attach the feedback to this team",
+    messageConflict:
+      "Specify the message only once (--message / --message-file / --body / --body-file).",
+    messageRequired: "Message is required (--message or --message-file).",
+    sent: "Sent your feedback. Thank you!",
+  },
   parse: {
     notPositiveInt: "{{name}} must be a positive integer (>= 1): {{value}}",
   },

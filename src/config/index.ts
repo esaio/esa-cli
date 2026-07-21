@@ -24,6 +24,7 @@ const DEFAULT_SCOPE = [
   "read:member",
   "read:team",
   "read:user",
+  "write:feedback",
 ].join(" ");
 
 export const config = {
