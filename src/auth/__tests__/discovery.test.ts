@@ -103,6 +103,29 @@ test("allows HTTP endpoints when the base URL itself is HTTP (local development)
   expect(metadata.token_endpoint).toBe("http://localhost:3000/oauth/token");
 });
 
+test("downgrades advertised HTTPS loopback endpoints to HTTP when the base URL is HTTP", async () => {
+  // dev サーバは metadata に https を広告するが、実際は loopback の http で待ち受ける。
+  mockDiscovery({
+    issuer: "https://esa.localhost:3000/",
+    authorization_endpoint: "https://api.esa.localhost:3000/oauth/authorize",
+    token_endpoint: "https://api.esa.localhost:3000/oauth/token",
+    revocation_endpoint: "https://api.esa.localhost:3000/oauth/revoke",
+    code_challenge_methods_supported: ["S256"],
+  });
+
+  const metadata = await fetchMetadata("http://api.esa.localhost:3000");
+
+  expect(metadata.authorization_endpoint).toBe(
+    "http://api.esa.localhost:3000/oauth/authorize",
+  );
+  expect(metadata.token_endpoint).toBe(
+    "http://api.esa.localhost:3000/oauth/token",
+  );
+  expect(metadata.revocation_endpoint).toBe(
+    "http://api.esa.localhost:3000/oauth/revoke",
+  );
+});
+
 test("throws when the server does not support PKCE S256", async () => {
   mockDiscovery({
     ...ESA_METADATA,

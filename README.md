@@ -124,6 +124,18 @@ esa attachment download /uploads/x.png > x.png        # 標準出力に書き出
 添付は公開 URL（`img.esa.io`）で配信されるため署名は不要で、
 `esa attachment download <公開URL>` で直接取得できます。
 
+### フィードバック
+
+esa.io 運営へのフィードバックを送信します。本文は `-m, --message` でインライン指定するか、
+`--message-file <path>`（`-` で標準入力）で渡します（`--body` / `--body-file` は
+それぞれの別名）。送信元クライアント（esa-cli のバージョン・OS など）は自動で添付されます。
+
+```bash
+esa feedback create -m "改善要望です"                    # 運営へ送信 (POST /v1/feedbacks)
+cat feedback.md | esa feedback create --message-file -   # 標準入力から本文
+esa feedback create -m "このチームの件で" --team docs      # 特定チームに紐づけて送信
+```
+
 ### 任意の API を叩く（`esa api`）
 
 専用コマンドが用意されていない API パスには、`esa api` で直接アクセスできます（任意パスへのエスケープハッチ）。認証・ベース URL・トークン更新は既存の仕組みをそのまま使います。レスポンスは JSON で stdout に出ます。
@@ -222,7 +234,7 @@ API リクエストの認証は次の順で選ばれます:
 
 | 変数 | 説明 | 既定値 |
 | --- | --- | --- |
-| `ESA_OAUTH_SCOPE` | 要求するスコープ（スペース区切り） | `read:post write:post delete:post read:comment write:comment delete:comment read:category read:tag read:attachment read:revision read:member read:team read:user` |
+| `ESA_OAUTH_SCOPE` | 要求するスコープ（スペース区切り） | `read:post write:post delete:post read:comment write:comment delete:comment read:category read:tag read:attachment read:revision read:member read:team read:user write:feedback` |
 | `ESA_OAUTH_CLIENT_ID` | public app の client_id を上書き | 内蔵の公式 public app |
 | `ESA_API_BASE_URL` | API のベース URL。discovery の取得元でもある | `https://api.esa.io` |
 | `ESA_ACCESS_TOKEN` | OAuth を使わずアクセストークンを直接指定 | （未設定） |

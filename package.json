@@ -36,7 +36,7 @@
     "type-check": "tsc --noEmit",
     "prepublishOnly": "npm run build",
     "bin-check": "node -e \"if (!require('fs').existsSync('./bin/index.js')) { console.error('Error: ./bin/index.js does not exist. Please run npm run build first.'); process.exit(1); }\"",
-    "update-esa-api": "openapi-typescript ../esa/api/openapi.yaml --output src/generated/api-types.ts && npm run lint:fix"
+    "update-esa-api": "npx -y -p typescript@5.9.3 -p openapi-typescript@7 openapi-typescript ../esa/api/openapi.yaml --output src/generated/api-types.ts && npm run lint:fix"
   },
   "keywords": [
     "esa",
@@ -56,7 +56,6 @@
     "@biomejs/biome": "^2.2.4",
     "@types/node": "^24.12.0",
     "@vitest/coverage-v8": "^4.0.5",
-    "openapi-typescript": "^7.13.0",
     "tsdown": "^0.22.12",
     "tsx": "^4.20.5",
     "typescript": "^7.0.2",

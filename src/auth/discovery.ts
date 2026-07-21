@@ -1,6 +1,7 @@
 import { REQUEST_TIMEOUT_MS } from "../config/index.js";
 import { t } from "../i18n/index.js";
 import { fetchWithTimeout } from "../network/fetch.js";
+import { isLoopbackHost } from "../network/loopback.js";
 
 /** OAuth 2.0 Authorization Server Metadata (RFC 8414) のうち利用する範囲。 */
 export type AuthorizationServerMetadata = {
@@ -59,6 +60,25 @@ function optionalEndpoint(
 }
 
 /**
+ * ローカル開発の dev サーバは metadata に https の endpoint を広告するが、実際は
+ * loopback の http で待ち受ける。base URL が http のとき（normalizeApiBaseUrl に
+ * より loopback に限定される）は、loopback ホストの endpoint を http に落として
+ * dev サーバに到達できるようにする。remote ホストの https はそのまま保つ。
+ */
+function toLoopbackHttp(value: string): string {
+  try {
+    const url = new URL(value);
+    if (url.protocol === "https:" && isLoopbackHost(url.hostname)) {
+      url.protocol = "http:";
+      return url.toString();
+    }
+  } catch {
+    // URL として解釈できなければそのまま返し、後段の検証に委ねる。
+  }
+  return value;
+}
+
+/**
  * esa の metadata は issuer が `https://esa.io/` だが、配信は
  * `https://api.esa.io/.well-known/...` のみ（issuer のホストでは 404）。
  * このため RFC 8414 の「issuer のオリジンから取得し issuer の完全一致を
@@ -99,20 +119,19 @@ export async function fetchMetadata(
 
   const raw = (await response.json()) as Record<string, unknown>;
   const allowHttp = base.protocol === "http:";
+  // http base（loopback のローカル開発）では、広告された https endpoint を
+  // http に落として dev サーバに届かせる。本番（https base）では素通し。
+  const rewrite = allowHttp ? toLoopbackHttp : (value: string) => value;
 
+  const revocation = optionalEndpoint(raw, "revocation_endpoint", allowHttp);
   const metadata: AuthorizationServerMetadata = {
     issuer: typeof raw.issuer === "string" ? raw.issuer : "",
-    authorization_endpoint: requireEndpoint(
-      raw,
-      "authorization_endpoint",
-      allowHttp,
+    authorization_endpoint: rewrite(
+      requireEndpoint(raw, "authorization_endpoint", allowHttp),
     ),
-    token_endpoint: requireEndpoint(raw, "token_endpoint", allowHttp),
-    revocation_endpoint: optionalEndpoint(
-      raw,
-      "revocation_endpoint",
-      allowHttp,
-    ),
+    token_endpoint: rewrite(requireEndpoint(raw, "token_endpoint", allowHttp)),
+    revocation_endpoint:
+      revocation === undefined ? undefined : rewrite(revocation),
     code_challenge_methods_supported: Array.isArray(
       raw.code_challenge_methods_supported,
     )
