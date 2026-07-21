@@ -78,8 +78,7 @@ follows a simple, command-oriented structure.
    (`export type Resources = typeof en`); `ja.ts` is typed as `Resources` so key
    parity is enforced at compile time.
 
-For the full command reference, environment variables, and project structure, see
-`README.md`.
+For the full command reference and environment variables, see `README.md`.
 
 ### Generated API Types (`src/generated/api-types.ts`)
 
@@ -103,6 +102,57 @@ generated from esa's `openapi.yaml` via `openapi-typescript`.
   binary data for attachment downloads); human-facing messages go to stderr
 - **Validate before the network**: validate input before `createEsaClient()` /
   `resolveTeam()` so bad input fails fast without an API call
+
+## Project structure
+
+```
+src/
+  index.ts               # CLI entry point (commander)
+  commands/              # Subcommand definitions
+    index.ts             # Aggregates command registration
+    auth.ts              # `esa auth` commands (login/logout/refresh/status)
+    user.ts              # `esa user`
+    team.ts              # `esa team` commands (list/stats)
+    post.ts              # `esa post` commands (list/search/get/backlinks/revisions/create/update/append/prepend/duplicate/rollback/archive/delete)
+    comment.ts           # `esa comment` commands (list/get/create/update/delete)
+    category.ts          # `esa category` commands (list)
+    tag.ts               # `esa tag list` (list tags)
+    member.ts            # `esa member list` (list members)
+    attachment.ts        # `esa attachment` commands (sign/download)
+    api.ts               # `esa api` escape hatch to any path
+    body-input.ts        # Body input (--body / --body-file / stdin)
+    confirm.ts           # y/N confirmation prompt (used by delete)
+    config.ts            # `esa config set/get` (default team, language)
+    parse.ts             # Shared option/argument validation
+  api/                   # esa API client
+    client.ts            # openapi-fetch client (auth, pre-request token refresh)
+    resolve-team.ts      # Resolve the target team (--team / ESA_TEAM / default / sole membership)
+    response.ts          # Response unwrapping and error formatting
+  i18n/                  # Localization (i18next)
+    index.ts             # i18next init and the t() translation function
+    resolve-language.ts  # Language resolution (ESA_LANG / config / OS locale)
+    locales/             # Language resources (en / ja)
+  auth/                  # OAuth auth and token storage
+    oauth.ts             # Authorization Code + PKCE flow
+    discovery.ts         # Authorization server metadata (RFC 8414)
+    resolve-auth.ts      # Auth method selection (OAuth / ESA_ACCESS_TOKEN / none)
+    pkce.ts              # PKCE / state generation
+    callback.ts          # Loopback HTTP server
+    open-browser.ts      # Launch the default browser (OS command)
+    token-store.ts       # Backend selection and dispatch
+    keychain.ts          # macOS Keychain
+    credential-manager.ts # Windows Credential Manager
+    secret-service.ts    # Linux Secret Service
+    encrypted-store.ts   # Encrypted-file fallback
+    machine-id.ts        # Machine-specific ID for the encrypted-file key
+    types.ts             # TokenSet type
+  config/                # Settings and environment variables
+    index.ts
+    paths.ts             # Config/token storage directories
+    file-store.ts        # Config file (~/.config/esa-cli/config.json) read/write
+  generated/             # API types generated from openapi.yaml (npm run update-esa-api)
+    api-types.ts
+```
 
 ## Testing Guidelines
 

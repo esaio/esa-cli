@@ -158,14 +158,9 @@ export const ja: Resources = {
     desc: "カテゴリを操作します",
     listDesc:
       "チームのカテゴリパス一覧を表示します (GET /v1/teams/{team_name}/categories/paths)",
-    browseDesc:
-      "カテゴリの中身（配下のサブカテゴリなど）を表示します。path 省略でトップ階層 (GET /v1/teams/{team_name}/categories[/top])",
-    pathArg: "表示するカテゴリのパス（省略でトップ階層。例: dev/docs）",
     teamOpt: "対象チーム",
     pageOpt: "ページ番号",
     perPageOpt: "1ページあたりの件数",
-    includeOpt: "追加で含める情報 (posts | parent_categories)",
-    descendantPostsOpt: "子孫記事も含めます（--include posts のときのみ有効）",
     prefixOpt: "指定した文字列で始まるパスのみ",
     suffixOpt: "指定した文字列で終わるパスのみ",
     matchOpt: "指定した文字列を含むパスのみ",

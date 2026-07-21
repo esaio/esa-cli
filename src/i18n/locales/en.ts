@@ -154,15 +154,9 @@ export const en = {
     desc: "Work with categories",
     listDesc:
       "List category paths in a team (GET /v1/teams/{team_name}/categories/paths)",
-    browseDesc:
-      "Browse a category and its subcategories, or the top level if no path is given (GET /v1/teams/{team_name}/categories[/top])",
-    pathArg: "Category path to browse (omit for the top level; e.g. dev/docs)",
     teamOpt: "Target team",
     pageOpt: "Page number",
     perPageOpt: "Items per page",
-    includeOpt: "Additional info to include (posts | parent_categories)",
-    descendantPostsOpt:
-      "Include descendant posts too (only with --include posts)",
     prefixOpt: "Only paths starting with this string",
     suffixOpt: "Only paths ending with this string",
     matchOpt: "Only paths containing this string",

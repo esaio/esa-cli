@@ -34,9 +34,11 @@ Linux Secret Service）に保存されます。いずれも使えない環境で
 ```bash
 esa auth login     # ブラウザで OAuth 認証してトークンを保存
 esa auth status    # 現在の認証状態を表示（JSON）
-esa auth refresh   # refresh token でアクセストークンを更新
-esa auth logout     # トークンを失効・削除
+esa auth logout    # トークンを失効・削除
 ```
+
+CI など非対話環境で使う場合は、OAuth ログインの代わりに環境変数 `ESA_ACCESS_TOKEN`
+に Personal Access Token を設定すれば認証できます（**PAT v2 を推奨**）。
 
 ### API コマンド
 
@@ -46,11 +48,11 @@ esa auth logout     # トークンを失効・削除
 esa user                    # 認証ユーザーの情報 (GET /v1/user)
 esa team list                        # 所属チーム一覧 (GET /v1/teams)
 esa team list --role owner           # 権限で絞り込み (member | owner)
-esa team list --page 2 --per-page 50 # ページング
 
-esa post list               # 記事一覧 (GET /v1/teams/{team}/posts)
-esa post list -q "wip:true" # 検索クエリで絞り込み
-esa post search "keyword"   # 記事を検索（list -q と同じエンドポイント）
+esa post list                        # 記事一覧 (GET /v1/teams/{team}/posts)
+esa post list -q "wip:true"          # 検索クエリで絞り込み
+esa post list --page 2 --per-page 50 # ページング
+esa post search "keyword"            # 記事を検索（list -q と同じエンドポイント）
 esa post get 123            # 記事を1件取得
 esa post backlinks 123      # この記事を参照している記事の一覧
 esa post revisions 123      # リビジョン一覧（rollback 用の番号を調べる）
@@ -61,7 +63,7 @@ esa post revisions 123      # リビジョン一覧（rollback 用の番号を�
 ```bash
 # 作成。名前に "/" を含めるとカテゴリになる（--category でも指定可）
 esa post create "dev/docs/新しい記事" --body "本文" --tags a,b
-cat note.md | esa post create "タイトル" --body-file -  # 標準入力から本文
+cat body.md | esa post create "タイトル" --body-file -  # 標準入力から本文
 esa post create "タイトル" --ship                        # WIP を解除して作成（既定は WIP）
 
 esa post update 123 --name "改題" --ship  # タイトル変更＋Ship（指定した項目のみ更新）
@@ -86,7 +88,7 @@ esa comment get 456         # コメントを1件取得
 esa comment get 456 --stargazers # スターしたメンバーも含める
 
 esa comment create 123 --body "コメント本文"        # 記事 123 にコメント
-cat review.md | esa comment create 123 --body-file - # 標準入力から本文
+cat comment.md | esa comment create 123 --body-file - # 標準入力から本文
 esa comment update 456 --body "修正後の本文"         # コメントを更新
 esa comment create 123 --body "代理投稿" --user alice # 別ユーザーとして投稿（owner 権限）
 
@@ -100,18 +102,27 @@ esa comment delete 456 --yes # 確認をスキップ（非対話環境では --y
 esa category list                 # カテゴリパス一覧（ページング。GET /v1/teams/{team}/categories/paths）
 esa category list --all           # 全ページを辿って全カテゴリパスをまとめて取得
 esa category list --prefix dev/   # 前方一致で絞り込み（--suffix / --match / --exact-match も可）
-esa category browse               # トップ階層のカテゴリを表示（path 省略。GET /v1/teams/{team}/categories/top）
-esa category browse dev/docs      # カテゴリの中身（配下のサブカテゴリなど）を表示 (GET /v1/teams/{team}/categories)
-esa category browse dev/docs --include posts --descendant-posts # 配下の記事も含める
 esa tag list                      # タグ一覧 (GET /v1/teams/{team}/tags)
 esa member list                   # メンバー一覧 (GET /v1/teams/{team}/members)
 esa member list --sort posts_count --order desc # 投稿数の多い順に並べる
 esa team stats                    # チームの統計情報 (GET /v1/teams/{team}/stats)
-esa attachment sign /uploads/x.png # 添付ファイルの署名付きURLを取得 (GET /v1/teams/{team}/signed_urls)
-esa attachment sign /uploads/x.png --expires-in 3600 # 有効期限を1時間に
-esa attachment download https://files.esa.io/uploads/x.png -o ./x.png # 実体をファイルに保存
-esa attachment download /uploads/x.png > x.png # 標準出力に書き出してリダイレクト
 ```
+
+### 添付ファイル
+
+`sign` で署名付き URL を取得し、`download` で実体を取得します（`download` は内部で
+署名してからダウンロードします）。
+
+```bash
+esa attachment sign /uploads/x.png                    # 署名付きURLを取得 (GET /v1/teams/{team}/signed_urls)
+esa attachment sign /uploads/x.png --expires-in 3600  # 有効期限を1時間に
+esa attachment download https://files.esa.io/uploads/x.png -o ./x.png # 実体をファイルに保存
+esa attachment download /uploads/x.png > x.png        # 標準出力に書き出してリダイレクト
+```
+
+> 署名の対象はセキュアチーム（セキュア添付）のファイルのみです。非セキュアチームの
+> 添付は公開 URL（`img.esa.io`）で配信されるため署名は不要で、
+> `esa attachment download <公開URL>` で直接取得できます。
 
 ### 任意の API を叩く（`esa api`）
 
@@ -230,59 +241,6 @@ API リクエストの認証は次の順で選ばれます:
 | `npm run lint` | biome によるチェック |
 | `npm run lint:fix` | biome による自動修正 |
 | `npm run type-check` | tsc による型チェック |
-
-## Project structure
-
-esa-mcp-server のディレクトリ構成を参考にしています。
-
-```
-src/
-  index.ts               # CLI エントリポイント（commander）
-  commands/              # サブコマンド定義
-    index.ts             # コマンド登録の集約
-    auth.ts              # `esa auth` コマンド群（login/logout/refresh/status）
-    user.ts              # `esa user`
-    team.ts              # `esa team` コマンド群（list/stats）
-    post.ts              # `esa post` コマンド群（list/search/get/backlinks/revisions/create/update/append/prepend/duplicate/rollback/archive/delete）
-    comment.ts           # `esa comment` コマンド群（list/get/create/update/delete）
-    category.ts          # `esa category` コマンド群（list/browse）
-    tag.ts               # `esa tag list`（タグ一覧）
-    member.ts            # `esa member list`（メンバー一覧）
-    attachment.ts        # `esa attachment` コマンド群（sign/download）
-    api.ts               # `esa api` 任意パスへのエスケープハッチ
-    body-input.ts        # 本文の入力（--body / --body-file / 標準入力）
-    confirm.ts           # y/N の確認プロンプト（delete で使用）
-    config.ts            # `esa config set/get`（既定チーム・表示言語）
-    parse.ts             # オプション・引数の共通バリデーション
-  api/                   # esa API クライアント
-    client.ts            # openapi-fetch クライアント（認証・送信前のトークン更新）
-    resolve-team.ts      # 対象チームの解決（--team / ESA_TEAM / 既定 / 単一所属）
-    response.ts          # レスポンスの取り出しとエラー整形
-  i18n/                  # 表示言語（i18next）
-    index.ts             # i18next の初期化と翻訳関数 t
-    resolve-language.ts  # 使用言語の判定（ESA_LANG / 設定 / OS ロケール）
-    locales/             # 言語リソース（en / ja）
-  auth/                  # OAuth 認証とトークン保存
-    oauth.ts             # Authorization Code + PKCE フロー
-    discovery.ts         # 認可サーバーのメタデータ取得 (RFC 8414)
-    resolve-auth.ts      # 認証方式の選択（OAuth / ESA_ACCESS_TOKEN / none）
-    pkce.ts              # PKCE / state 生成
-    callback.ts          # ループバック HTTP サーバー
-    open-browser.ts      # 既定ブラウザの起動（OS 標準コマンド）
-    token-store.ts       # 保存先の判定と振り分け
-    keychain.ts          # macOS Keychain
-    credential-manager.ts # Windows Credential Manager
-    secret-service.ts    # Linux Secret Service
-    encrypted-store.ts   # フォールバックの暗号化ファイル
-    machine-id.ts        # 暗号化ファイルの鍵に使うマシン固有 ID
-    types.ts             # TokenSet 型
-  config/                # 設定・環境変数
-    index.ts
-    paths.ts             # 設定・トークンの保存先ディレクトリ
-    file-store.ts        # 設定ファイル (~/.config/esa-cli/config.json) の読み書き
-  generated/             # openapi.yaml から生成した API 型（npm run update-esa-api）
-    api-types.ts
-```
 
 ## License
 

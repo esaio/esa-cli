@@ -4,7 +4,7 @@ import { resolveTeam } from "../api/resolve-team.js";
 import { unwrap } from "../api/response.js";
 import type { components, paths } from "../generated/api-types.js";
 import { t } from "../i18n/index.js";
-import { positiveInt, serverEnum } from "./parse.js";
+import { positiveInt } from "./parse.js";
 
 type PathsQuery = NonNullable<
   paths["/v1/teams/{team_name}/categories/paths"]["get"]["parameters"]["query"]
@@ -18,10 +18,6 @@ type PagedCategoryPaths = components["schemas"]["Pagination"] & {
 // --all で全ページを取得するときの1リクエストあたりの件数。esa の per_page 上限。
 const ALL_PER_PAGE = 100;
 
-type CategoriesQuery = NonNullable<
-  paths["/v1/teams/{team_name}/categories"]["get"]["parameters"]["query"]
->;
-
 type ListOptions = {
   team?: string;
   page?: string;
@@ -31,14 +27,6 @@ type ListOptions = {
   match?: string;
   exactMatch?: string;
   all?: boolean;
-};
-
-type BrowseOptions = {
-  team?: string;
-  page?: string;
-  perPage?: string;
-  include?: string;
-  descendantPosts?: boolean;
 };
 
 export function registerCategoryCommand(program: Command): void {
@@ -117,55 +105,6 @@ export function registerCategoryCommand(program: Command): void {
         "/v1/teams/{team_name}/categories/paths",
         { params: { path: { team_name: team }, query } },
       );
-      console.log(JSON.stringify(unwrap(result), null, 2));
-    });
-
-  category
-    .command("browse")
-    .argument("[path]", t("category.pathArg"))
-    .description(t("category.browseDesc"))
-    .option("--team <name>", t("category.teamOpt"))
-    .option("--page <number>", t("category.pageOpt"))
-    .option("--per-page <number>", t("category.perPageOpt"))
-    .option("--include <include>", t("category.includeOpt"))
-    .option("--descendant-posts", t("category.descendantPostsOpt"))
-    .action(async (pathArg: string | undefined, options: BrowseOptions) => {
-      // path 指定時のクエリを、ネットワーク（resolveTeam の GET /v1/teams）より
-      // 先に組み立て・検証する。path 未指定ならトップ階層で、クエリは使わない。
-      let query: CategoriesQuery | undefined;
-      if (pathArg !== undefined) {
-        query = { select: pathArg };
-        if (options.page) query.page = positiveInt(options.page, "--page");
-        if (options.perPage) {
-          query.per_page = positiveInt(options.perPage, "--per-page");
-        }
-        const include = serverEnum<NonNullable<CategoriesQuery["include"]>>(
-          options.include,
-        );
-        if (include !== undefined) query.include = include;
-        // descendant_posts は include=posts のときだけ有効なので、それに合わせる。
-        if (options.descendantPosts && query.include === "posts") {
-          query.descendant_posts = true;
-        }
-      }
-
-      const client = createEsaClient();
-      const team = await resolveTeam(client, options.team);
-
-      // path 未指定ならトップ階層。/categories/top はクエリを取らないため、
-      // 絞り込み系オプションは無視する。
-      if (query === undefined) {
-        const result = await client.GET(
-          "/v1/teams/{team_name}/categories/top",
-          { params: { path: { team_name: team } } },
-        );
-        console.log(JSON.stringify(unwrap(result), null, 2));
-        return;
-      }
-
-      const result = await client.GET("/v1/teams/{team_name}/categories", {
-        params: { path: { team_name: team }, query },
-      });
       console.log(JSON.stringify(unwrap(result), null, 2));
     });
 }
