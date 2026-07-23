@@ -222,6 +222,21 @@ API リクエストの認証は次の順で選ばれます:
 2. 環境変数 **`ESA_ACCESS_TOKEN`**
 3. どちらも無ければエラー（`esa auth login` を案内）
 
+## AI エージェントから使う
+
+Claude Code / Cursor / Gemini CLI / Codex CLI などの AI エージェントから esa-cli を
+操作させるためのスキルを [esa-skills](https://github.com/esaio/esa-skills) で配布して
+います。自然言語で記事の検索・作成・コメントなどを行えます。
+
+各エージェントの marketplace / extension からの導入に加え、横断ツール
+[`npx skills`](https://github.com/vercel-labs/skills) でも導入できます。
+
+```bash
+npx skills add esaio/esa-skills
+```
+
+導入方法の詳細は [esa-skills の README](https://github.com/esaio/esa-skills#installation) を参照してください。
+
 ## Authentication flow
 
 - Authorization Code + PKCE（S256）フロー。client_secret を持たない public app。
