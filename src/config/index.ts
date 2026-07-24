@@ -96,5 +96,5 @@ export function getOAuthConfig(): OAuthConfig {
   };
 }
 
-/** ネットワークリクエストのタイムアウト（ミリ秒）。無応答時のハングを防ぐ。 */
-export const REQUEST_TIMEOUT_MS = 10_000;
+/** OAuth フロー（メタデータ取得・トークン交換／更新）のタイムアウト（ミリ秒）。 */
+export const OAUTH_REQUEST_TIMEOUT_MS = 10_000;

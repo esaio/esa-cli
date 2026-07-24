@@ -1,4 +1,4 @@
-import { type OAuthConfig, REQUEST_TIMEOUT_MS } from "../config/index.js";
+import { OAUTH_REQUEST_TIMEOUT_MS, type OAuthConfig } from "../config/index.js";
 import { t } from "../i18n/index.js";
 import { fetchWithTimeout } from "../network/fetch.js";
 import { startCallbackServer } from "./callback.js";
@@ -52,7 +52,7 @@ async function postForm(
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: params,
     },
-    REQUEST_TIMEOUT_MS,
+    OAUTH_REQUEST_TIMEOUT_MS,
   );
 }
 

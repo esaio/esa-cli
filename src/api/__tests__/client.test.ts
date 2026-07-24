@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import type { ResolvedAuth } from "../../auth/resolve-auth.js";
 import type { TokenSet } from "../../auth/types.js";
+import { setRequestTimeoutMs } from "../request-timeout.js";
 
 const refresh = vi.fn<() => Promise<TokenSet>>();
 const resolveAuth = vi.fn<() => ResolvedAuth>();
@@ -22,7 +23,6 @@ vi.mock("../../config/index.js", () => ({
     },
   },
   getOAuthConfig,
-  REQUEST_TIMEOUT_MS: 10_000,
 }));
 
 const { createEsaClient } = await import("../client.js");
@@ -86,6 +86,7 @@ beforeEach(() => {
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
+  setRequestTimeoutMs(undefined); // モジュール状態を次のテストへ持ち越さない
 });
 
 test("sends the Bearer token and esa-cli User-Agent", async () => {
@@ -97,6 +98,17 @@ test("sends the Bearer token and esa-cli User-Agent", async () => {
   const request = fetchMock.mock.calls[0][0];
   expect(request.headers.get("Authorization")).toBe("Bearer tok");
   expect(request.headers.get("User-Agent")).toBe("esa-cli/9.9.9 (official)");
+  // 既定ではタイムアウト用の AbortSignal を注入しない。
+  expect(fetchMock.mock.calls[0][1]?.signal).toBeUndefined();
+});
+
+test("applies a request timeout when one is configured", async () => {
+  setRequestTimeoutMs(5000);
+  resolveAuth.mockReturnValue(oauth("tok", NOW() + 3600));
+  const fetchMock = stubOkFetch();
+
+  await createEsaClient().GET("/v1/user");
+
   expect(fetchMock.mock.calls[0][1]?.signal).toBeInstanceOf(AbortSignal);
 });
 

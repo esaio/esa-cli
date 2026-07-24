@@ -1,4 +1,4 @@
-import { REQUEST_TIMEOUT_MS } from "../config/index.js";
+import { OAUTH_REQUEST_TIMEOUT_MS } from "../config/index.js";
 import { t } from "../i18n/index.js";
 import { fetchWithTimeout } from "../network/fetch.js";
 import { isLoopbackHost } from "../network/loopback.js";
@@ -102,7 +102,7 @@ export async function fetchMetadata(
     response = await fetchWithTimeout(
       url,
       { headers: { Accept: "application/json" } },
-      REQUEST_TIMEOUT_MS,
+      OAUTH_REQUEST_TIMEOUT_MS,
     );
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);

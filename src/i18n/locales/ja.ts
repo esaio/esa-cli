@@ -4,6 +4,7 @@ import type { Resources } from "./en.js";
 export const ja: Resources = {
   cli: {
     description: "esa.io の公式 CLI",
+    timeoutOpt: "各 API リクエストのタイムアウト（秒、既定: なし）",
   },
   baseUrl: {
     invalid:

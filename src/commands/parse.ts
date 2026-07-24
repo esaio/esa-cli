@@ -10,6 +10,13 @@ export function positiveInt(value: string, name: string): number {
 }
 
 /**
+ * --timeout（正の整数秒）を検証してミリ秒に変換する。未指定なら undefined。
+ */
+export function parseTimeoutMs(raw: string | undefined): number | undefined {
+  return raw === undefined ? undefined : positiveInt(raw, "--timeout") * 1000;
+}
+
+/**
  * サーバー所有の列挙値をそのまま渡す。生成型より先にAPIへ値が追加されてもCLIが
  * 黙って値を捨てないよう、妥当性の最終判断はサーバーに委ねる。
  */

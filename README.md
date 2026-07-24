@@ -44,6 +44,8 @@ CI など非対話環境で使う場合は、OAuth ログインの代わりに�
 
 認証後、esa API を叩けます。レスポンスは JSON で stdout に出力するので `jq` 等に流せます。
 
+既定では API リクエストにクライアント側のタイムアウトを設けません。無応答で待たせたくない場合は、グローバルオプション `--timeout <秒>`（正の整数）をコマンド名の前に置いて上限を指定できます（例: `esa --timeout 30 post list`）。
+
 ```bash
 esa user                    # 認証ユーザーの情報 (GET /v1/user)
 esa team list                        # 所属チーム一覧 (GET /v1/teams)
