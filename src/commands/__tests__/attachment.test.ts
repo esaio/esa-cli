@@ -1,4 +1,10 @@
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  chmodSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Command } from "commander";
@@ -281,3 +287,21 @@ test("`attachment upload` rejects an empty --name before any network call", asyn
   expect(resolveTeam).not.toHaveBeenCalled();
   expect(post).not.toHaveBeenCalled();
 });
+
+// root は権限を無視して読めてしまうため（CI コンテナ等）、その環境ではスキップ。
+const cannotDenyRead = process.platform === "win32" || process.getuid?.() === 0;
+
+test.skipIf(cannotDenyRead)(
+  "`attachment upload` rejects an unreadable file before any network call",
+  async () => {
+    const file = join(tmpDir, "secret.png");
+    writeFileSync(file, new Uint8Array([1, 2, 3]));
+    chmodSync(file, 0o000);
+
+    await expect(run(["attachment", "upload", file])).rejects.toThrow(
+      /Cannot read file/i,
+    );
+    expect(resolveTeam).not.toHaveBeenCalled();
+    expect(post).not.toHaveBeenCalled();
+  },
+);

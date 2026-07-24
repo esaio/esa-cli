@@ -204,6 +204,7 @@ export const ja: Resources = {
     tooManyUrls: "sign で一度に指定できるURLは最大 {{max}} 件です。",
     notFound: "添付ファイルが見つかりません: {{url}}",
     notAFile: "ファイルではありません: {{path}}",
+    notReadable: "ファイルを読み取れません: {{path}}",
     emptyName: "--name が空です。",
     fetchFailed:
       "添付ファイルのダウンロードに失敗しました ({{status}} {{statusText}})。",

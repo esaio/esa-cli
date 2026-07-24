@@ -200,6 +200,7 @@ export const en = {
     tooManyUrls: "sign accepts at most {{max}} URLs at once.",
     notFound: "Attachment not found: {{url}}",
     notAFile: "Not a file: {{path}}",
+    notReadable: "Cannot read file: {{path}}",
     emptyName: "--name is empty.",
     fetchFailed:
       "Failed to download the attachment ({{status}} {{statusText}}).",

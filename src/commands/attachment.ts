@@ -1,5 +1,5 @@
-import { createWriteStream, openAsBlob } from "node:fs";
-import { stat } from "node:fs/promises";
+import { constants, createWriteStream, openAsBlob } from "node:fs";
+import { access, stat } from "node:fs/promises";
 import { basename } from "node:path";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
@@ -158,9 +158,21 @@ export function registerAttachmentCommand(program: Command): void {
     .option("--name <name>", t("attachment.nameOpt"))
     .action(async (file: string, options: UploadOptions) => {
       // 入力の検証はネットワーク（resolveTeam の GET /v1/teams）より先に行う。
-      const stats = await stat(file).catch(() => null);
+      // 不在（ENOENT）やパス途中が非ディレクトリ（ENOTDIR）は「ファイルでない」
+      // として扱うが、権限エラー（EACCES 等）はそのまま伝えて誤解を避ける。
+      const stats = await stat(file).catch((err: NodeJS.ErrnoException) => {
+        if (err.code === "ENOENT" || err.code === "ENOTDIR") return null;
+        throw err;
+      });
       if (!stats?.isFile()) {
         throw new Error(t("attachment.notAFile", { path: file }));
+      }
+      // 読み取り権限を事前に確認する。openAsBlob は遅延参照で、権限が無いと
+      // 送信時のストリーム読み取りで初めて失敗し、生の DOMException になるため。
+      try {
+        await access(file, constants.R_OK);
+      } catch {
+        throw new Error(t("attachment.notReadable", { path: file }));
       }
       // --name を明示したなら空文字は許さない（省略時はファイル名にフォールバック）。
       if (options.name === "") {
