@@ -186,15 +186,22 @@ export const en = {
     signDesc:
       "Get signed URLs for attachments (GET /v1/teams/{team_name}/signed_urls)",
     downloadDesc: "Download an attachment to a file or stdout",
+    uploadDesc:
+      "Upload a file and print the attachment (including its embeddable URL) (POST /v1/teams/{team_name}/attachments)",
     urlArg:
       "Attachment URL or path (e.g. https://files.esa.io/... or /uploads/...)",
+    fileArg: "Path to the file to upload",
     teamOpt: "Target team",
     expiresInOpt: "Signed URL lifetime in seconds (1-604800; default 60)",
     outputOpt: "Write to this file (default: stdout)",
+    nameOpt: "File name to use (default: the uploaded file's name)",
     expiresInRange:
       "--expires-in must be between 1 and 604800 seconds: {{value}}",
     tooManyUrls: "sign accepts at most {{max}} URLs at once.",
     notFound: "Attachment not found: {{url}}",
+    notAFile: "Not a file: {{path}}",
+    notReadable: "Cannot read file: {{path}}",
+    emptyName: "--name is empty.",
     fetchFailed:
       "Failed to download the attachment ({{status}} {{statusText}}).",
     saved: "Saved {{bytes}} bytes to {{path}}.",

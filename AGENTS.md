@@ -118,7 +118,7 @@ src/
     category.ts          # `esa category` commands (list)
     tag.ts               # `esa tag list` (list tags)
     member.ts            # `esa member list` (list members)
-    attachment.ts        # `esa attachment` commands (sign/download)
+    attachment.ts        # `esa attachment` commands (upload/sign/download)
     feedback.ts          # `esa feedback create` (send feedback to esa.io)
     api.ts               # `esa api` escape hatch to any path
     body-input.ts        # Body input (--body / --body-file / stdin)

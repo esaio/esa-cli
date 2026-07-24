@@ -191,14 +191,21 @@ export const ja: Resources = {
     signDesc:
       "添付ファイルの署名付きURLを取得します (GET /v1/teams/{team_name}/signed_urls)",
     downloadDesc: "添付ファイルをファイルまたは標準出力にダウンロードします",
+    uploadDesc:
+      "ファイルをアップロードし、添付情報（埋め込み用のURLを含む）を出力します (POST /v1/teams/{team_name}/attachments)",
     urlArg:
       "添付ファイルのURLまたはパス (例: https://files.esa.io/... または /uploads/...)",
+    fileArg: "アップロードするファイルのパス",
     teamOpt: "対象チーム",
     expiresInOpt: "署名付きURLの有効期限（秒、1〜604800、既定60）",
     outputOpt: "書き出すファイル（既定: 標準出力）",
+    nameOpt: "使用するファイル名（既定: アップロードするファイルの名前）",
     expiresInRange: "--expires-in は 1〜604800 秒で指定してください: {{value}}",
     tooManyUrls: "sign で一度に指定できるURLは最大 {{max}} 件です。",
     notFound: "添付ファイルが見つかりません: {{url}}",
+    notAFile: "ファイルではありません: {{path}}",
+    notReadable: "ファイルを読み取れません: {{path}}",
+    emptyName: "--name が空です。",
     fetchFailed:
       "添付ファイルのダウンロードに失敗しました ({{status}} {{statusText}})。",
     saved: "{{bytes}} バイトを {{path}} に保存しました。",

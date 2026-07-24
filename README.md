@@ -112,15 +112,21 @@ esa team stats                    # チームの統計情報 (GET /v1/teams/{tea
 
 ### 添付ファイル
 
-`sign` で署名付き URL を取得し、`download` で実体を取得します（`download` は内部で
-署名してからダウンロードします）。
+`upload` でファイルをアップロードし、`sign` で署名付き URL を取得し、`download` で実体を
+取得します（`download` は内部で署名してからダウンロードします）。
 
 ```bash
+esa attachment upload ./diagram.png                   # ファイルをアップロード (POST /v1/teams/{team}/attachments)
+esa attachment upload ./diagram.png --name figure.png # ファイル名を指定してアップロード
 esa attachment sign /uploads/x.png                    # 署名付きURLを取得 (GET /v1/teams/{team}/signed_urls)
 esa attachment sign /uploads/x.png --expires-in 3600  # 有効期限を1時間に
 esa attachment download https://files.esa.io/uploads/x.png -o ./x.png # 実体をファイルに保存
 esa attachment download /uploads/x.png > x.png        # 標準出力に書き出してリダイレクト
 ```
+
+`upload` は添付情報（`attachment.url` のほか name / size / content_type）を JSON で
+出力します。埋め込みには `attachment.url` をそのまま Markdown（`![alt](url)` など）に
+記載すると、アップロードしたファイルを記事やコメントに埋め込めます。
 
 署名の対象はセキュアチーム（セキュア添付）のファイルのみです。非セキュアチームの
 添付は公開 URL（`img.esa.io`）で配信されるため署名は不要で、
@@ -251,7 +257,7 @@ npx skills add esaio/esa-skills
 
 | 変数 | 説明 | 既定値 |
 | --- | --- | --- |
-| `ESA_OAUTH_SCOPE` | 要求するスコープ（スペース区切り） | `read:post write:post delete:post read:comment write:comment delete:comment read:category read:tag read:attachment read:revision read:member read:team read:user write:feedback` |
+| `ESA_OAUTH_SCOPE` | 要求するスコープ（スペース区切り） | `read:post write:post delete:post read:comment write:comment delete:comment read:category read:tag read:attachment write:attachment read:revision read:member read:team read:user write:feedback` |
 | `ESA_OAUTH_CLIENT_ID` | public app の client_id を上書き | 内蔵の公式 public app |
 | `ESA_API_BASE_URL` | API のベース URL。discovery の取得元でもある | `https://api.esa.io` |
 | `ESA_ACCESS_TOKEN` | OAuth を使わずアクセストークンを直接指定 | （未設定） |
