@@ -5,6 +5,7 @@
 export const en = {
   cli: {
     description: "Official CLI for esa.io",
+    timeoutOpt: "Timeout for each API request in seconds (default: no timeout)",
   },
   baseUrl: {
     invalid: "Invalid API base URL (check ESA_API_BASE_URL): {{url}}",

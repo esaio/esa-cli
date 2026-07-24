@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { positiveInt } from "../parse.js";
+import { parseTimeoutMs, positiveInt } from "../parse.js";
 
 test("parses a positive integer", () => {
   expect(positiveInt("3", "--page")).toBe(3);
@@ -18,4 +18,17 @@ test("rejects zero and negatives", () => {
 
 test("rejects a decimal", () => {
   expect(() => positiveInt("1.5", "n")).toThrow(/positive integer/);
+});
+
+test("parseTimeoutMs converts seconds to milliseconds", () => {
+  expect(parseTimeoutMs("30")).toBe(30000);
+});
+
+test("parseTimeoutMs returns undefined when unset", () => {
+  expect(parseTimeoutMs(undefined)).toBeUndefined();
+});
+
+test("parseTimeoutMs rejects a non-positive-integer value", () => {
+  expect(() => parseTimeoutMs("abc")).toThrow(/--timeout.*positive integer/);
+  expect(() => parseTimeoutMs("0")).toThrow(/positive integer/);
 });
