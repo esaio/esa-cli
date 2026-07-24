@@ -21,6 +21,7 @@ const DEFAULT_SCOPE = [
   "read:category",
   "read:tag",
   "read:attachment",
+  "write:attachment",
   "read:revision",
   "read:member",
   "read:team",

@@ -1,5 +1,6 @@
-import { createWriteStream } from "node:fs";
+import { createWriteStream, openAsBlob } from "node:fs";
 import { stat } from "node:fs/promises";
+import { basename } from "node:path";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import type { Command } from "commander";
@@ -12,6 +13,11 @@ import { t } from "../i18n/index.js";
 type SignedUrlsQuery = NonNullable<
   paths["/v1/teams/{team_name}/signed_urls"]["get"]["parameters"]["query"]
 >;
+
+// multipart 本文の型。openapi-typescript は binary を string 型にするため、
+// 実際に送る FormData をこの型に合わせてキャストする。
+type UploadBody =
+  paths["/v1/teams/{team_name}/attachments"]["post"]["requestBody"]["content"]["multipart/form-data"];
 
 // 署名付きURLが必要なホスト。files.esa.io / dl.esa.io は API 経由で署名する。
 // img.esa.io は公開なので署名不要で直接取得できる。
@@ -56,6 +62,7 @@ function normalizeUrl(url: string): string {
 
 type SignOptions = { team?: string; expiresIn?: string };
 type DownloadOptions = { team?: string; expiresIn?: string; output?: string };
+type UploadOptions = { team?: string; name?: string };
 
 export function registerAttachmentCommand(program: Command): void {
   const attachment = program
@@ -141,5 +148,40 @@ export function registerAttachmentCommand(program: Command): void {
         // process.stdout は閉じないよう end:false で流す。
         await pipeline(source, process.stdout, { end: false });
       }
+    });
+
+  attachment
+    .command("upload")
+    .argument("<file>", t("attachment.fileArg"))
+    .description(t("attachment.uploadDesc"))
+    .option("--team <name>", t("attachment.teamOpt"))
+    .option("--name <name>", t("attachment.nameOpt"))
+    .action(async (file: string, options: UploadOptions) => {
+      // 入力の検証はネットワーク（resolveTeam の GET /v1/teams）より先に行う。
+      const stats = await stat(file).catch(() => null);
+      if (!stats?.isFile()) {
+        throw new Error(t("attachment.notAFile", { path: file }));
+      }
+      // --name を明示したなら空文字は許さない（省略時はファイル名にフォールバック）。
+      if (options.name === "") {
+        throw new Error(t("attachment.emptyName"));
+      }
+
+      const client = createEsaClient();
+      const team = await resolveTeam(client, options.team);
+
+      // openAsBlob はファイルを全読み込みせず Blob として参照するため、
+      // 大きな添付でもメモリに載せずに multipart で送れる。
+      const blob = await openAsBlob(file);
+      const form = new FormData();
+      form.set("file", blob, basename(file));
+      // name を渡すとサーバ側でファイル名（URL の拡張子）として使われる。
+      if (options.name) form.set("name", options.name);
+
+      const result = await client.POST("/v1/teams/{team_name}/attachments", {
+        params: { path: { team_name: team } },
+        body: form as unknown as UploadBody,
+      });
+      console.log(JSON.stringify(unwrap(result), null, 2));
     });
 }

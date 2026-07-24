@@ -1,14 +1,15 @@
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Command } from "commander";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 
 const get = vi.fn();
+const post = vi.fn();
 const resolveTeam = vi.fn<() => Promise<string>>();
 
 vi.mock("../../api/client.js", () => ({
-  createEsaClient: () => ({ GET: get }),
+  createEsaClient: () => ({ GET: get, POST: post }),
 }));
 vi.mock("../../api/resolve-team.js", () => ({ resolveTeam }));
 
@@ -26,6 +27,11 @@ const ok200 = (data: unknown) => ({
   response: new Response(null, { status: 200 }),
 });
 
+const ok201 = (data: unknown) => ({
+  data,
+  response: new Response(null, { status: 201 }),
+});
+
 const fetchMock = vi.fn();
 
 let tmpDir: string;
@@ -36,6 +42,11 @@ beforeEach(() => {
     .mockReset()
     .mockResolvedValue(
       ok200({ signed_urls: [["/uploads/x.png", "https://s3/signed"]] }),
+    );
+  post
+    .mockReset()
+    .mockResolvedValue(
+      ok201({ attachment: { url: "https://img.esa.io/uploads/x.png" } }),
     );
   resolveTeam.mockReset().mockResolvedValue("resolved-team");
   // 各呼び出しで本文（ストリーム）が未消費の新しい Response を返す。
@@ -208,4 +219,65 @@ test("`attachment download` rejects an out-of-range --expires-in before any netw
   expect(resolveTeam).not.toHaveBeenCalled();
   expect(get).not.toHaveBeenCalled();
   expect(fetchMock).not.toHaveBeenCalled();
+});
+
+test("`attachment upload` posts the file as multipart and prints the result", async () => {
+  const log = vi.spyOn(console, "log").mockImplementation(() => {});
+  const file = join(tmpDir, "diagram.png");
+  writeFileSync(file, new Uint8Array([1, 2, 3]));
+
+  await run(["attachment", "upload", file, "--team", "docs"]);
+
+  expect(resolveTeam).toHaveBeenCalledWith(expect.anything(), "docs");
+  const [path, init] = post.mock.calls[0];
+  expect(path).toBe("/v1/teams/{team_name}/attachments");
+  expect(init.params).toEqual({ path: { team_name: "resolved-team" } });
+  // multipart 本文は FormData として送る（Content-Type は fetch が付ける）。
+  const body = init.body as FormData;
+  expect(body).toBeInstanceOf(FormData);
+  const filePart = body.get("file") as File;
+  expect(filePart).toBeInstanceOf(Blob);
+  expect(filePart.name).toBe("diagram.png");
+  expect(body.has("name")).toBe(false);
+  expect(JSON.parse(log.mock.calls[0][0] as string)).toEqual({
+    attachment: { url: "https://img.esa.io/uploads/x.png" },
+  });
+});
+
+test("`attachment upload` sends --name as the name field", async () => {
+  vi.spyOn(console, "log").mockImplementation(() => {});
+  const file = join(tmpDir, "diagram.png");
+  writeFileSync(file, new Uint8Array([1, 2, 3]));
+
+  await run(["attachment", "upload", file, "--name", "renamed.png"]);
+
+  const body = post.mock.calls[0][1].body as FormData;
+  expect(body.get("name")).toBe("renamed.png");
+});
+
+test("`attachment upload` rejects a missing file before any network call", async () => {
+  await expect(
+    run(["attachment", "upload", join(tmpDir, "missing.png")]),
+  ).rejects.toThrow(/Not a file/i);
+  expect(resolveTeam).not.toHaveBeenCalled();
+  expect(post).not.toHaveBeenCalled();
+});
+
+test("`attachment upload` rejects a directory before any network call", async () => {
+  await expect(run(["attachment", "upload", tmpDir])).rejects.toThrow(
+    /Not a file/i,
+  );
+  expect(resolveTeam).not.toHaveBeenCalled();
+  expect(post).not.toHaveBeenCalled();
+});
+
+test("`attachment upload` rejects an empty --name before any network call", async () => {
+  const file = join(tmpDir, "diagram.png");
+  writeFileSync(file, new Uint8Array([1, 2, 3]));
+
+  await expect(
+    run(["attachment", "upload", file, "--name", ""]),
+  ).rejects.toThrow(/--name is empty/i);
+  expect(resolveTeam).not.toHaveBeenCalled();
+  expect(post).not.toHaveBeenCalled();
 });
