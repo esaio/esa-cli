@@ -2,24 +2,32 @@
 
 Official CLI for [esa.io](https://esa.io).
 
+記事・コメント・カテゴリ・タグ・メンバー・添付ファイルをコマンドラインから操作できます。
+レスポンスは JSON で stdout に出力するので、`jq` などと組み合わせてそのままスクリプトに
+組み込めます。
+
 ## Requirements
 
 - Node.js >= 24.18.0
 - npm >= 11.7.0
 
-## Development
+## Installation
 
 ```bash
-npm install
+npm install --ignore-scripts -g @esaio/esa-cli
+```
 
-# ソースを直接実行（tsx）
-npm run dev -- auth status
+インストールすると `esa` コマンドが使えます。
 
-# ビルド（bin/ に出力）
-npm run build
+```bash
+esa --version
+esa --help
+```
 
-# ビルド後のバイナリを実行
-node bin/index.js auth status
+インストールせずに単発で実行することもできます。
+
+```bash
+npx --ignore-scripts @esaio/esa-cli auth status
 ```
 
 ## Usage
@@ -265,7 +273,24 @@ npx skills add esaio/esa-skills
 | `ESA_LANG` | 表示言語（`en` / `ja`）。最優先で使われる | OS ロケール→`en` |
 | `ESA_DEBUG` | `1` のときエラーのスタックトレースを表示 | （未設定） |
 
-## Scripts
+## Development
+
+リポジトリを clone して開発する場合の手順です。
+
+```bash
+npm install
+
+# ソースを直接実行（tsx）
+npm run dev -- auth status
+
+# ビルド（bin/ に出力）
+npm run build
+
+# ビルド後のバイナリを実行
+node bin/index.js auth status
+```
+
+### Scripts
 
 | Script | 説明 |
 | --- | --- |
