@@ -1,5 +1,6 @@
 import { Command } from "commander";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
+import { captureStdout } from "../../test-utils/stdout.js";
 
 const get = vi.fn();
 vi.mock("../../api/client.js", () => ({
@@ -14,28 +15,37 @@ function run(args: string[]): Promise<Command> {
   return program.parseAsync(args, { from: "user" });
 }
 
+const ok200 = (data: unknown) => ({
+  data,
+  response: new Response(null, { status: 200 }),
+});
+
+const originalStdoutIsTTY = process.stdout.isTTY;
+
 beforeEach(() => {
   get.mockReset();
-  get.mockResolvedValue({
-    data: { teams: [], total_count: 0 },
-    response: new Response(null, { status: 200 }),
-  });
+  get.mockResolvedValue(ok200({ teams: [], total_count: 0 }));
 });
 
 afterEach(() => {
+  process.stdout.isTTY = originalStdoutIsTTY;
   vi.restoreAllMocks();
 });
 
 test("`esa team list` calls GET /v1/teams with an empty query by default", async () => {
-  const log = vi.spyOn(console, "log").mockImplementation(() => {});
+  const { output } = captureStdout();
+  process.stdout.isTTY = false;
+  get.mockResolvedValue(
+    ok200({
+      teams: [{ name: "docs", description: "ドキュメント", privacy: "closed" }],
+      total_count: 1,
+    }),
+  );
 
   await run(["team", "list"]);
 
   expect(get).toHaveBeenCalledWith("/v1/teams", { params: { query: {} } });
-  expect(JSON.parse(log.mock.calls[0][0] as string)).toEqual({
-    teams: [],
-    total_count: 0,
-  });
+  expect(output()).toBe("docs\tドキュメント\tclosed\n");
 });
 
 test("passes --page / --per-page as numbers and a valid --role", async () => {

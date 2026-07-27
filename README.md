@@ -3,8 +3,8 @@
 Official CLI for [esa.io](https://esa.io).
 
 記事・コメント・カテゴリ・タグ・メンバー・添付ファイルをコマンドラインから操作できます。
-レスポンスは JSON で stdout に出力するので、`jq` などと組み合わせてそのままスクリプトに
-組み込めます。
+端末では読みやすく、パイプでは扱いやすい形で出力し、`--json` を付ければ指定した
+フィールドだけを JSON で取り出せるので、`jq` などと組み合わせてスクリプトに組み込めます。
 
 ## Requirements
 
@@ -41,7 +41,7 @@ Linux Secret Service）に保存されます。いずれも使えない環境で
 
 ```bash
 esa auth login     # ブラウザで OAuth 認証してトークンを保存
-esa auth status    # 現在の認証状態を表示（JSON）
+esa auth status    # 現在の認証状態を表示（--json で機械可読に）
 esa auth logout    # トークンを失効・削除
 ```
 
@@ -50,7 +50,7 @@ CI など非対話環境で使う場合は、OAuth ログインの代わりに�
 
 ### API コマンド
 
-認証後、esa API を叩けます。レスポンスは JSON で stdout に出力するので `jq` 等に流せます。
+認証後、esa API を叩けます。出力の形式は[出力形式](#出力形式)を参照してください。
 
 既定では API リクエストにクライアント側のタイムアウトを設けません。無応答で待たせたくない場合は、グローバルオプション `--timeout <秒>`（正の整数）をコマンド名の前に置いて上限を指定できます（例: `esa --timeout 30 post list`）。
 
@@ -62,6 +62,7 @@ esa team list --role owner           # 権限で絞り込み (member | owner)
 esa post list                        # 記事一覧 (GET /v1/teams/{team}/posts)
 esa post list -q "wip:true"          # 検索クエリで絞り込み
 esa post list --page 2 --per-page 50 # ページング
+esa post list --json number,url      # 指定フィールドだけを JSON で
 esa post search "keyword"            # 記事を検索（list -q と同じエンドポイント）
 esa post get 123            # 記事を1件取得
 esa post backlinks 123      # この記事を参照している記事の一覧
@@ -132,9 +133,9 @@ esa attachment download https://files.esa.io/uploads/x.png -o ./x.png # 実体�
 esa attachment download /uploads/x.png > x.png        # 標準出力に書き出してリダイレクト
 ```
 
-`upload` は添付情報（`attachment.url` のほか name / size / content_type）を JSON で
-出力します。埋め込みには `attachment.url` をそのまま Markdown（`![alt](url)` など）に
-記載すると、アップロードしたファイルを記事やコメントに埋め込めます。
+`upload` は stdout に添付の URL を出します。そのまま Markdown（`![alt](url)` など）に
+記載すると、アップロードしたファイルを記事やコメントに埋め込めます。名前やサイズも
+必要なら `--json url,name,size` のように指定してください。
 
 署名の対象はセキュアチーム（セキュア添付）のファイルのみです。非セキュアチームの
 添付は公開 URL（`img.esa.io`）で配信されるため署名は不要で、
@@ -173,9 +174,93 @@ esa api /v1/teams/{team}/comments/456 -X PATCH --input body.json
 - `-H, --header key:value`: 追加ヘッダ（繰り返し可）
 - パス中の `{team}` は対象チーム（下記の解決順、`--team` でも指定可）に置換されます
 
+### 出力形式
+
+**JSON は `--json` を指定したときだけ出ます。** 既定では、端末なら人が読みやすい形、パイプなら機械が扱いやすいテキストになります。唯一の例外は `esa api` で、API のレスポンスをそのまま返すのが役割なので、本文のある応答は常に JSON で出します（204 など本文が無ければ何も出しません）。
+
+#### 一覧
+
+`post list` / `post search` / `post backlinks` / `post revisions` /
+`comment list` / `category list` / `tag list` / `member list` / `team list` /
+`attachment sign`
+
+| 出力先 | 形式 |
+| --- | --- |
+| 端末 | 桁を揃えたテーブル。日時は相対表示（例: `2 hours ago`） |
+| パイプ | タブ区切り。見出しなし、色なし、日時は ISO 8601 |
+
+値に含まれるタブや改行は、列や行の区切りと紛れないよう空白に均されます。元の値が必要な場合は `--json` を使ってください。
+
+```bash
+esa post list                   # 端末ではテーブル
+esa post list | cut -f1,2       # パイプではタブ区切り（列位置で扱える）
+```
+
+#### 1件の取得
+
+`post get` / `comment get` / `user` / `team stats`
+
+端末では見出しと項目を並べます。本文を持つ `post get` / `comment get` は続けて本文も出します。本文（Markdown）は描画せずそのまま出すので、コピーして編集元へ貼り戻せます。
+
+```
+$ esa post get 14184
+日報/2026/07/26/esa-cli微調整 #14184
+  - State: Ship
+  - Category: 日報/2026/07/26
+  - Tags:
+  - Updated by: ppworks
+  - Updated: 1 hour ago
+  - Revision: 4
+  - Comments: 0
+  - URL: https://ware2.esa.io/posts/14184
+
+## Task
+- [ ] ...
+```
+
+パイプ時はタブ区切りのキーと値になり、本文の前に `--` が入ります。
+
+```
+$ esa post get 14184 | head -3
+wip	Ship
+category	日報/2026/07/26
+tags
+```
+
+#### 作成・更新
+
+`post create` / `update` / `append` / `prepend` / `archive` / `duplicate` / `rollback`、
+`comment create` / `update`、`attachment upload`
+
+**stdout には URL だけ**を出し、確認の1行は stderr に回します。URL をそのまま次のコマンドへ渡せます。
+
+```bash
+$ esa post create "日報/新しい記事" --body "本文"
+✓ Created #14187 日報/新しい記事        # stderr
+https://ware2.esa.io/posts/14187        # stdout
+```
+
+削除（`post delete` / `comment delete`）は、新しく辿れるものが生まれないので stdout に何も出さず、`✓` の1行だけを stderr に出します。`auth refresh` も同じですが、こちらは `--json` を付けたときだけトークンの状態を stdout に出せます。
+
+`auth status` は状態の報告なので出力先で形を変えず、常に人が読める形を出します（`--json` で機械可読にできます）。
+
+`attachment download` は添付データそのものを stdout に流すため、この規則の外です（`--output` を付けるとファイルに保存し、`✓` を stderr に出します）。
+
+#### `--json`
+
+リソースを返すコマンドでは、指定したフィールドだけを JSON で出せます。フィールド名を省くと候補が一覧表示されます。返すものが無いコマンド（`post delete` / `comment delete` / `attachment download` / `feedback create` / `config`）には付いていません。
+
+```bash
+esa post list --json number,full_name,url
+esa post get 14184 --json body_md
+esa post list --json            # 指定できるフィールドを表示
+```
+
+色は `NO_COLOR` を設定すると無効になります（パイプ時は元から付きません）。
+
 ### `jq` と組み合わせる（標準入力）
 
-各コマンドはレスポンス JSON を stdout に出し、本文やリクエストボディを標準入力（`-`）から受け取れるので、`jq` でパイプして繋げられます。エスケープ（改行やクォート）を `jq` に任せられるのも利点です。
+`--json` で JSON を stdout に出せて、本文やリクエストボディを標準入力（`-`）から受け取れるので、`jq` でパイプして繋げられます。エスケープ（改行やクォート）を `jq` に任せられるのも利点です。
 
 渡し方は 2 種類あります。
 
@@ -184,7 +269,7 @@ esa api /v1/teams/{team}/comments/456 -X PATCH --input body.json
 
 ```bash
 # 取得した JSON を jq -r でコメント本文に整形して投稿
-esa post get 123 \
+esa post get 123 --json tags \
   | jq -r '"現在のタグ（\(.tags | length)個）: \(.tags | join(", "))"' \
   | esa comment create 123 --body-file -
 
@@ -194,7 +279,7 @@ jq -n --arg body "LGTM :+1:" --arg user alice \
   | esa api /v1/teams/{team}/posts/123/comments --input -
 
 # 取得 → 加工 → 書き戻し（既存タグに1つ追加して PATCH）
-esa post get 123 \
+esa post get 123 --json tags \
   | jq '{post: {tags: (.tags + ["新タグ"])}}' \
   | esa api /v1/teams/{team}/posts/123 -X PATCH --input -
 ```

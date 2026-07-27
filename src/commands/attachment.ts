@@ -9,6 +9,9 @@ import { resolveTeam } from "../api/resolve-team.js";
 import { unwrap } from "../api/response.js";
 import type { paths } from "../generated/api-types.js";
 import { t } from "../i18n/index.js";
+import { dim } from "../output/color.js";
+import { type Column, printList } from "../output/list.js";
+import { printMutation, printSuccess } from "../output/mutation.js";
 
 type SignedUrlsQuery = NonNullable<
   paths["/v1/teams/{team_name}/signed_urls"]["get"]["parameters"]["query"]
@@ -60,9 +63,23 @@ function normalizeUrl(url: string): string {
   }
 }
 
-type SignOptions = { team?: string; expiresIn?: string };
+type SignOptions = { team?: string; expiresIn?: string; json?: string | true };
 type DownloadOptions = { team?: string; expiresIn?: string; output?: string };
-type UploadOptions = { team?: string; name?: string };
+type UploadOptions = { team?: string; name?: string; json?: string | true };
+
+/** 署名結果の1件。API はペアの配列を返すので、扱いやすい形に均す。 */
+type SignedUrl = { url: string; signed_url: string | null };
+
+const SIGNED_URL_COLUMNS: Column<SignedUrl>[] = [
+  // 署名付き URL は長いが、切ると使えなくなるので幅に収まらなくても切らない。
+  { header: t("output.colUrl"), value: (item) => item.url, truncate: false },
+  {
+    header: t("output.colSignedUrl"),
+    value: (item) => item.signed_url ?? "",
+    color: dim,
+    truncate: false,
+  },
+];
 
 export function registerAttachmentCommand(program: Command): void {
   const attachment = program
@@ -75,6 +92,7 @@ export function registerAttachmentCommand(program: Command): void {
     .description(t("attachment.signDesc"))
     .option("--team <name>", t("attachment.teamOpt"))
     .option("--expires-in <seconds>", t("attachment.expiresInOpt"))
+    .option("--json [fields]", t("output.jsonOpt"))
     .action(async (urls: string[], options: SignOptions) => {
       // 入力の検証はネットワーク（resolveTeam の GET /v1/teams）より先に行う。
       if (urls.length > MAX_SIGN_URLS) {
@@ -92,7 +110,15 @@ export function registerAttachmentCommand(program: Command): void {
       const result = await client.GET("/v1/teams/{team_name}/signed_urls", {
         params: { path: { team_name: team }, query },
       });
-      console.log(JSON.stringify(unwrap(result), null, 2));
+      const items: SignedUrl[] = (unwrap(result).signed_urls ?? []).map(
+        ([url, signedUrl]) => ({ url, signed_url: signedUrl ?? null }),
+      );
+      printList({
+        items,
+        columns: SIGNED_URL_COLUMNS,
+        emptyMessage: t("output.noResults"),
+        json: options.json,
+      });
     });
 
   attachment
@@ -141,7 +167,7 @@ export function registerAttachmentCommand(program: Command): void {
         await pipeline(source, createWriteStream(options.output));
         const { size } = await stat(options.output);
         // ファイル保存の報告は人間向けなので stderr。stdout はデータ専用に空ける。
-        console.error(
+        printSuccess(
           t("attachment.saved", { bytes: size, path: options.output }),
         );
       } else {
@@ -156,6 +182,7 @@ export function registerAttachmentCommand(program: Command): void {
     .description(t("attachment.uploadDesc"))
     .option("--team <name>", t("attachment.teamOpt"))
     .option("--name <name>", t("attachment.nameOpt"))
+    .option("--json [fields]", t("output.jsonOpt"))
     .action(async (file: string, options: UploadOptions) => {
       // 入力の検証はネットワーク（resolveTeam の GET /v1/teams）より先に行う。
       // 不在（ENOENT）やパス途中が非ディレクトリ（ENOTDIR）は「ファイルでない」
@@ -194,6 +221,16 @@ export function registerAttachmentCommand(program: Command): void {
         params: { path: { team_name: team } },
         body: form as unknown as UploadBody,
       });
-      console.log(JSON.stringify(unwrap(result), null, 2));
+      // 記事に貼れる URL が要るので、包みではなく attachment 自体を対象にする。
+      const uploaded = unwrap(result).attachment;
+      printMutation({
+        item: uploaded,
+        url: uploaded.url,
+        message: t("attachment.uploadDone", {
+          name: uploaded.name,
+          bytes: uploaded.size,
+        }),
+        json: options.json,
+      });
     });
 }

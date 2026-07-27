@@ -4,6 +4,7 @@ import { resolveTeam } from "../api/resolve-team.js";
 import { unwrap } from "../api/response.js";
 import { config } from "../config/index.js";
 import { t } from "../i18n/index.js";
+import { printSuccess } from "../output/mutation.js";
 import { readFileOrStdin } from "./body-input.js";
 
 type CreateOptions = {
@@ -78,6 +79,6 @@ export function registerFeedbackCommand(program: Command): void {
       }
 
       // 送信成功（201・本文なし）。報告は人間向けなので stderr。
-      console.error(t("feedback.sent"));
+      printSuccess(t("feedback.sent"));
     });
 }

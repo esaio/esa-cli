@@ -48,9 +48,11 @@
   "author": "esa LLC",
   "license": "MIT",
   "dependencies": {
+    "cli-truncate": "^6.1.1",
     "commander": "^15.0.0",
     "i18next": "^26.3.6",
-    "openapi-fetch": "^0.17.0"
+    "openapi-fetch": "^0.17.0",
+    "string-width": "^8.2.2"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.5",

@@ -2,8 +2,13 @@ import type { Command } from "commander";
 import { createEsaClient } from "../api/client.js";
 import { resolveTeam } from "../api/resolve-team.js";
 import { unwrap } from "../api/response.js";
-import type { paths } from "../generated/api-types.js";
+import type { components, paths } from "../generated/api-types.js";
 import { t } from "../i18n/index.js";
+import { bold, cyan, dim, green, yellow } from "../output/color.js";
+import { type DetailField, printDetail } from "../output/detail.js";
+import { type Column, printList } from "../output/list.js";
+import { printMutation, printSuccess } from "../output/mutation.js";
+import { displayTime } from "../output/time.js";
 import { type BodyOptions, readBody, requireBody } from "./body-input.js";
 import { confirm } from "./confirm.js";
 import { positiveInt } from "./parse.js";
@@ -20,11 +25,16 @@ type RevisionsQuery = NonNullable<
   paths["/v1/teams/{team_name}/posts/{post_number}/revisions"]["get"]["parameters"]["query"]
 >;
 
+type Post = components["schemas"]["Post"];
+type PostSummary = components["schemas"]["PostSummary"];
+type Revision = components["schemas"]["Revision"];
+
 type ListOptions = {
   team?: string;
   page?: string;
   perPage?: string;
   query?: string;
+  json?: string | true;
 };
 
 type WipOptions = { wip?: boolean; ship?: boolean };
@@ -67,8 +77,121 @@ function splitNameCategory(
   return { name: extractedName || undefined, category: parts.join("/") };
 }
 
-function print(value: unknown): void {
-  console.log(JSON.stringify(value, null, 2));
+function numberColumn<T>(value: (item: T) => number): Column<T> {
+  return {
+    header: t("output.colNumber"),
+    value: (item) => String(value(item)),
+    color: cyan,
+    truncate: false,
+  };
+}
+
+/** WIP / Ship の状態列。 */
+function stateColumn<T>(wip: (item: T) => boolean): Column<T> {
+  return {
+    header: t("output.colState"),
+    value: (item) => (wip(item) ? t("output.stateWip") : t("output.stateShip")),
+    color: (value, item) => (wip(item) ? yellow(value) : green(value)),
+    truncate: false,
+  };
+}
+
+const POST_COLUMNS: Column<Post>[] = [
+  numberColumn((post) => post.number),
+  {
+    header: t("output.colTitle"),
+    value: (post) => post.full_name,
+    color: bold,
+  },
+  stateColumn((post) => post.wip),
+  {
+    header: t("output.colUpdatedBy"),
+    value: (post) => post.updated_by?.screen_name ?? "",
+  },
+  {
+    header: t("output.colUpdated"),
+    value: (post) => displayTime(post.updated_at),
+    color: dim,
+  },
+];
+
+const SUMMARY_COLUMNS: Column<PostSummary>[] = [
+  numberColumn((post) => post.number),
+  {
+    header: t("output.colTitle"),
+    value: (post) => post.full_name,
+    color: bold,
+  },
+  stateColumn((post) => post.wip),
+  {
+    header: t("output.colUpdated"),
+    value: (post) => displayTime(post.updated_at),
+    color: dim,
+  },
+];
+
+const REVISION_COLUMNS: Column<Revision>[] = [
+  {
+    header: t("output.colRevision"),
+    value: (revision) => String(revision.number),
+    color: cyan,
+    truncate: false,
+  },
+  {
+    header: t("output.colAuthor"),
+    value: (revision) => revision.created_by?.screen_name ?? "",
+  },
+  {
+    header: t("output.colMessage"),
+    value: (revision) => revision.message ?? "",
+  },
+  {
+    header: t("output.colCreated"),
+    value: (revision) => displayTime(revision.created_at),
+    color: dim,
+  },
+];
+
+/** 本文の前に出すメタ情報。key は API のフィールド名に揃える。 */
+function postDetailFields(post: Post): DetailField[] {
+  return [
+    {
+      key: "wip",
+      label: t("output.fieldState"),
+      value: post.wip ? t("output.stateWip") : t("output.stateShip"),
+    },
+    {
+      key: "category",
+      label: t("output.fieldCategory"),
+      value: post.category ?? "",
+    },
+    {
+      key: "tags",
+      label: t("output.fieldTags"),
+      value: post.tags.join(", "),
+    },
+    {
+      key: "updated_by",
+      label: t("output.fieldUpdatedBy"),
+      value: post.updated_by?.screen_name ?? "",
+    },
+    {
+      key: "updated_at",
+      label: t("output.fieldUpdated"),
+      value: displayTime(post.updated_at),
+    },
+    {
+      key: "revision_number",
+      label: t("output.fieldRevision"),
+      value: String(post.revision_number),
+    },
+    {
+      key: "comments_count",
+      label: t("output.fieldComments"),
+      value: String(post.comments_count ?? 0),
+    },
+    { key: "url", label: t("output.fieldUrl"), value: post.url },
+  ];
 }
 
 export function registerPostCommand(program: Command): void {
@@ -81,8 +204,10 @@ export function registerPostCommand(program: Command): void {
     .option("--page <number>", t("post.pageOpt"))
     .option("--per-page <number>", t("post.perPageOpt"))
     .option("-q, --query <query>", t("post.queryOpt"))
+    .option("--json [fields]", t("output.jsonOpt"))
     .action(async (options: ListOptions) => {
       // 入力の検証はネットワーク（resolveTeam の GET /v1/teams）より先に行う。
+      // ただし --json のフィールド名だけは、候補を応答から取る都合で後になる。
       const query: PostsQuery = {};
       if (options.page) query.page = positiveInt(options.page, "--page");
       if (options.perPage) {
@@ -95,7 +220,15 @@ export function registerPostCommand(program: Command): void {
       const result = await client.GET("/v1/teams/{team_name}/posts", {
         params: { path: { team_name: team }, query },
       });
-      print(unwrap(result));
+      const payload = unwrap(result);
+      printList({
+        items: payload.posts ?? [],
+        columns: POST_COLUMNS,
+        emptyMessage: t("output.noResults"),
+        json: options.json,
+        // ページ情報は残す。次ページの有無は絞り込みとは無関係に必要になる。
+        wrapJson: (posts) => ({ ...payload, posts }),
+      });
     });
 
   post
@@ -105,6 +238,7 @@ export function registerPostCommand(program: Command): void {
     .option("--team <name>", t("post.listTeamOpt"))
     .option("--page <number>", t("post.pageOpt"))
     .option("--per-page <number>", t("post.perPageOpt"))
+    .option("--json [fields]", t("output.jsonOpt"))
     .action(async (queryArg: string, options: ListOptions) => {
       const query: PostsQuery = { q: queryArg };
       if (options.page) query.page = positiveInt(options.page, "--page");
@@ -117,7 +251,14 @@ export function registerPostCommand(program: Command): void {
       const result = await client.GET("/v1/teams/{team_name}/posts", {
         params: { path: { team_name: team }, query },
       });
-      print(unwrap(result));
+      const payload = unwrap(result);
+      printList({
+        items: payload.posts ?? [],
+        columns: POST_COLUMNS,
+        emptyMessage: t("output.noResults"),
+        json: options.json,
+        wrapJson: (posts) => ({ ...payload, posts }),
+      });
     });
 
   post
@@ -125,18 +266,32 @@ export function registerPostCommand(program: Command): void {
     .argument("<number>", t("post.numberArg"))
     .description(t("post.getDesc"))
     .option("--team <name>", t("post.getTeamOpt"))
-    .action(async (number: string, options: { team?: string }) => {
-      // 記事番号の検証をネットワークより先に行う。
-      const postNumber = positiveInt(number, t("post.idLabel"));
+    .option("--json [fields]", t("output.jsonOpt"))
+    .action(
+      async (
+        number: string,
+        options: { team?: string; json?: string | true },
+      ) => {
+        // 記事番号の検証をネットワークより先に行う。
+        const postNumber = positiveInt(number, t("post.idLabel"));
 
-      const client = createEsaClient();
-      const team = await resolveTeam(client, options.team);
-      const result = await client.GET(
-        "/v1/teams/{team_name}/posts/{post_number}",
-        { params: { path: { team_name: team, post_number: postNumber } } },
-      );
-      print(unwrap(result));
-    });
+        const client = createEsaClient();
+        const team = await resolveTeam(client, options.team);
+        const result = await client.GET(
+          "/v1/teams/{team_name}/posts/{post_number}",
+          { params: { path: { team_name: team, post_number: postNumber } } },
+        );
+        const post = unwrap(result);
+        printDetail({
+          item: post,
+          // esa はタイトル内に #タグ を書けるので、番号は括弧で括って区別する。
+          title: `${post.full_name} (#${post.number})`,
+          fields: postDetailFields(post),
+          body: post.body_md,
+          json: options.json,
+        });
+      },
+    );
 
   post
     .command("backlinks")
@@ -145,6 +300,7 @@ export function registerPostCommand(program: Command): void {
     .option("--team <name>", t("post.getTeamOpt"))
     .option("--page <number>", t("post.pageOpt"))
     .option("--per-page <number>", t("post.perPageOpt"))
+    .option("--json [fields]", t("output.jsonOpt"))
     .action(async (number: string, options: ListOptions) => {
       // 記事番号・ページ指定の検証をネットワークより先に行う。
       const postNumber = positiveInt(number, t("post.idLabel"));
@@ -165,7 +321,14 @@ export function registerPostCommand(program: Command): void {
           },
         },
       );
-      print(unwrap(result));
+      const payload = unwrap(result);
+      printList({
+        items: payload.posts ?? [],
+        columns: SUMMARY_COLUMNS,
+        emptyMessage: t("output.noResults"),
+        json: options.json,
+        wrapJson: (posts) => ({ ...payload, posts }),
+      });
     });
 
   post
@@ -175,6 +338,7 @@ export function registerPostCommand(program: Command): void {
     .option("--team <name>", t("post.getTeamOpt"))
     .option("--page <number>", t("post.pageOpt"))
     .option("--per-page <number>", t("post.perPageOpt"))
+    .option("--json [fields]", t("output.jsonOpt"))
     .action(async (number: string, options: ListOptions) => {
       // 記事番号・ページ指定の検証をネットワークより先に行う。
       const postNumber = positiveInt(number, t("post.idLabel"));
@@ -195,7 +359,14 @@ export function registerPostCommand(program: Command): void {
           },
         },
       );
-      print(unwrap(result));
+      const payload = unwrap(result);
+      printList({
+        items: payload.revisions ?? [],
+        columns: REVISION_COLUMNS,
+        emptyMessage: t("output.noResults"),
+        json: options.json,
+        wrapJson: (revisions) => ({ ...payload, revisions }),
+      });
     });
 
   type CreateOptions = BodyOptions &
@@ -204,6 +375,7 @@ export function registerPostCommand(program: Command): void {
       category?: string;
       tags?: string;
       message?: string;
+      json?: string | true;
     };
 
   post
@@ -218,6 +390,7 @@ export function registerPostCommand(program: Command): void {
     .option("--wip", t("post.wipOpt"))
     .option("--ship", t("post.shipOpt"))
     .option("-m, --message <message>", t("post.messageOpt"))
+    .option("--json [fields]", t("output.jsonOpt"))
     .action(async (nameArg: string, options: CreateOptions) => {
       // 本文・WIP・記事名の検証をネットワークより先に行う。
       const bodyMd = readBody(options);
@@ -241,7 +414,16 @@ export function registerPostCommand(program: Command): void {
           },
         },
       });
-      print(unwrap(result));
+      const created = unwrap(result);
+      printMutation({
+        item: created,
+        url: created.url,
+        message: t("post.createDone", {
+          number: created.number,
+          name: created.full_name,
+        }),
+        json: options.json,
+      });
     });
 
   type UpdateOptions = BodyOptions &
@@ -251,6 +433,7 @@ export function registerPostCommand(program: Command): void {
       category?: string;
       tags?: string;
       message?: string;
+      json?: string | true;
     };
 
   post
@@ -266,6 +449,7 @@ export function registerPostCommand(program: Command): void {
     .option("--wip", t("post.wipOpt"))
     .option("--ship", t("post.shipOpt"))
     .option("-m, --message <message>", t("post.messageOpt"))
+    .option("--json [fields]", t("output.jsonOpt"))
     .action(async (number: string, options: UpdateOptions) => {
       const postNumber = positiveInt(number, t("post.idLabel"));
       const bodyMd = readBody(options);
@@ -297,11 +481,20 @@ export function registerPostCommand(program: Command): void {
           },
         },
       );
-      print(unwrap(result));
+      const updated = unwrap(result);
+      printMutation({
+        item: updated,
+        url: updated.url,
+        message: t("post.updateDone", {
+          number: updated.number,
+          name: updated.full_name,
+        }),
+        json: options.json,
+      });
     });
 
   type InsertOptions = BodyOptions &
-    WipOptions & { team?: string; message?: string };
+    WipOptions & { team?: string; message?: string; json?: string | true };
 
   post
     .command("append")
@@ -313,6 +506,7 @@ export function registerPostCommand(program: Command): void {
     .option("--wip", t("post.wipOpt"))
     .option("--ship", t("post.shipOpt"))
     .option("-m, --message <message>", t("post.messageOpt"))
+    .option("--json [fields]", t("output.jsonOpt"))
     .action(async (number: string, options: InsertOptions) => {
       const postNumber = positiveInt(number, t("post.idLabel"));
       const content = requireBody(options);
@@ -327,7 +521,16 @@ export function registerPostCommand(program: Command): void {
           body: { post: { content, wip, message: options.message } },
         },
       );
-      print(unwrap(result));
+      const appended = unwrap(result);
+      printMutation({
+        item: appended,
+        url: appended.url,
+        message: t("post.appendDone", {
+          number: appended.number,
+          name: appended.full_name,
+        }),
+        json: options.json,
+      });
     });
 
   post
@@ -340,6 +543,7 @@ export function registerPostCommand(program: Command): void {
     .option("--wip", t("post.wipOpt"))
     .option("--ship", t("post.shipOpt"))
     .option("-m, --message <message>", t("post.messageOpt"))
+    .option("--json [fields]", t("output.jsonOpt"))
     .action(async (number: string, options: InsertOptions) => {
       const postNumber = positiveInt(number, t("post.idLabel"));
       const content = requireBody(options);
@@ -354,7 +558,16 @@ export function registerPostCommand(program: Command): void {
           body: { post: { content, wip, message: options.message } },
         },
       );
-      print(unwrap(result));
+      const prepended = unwrap(result);
+      printMutation({
+        item: prepended,
+        url: prepended.url,
+        message: t("post.prependDone", {
+          number: prepended.number,
+          name: prepended.full_name,
+        }),
+        json: options.json,
+      });
     });
 
   post
@@ -363,8 +576,12 @@ export function registerPostCommand(program: Command): void {
     .description(t("post.archiveDesc"))
     .option("--team <name>", t("post.getTeamOpt"))
     .option("-m, --message <message>", t("post.messageOpt"))
+    .option("--json [fields]", t("output.jsonOpt"))
     .action(
-      async (number: string, options: { team?: string; message?: string }) => {
+      async (
+        number: string,
+        options: { team?: string; message?: string; json?: string | true },
+      ) => {
         const postNumber = positiveInt(number, t("post.idLabel"));
 
         const client = createEsaClient();
@@ -376,14 +593,17 @@ export function registerPostCommand(program: Command): void {
         const post = unwrap(got);
         const current = post.category ?? "";
         if (current === "Archived" || current.startsWith("Archived/")) {
-          // 人間向けの通知は stderr、記事 JSON は stdout（`| jq` 用）に出す。
-          console.error(
-            t("post.alreadyArchived", {
+          // 変更は起きないが、出力の形は成功時と揃える。
+          printMutation({
+            item: post,
+            url: post.url,
+            message: t("post.alreadyArchived", {
               number: postNumber,
               category: current,
             }),
-          );
-          print(post);
+            notice: true,
+            json: options.json,
+          });
           return;
         }
 
@@ -399,7 +619,16 @@ export function registerPostCommand(program: Command): void {
             },
           },
         );
-        print(unwrap(result));
+        const archivedPost = unwrap(result);
+        printMutation({
+          item: archivedPost,
+          url: archivedPost.url,
+          message: t("post.archiveDone", {
+            number: archivedPost.number,
+            name: archivedPost.full_name,
+          }),
+          json: options.json,
+        });
       },
     );
 
@@ -409,10 +638,15 @@ export function registerPostCommand(program: Command): void {
     .description(t("post.duplicateDesc"))
     .option("--team <name>", t("post.sourceTeamOpt"))
     .option("--target-team <name>", t("post.targetTeamOpt"))
+    .option("--json [fields]", t("output.jsonOpt"))
     .action(
       async (
         number: string,
-        options: { team?: string; targetTeam?: string },
+        options: {
+          team?: string;
+          targetTeam?: string;
+          json?: string | true;
+        },
       ) => {
         const postNumber = positiveInt(number, t("post.idLabel"));
 
@@ -438,7 +672,16 @@ export function registerPostCommand(program: Command): void {
             post: { name: newPost.name, body_md: newPost.body_md, wip: true },
           },
         });
-        print(unwrap(result));
+        const duplicated = unwrap(result);
+        printMutation({
+          item: duplicated,
+          url: duplicated.url,
+          message: t("post.duplicateDone", {
+            number: duplicated.number,
+            name: duplicated.full_name,
+          }),
+          json: options.json,
+        });
       },
     );
 
@@ -451,11 +694,16 @@ export function registerPostCommand(program: Command): void {
     .option("--wip", t("post.wipOpt"))
     .option("--ship", t("post.shipOpt"))
     .option("-m, --message <message>", t("post.messageOpt"))
+    .option("--json [fields]", t("output.jsonOpt"))
     .action(
       async (
         number: string,
         revision: string,
-        options: WipOptions & { team?: string; message?: string },
+        options: WipOptions & {
+          team?: string;
+          message?: string;
+          json?: string | true;
+        },
       ) => {
         // 記事番号・リビジョン番号・WIP の検証をネットワークより先に行う。
         const postNumber = positiveInt(number, t("post.idLabel"));
@@ -479,7 +727,16 @@ export function registerPostCommand(program: Command): void {
             body: { post: { wip, message: options.message } },
           },
         );
-        print(unwrap(result));
+        const rolledBack = unwrap(result);
+        printMutation({
+          item: rolledBack,
+          url: rolledBack.url,
+          message: t("post.rollbackDone", {
+            number: rolledBack.number,
+            revision: revisionNumber,
+          }),
+          json: options.json,
+        });
       },
     );
 
@@ -523,7 +780,7 @@ export function registerPostCommand(program: Command): void {
           { params: { path: { team_name: team, post_number: postNumber } } },
         );
         unwrap(result); // 204 No Content。エラー時はここで投げる。
-        console.error(t("post.deleteDone", { number: postNumber }));
+        printSuccess(t("post.deleteDone", { number: postNumber }));
       },
     );
 }

@@ -7,6 +7,7 @@ import {
 } from "../config/file-store.js";
 import { t } from "../i18n/index.js";
 import { SUPPORTED_LANGUAGES } from "../i18n/resolve-language.js";
+import { printSuccess } from "../output/mutation.js";
 
 const KEY_DEFAULT_TEAM = "default-team";
 const KEY_LANGUAGE = "language";
@@ -47,7 +48,7 @@ export function registerConfigCommand(program: Command): void {
       } else {
         setDefaultTeam(trimmed);
       }
-      console.error(t("config.setDone", { key, value: trimmed }));
+      printSuccess(t("config.setDone", { key, value: trimmed }));
     });
 
   config

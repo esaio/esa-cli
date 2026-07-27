@@ -1,5 +1,6 @@
 import { Command } from "commander";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
+import { captureStdout } from "../../test-utils/stdout.js";
 
 const get = vi.fn();
 const resolveTeam = vi.fn<() => Promise<string>>();
@@ -31,17 +32,25 @@ const ok200 = (data: unknown) => ({
   response: new Response(null, { status: 200 }),
 });
 
+const originalStdoutIsTTY = process.stdout.isTTY;
+
 beforeEach(() => {
   get.mockReset().mockResolvedValue(ok200({ ok: true }));
   resolveTeam.mockReset().mockResolvedValue("resolved-team");
+  // 既定はパイプ扱いにして、テーブル整形ではなくタブ区切りを検証する。
+  process.stdout.isTTY = false;
 });
 
 afterEach(() => {
+  process.stdout.isTTY = originalStdoutIsTTY;
   vi.restoreAllMocks();
 });
 
 test("`tag list` resolves the team and calls the tags endpoint", async () => {
-  const log = vi.spyOn(console, "log").mockImplementation(() => {});
+  const { output } = captureStdout();
+  get.mockResolvedValue(
+    ok200({ tags: [{ name: "設計", posts_count: 12 }], total_count: 1 }),
+  );
 
   await run(["tag", "list", "--team", "docs", "--per-page", "50"]);
 
@@ -49,7 +58,7 @@ test("`tag list` resolves the team and calls the tags endpoint", async () => {
   expect(get).toHaveBeenCalledWith("/v1/teams/{team_name}/tags", {
     params: { path: { team_name: "resolved-team" }, query: { per_page: 50 } },
   });
-  expect(JSON.parse(log.mock.calls[0][0] as string)).toEqual({ ok: true });
+  expect(output()).toBe("設計\t12\n");
 });
 
 test("`tag list` rejects an invalid --page before any network call", async () => {
@@ -93,16 +102,20 @@ test("`category list --page` returns just that page (v=2)", async () => {
 test("`category list --all` walks every page and combines the results", async () => {
   get
     .mockResolvedValueOnce(
-      ok200({ categories: [{ full_name: "a" }], next_page: 2, total_count: 2 }),
+      ok200({
+        categories: [{ path: "a", posts: 1 }],
+        next_page: 2,
+        total_count: 2,
+      }),
     )
     .mockResolvedValueOnce(
       ok200({
-        categories: [{ full_name: "b" }],
+        categories: [{ path: "b", posts: 2 }],
         next_page: null,
         total_count: 2,
       }),
     );
-  const log = vi.spyOn(console, "log").mockImplementation(() => {});
+  const { output } = captureStdout();
 
   await run(["category", "list", "--all"]);
 
@@ -117,10 +130,8 @@ test("`category list --all` walks every page and combines the results", async ()
     per_page: 100,
     page: 2,
   });
-  expect(JSON.parse(log.mock.calls[0][0] as string)).toEqual({
-    categories: [{ full_name: "a" }, { full_name: "b" }],
-    total_count: 2,
-  });
+  // 全ページ分がひとつの表にまとまる。
+  expect(output()).toBe("a\t1\nb\t2\n");
 });
 
 test("`category list --all --page` is rejected before any network call", async () => {
@@ -142,6 +153,31 @@ test("`member list` passes valid sort and order through", async () => {
       query: { sort: "posts_count", order: "asc" },
     },
   });
+});
+
+test("`member list` renders the member columns", async () => {
+  const { output } = captureStdout();
+  get.mockResolvedValue(
+    ok200({
+      members: [
+        {
+          screen_name: "ppworks",
+          name: "Koshikawa Naoto",
+          role: "owner",
+          posts_count: 3330,
+          last_accessed_at: "2026-07-27T09:03:16+09:00",
+        },
+      ],
+      total_count: 1,
+    }),
+  );
+
+  await run(["member", "list"]);
+
+  // screen_name と name を取り違えないことを、値の並びで確かめる。
+  expect(output()).toBe(
+    "ppworks\tKoshikawa Naoto\towner\t3330\t2026-07-27T09:03:16+09:00\n",
+  );
 });
 
 test("`member list` passes unknown enum values through to the server", async () => {
@@ -171,6 +207,38 @@ test("`team stats` resolves the team and calls the stats endpoint", async () => 
   expect(get).toHaveBeenCalledWith("/v1/teams/{team_name}/stats", {
     params: { path: { team_name: "resolved-team" } },
   });
+});
+
+test("`team stats` renders each count as its own field", async () => {
+  get.mockResolvedValue(
+    ok200({
+      members: 4,
+      posts: 13963,
+      posts_wip: 962,
+      posts_shipped: 13001,
+      comments: 25883,
+      stars: 2613,
+      daily_active_users: 1,
+      weekly_active_users: 2,
+      monthly_active_users: 3,
+    }),
+  );
+  const log = vi.spyOn(console, "log").mockImplementation(() => {});
+
+  await run(["team", "stats"]);
+
+  // 値を合成すると取り違えに気づきにくく、パイプ先も内訳を取り出せない。
+  expect((log.mock.calls[0][0] as string).split("\n")).toEqual([
+    "members\t4",
+    "posts\t13963",
+    "posts_wip\t962",
+    "posts_shipped\t13001",
+    "comments\t25883",
+    "stars\t2613",
+    "daily_active_users\t1",
+    "weekly_active_users\t2",
+    "monthly_active_users\t3",
+  ]);
 });
 
 test("`post backlinks` sends the post number and paging query", async () => {
