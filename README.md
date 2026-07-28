@@ -384,9 +384,11 @@ node bin/index.js auth status
 | `npm run build` | tsdown で `bin/` にビルド |
 | `npm test` | vitest（watch） |
 | `npm run test:run` | vitest（1 回実行） |
+| `npm run test:coverage` | vitest（カバレッジ付き） |
 | `npm run lint` | biome によるチェック |
 | `npm run lint:fix` | biome による自動修正 |
 | `npm run type-check` | tsc による型チェック |
+| `npm run test:release` | テスト・型チェック・lint をまとめて実行 |
 
 ## License
 

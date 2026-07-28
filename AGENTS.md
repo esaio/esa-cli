@@ -46,16 +46,23 @@ follows a simple, command-oriented structure.
 ### Core Components
 
 1. **CLI Entry Point** (`src/index.ts`): Creates the root `commander` `Command`,
-   sets name/description/version, calls `registerCommands(program)`, and runs
-   `program.parseAsync`. Top-level errors are printed to stderr with a non-zero exit.
+   sets name/description/version, defines the global `--timeout <seconds>`
+   option, calls `registerCommands(program)`, and runs `program.parseAsync`.
+   A `preAction` hook validates `--timeout` once (`parseTimeoutMs()`) and stores
+   it via `setRequestTimeoutMs()`. Top-level errors are formatted by
+   `formatCliError()` (`src/cli-error.ts`) and printed to stderr with a non-zero
+   exit; the stack trace is shown only when `ESA_DEBUG=1`.
 
 2. **Commands** (`src/commands/`): One file per command group (`auth`, `user`,
-   `team`, `post`, `comment`, `category`, `tag`, `member`, `attachment`, `api`,
-   `config`). `commands/index.ts` aggregates registration. `api.ts` is an escape
-   hatch to any v1 path.
+   `team`, `post`, `comment`, `category`, `tag`, `member`, `attachment`,
+   `feedback`, `api`, `config`). `commands/index.ts` aggregates registration.
+   `api.ts` is an escape hatch to any v1 path.
 
 3. **API Client** (`src/api/`): `client.ts` wraps `openapi-fetch` with auth and
-   pre-request token refresh; `resolve-team.ts` resolves the target team;
+   pre-request token refresh. There is no client-side timeout by default; when
+   `--timeout` is given, `request-timeout.ts` holds the value and `client.ts`
+   swaps in `fetchWithTimeout()` (`src/network/fetch.ts`) so it applies to the
+   whole request. `resolve-team.ts` resolves the target team;
    `response.ts` unwraps responses and formats errors.
 
 4. **Auth** (`src/auth/`): OAuth (PKCE) flow, RFC 8414 discovery, and token
@@ -119,10 +126,15 @@ generated from esa's `openapi.yaml` via `openapi-typescript`.
     name here is reported as a `!` line and the command still exits 0 — the
     change already happened, and failing would invite a retry that applies it
     twice. Read commands keep failing on a bad field: retrying those is free.
-  - `printSuccess()` — actions that produce no URL (delete, `auth refresh`);
-    stdout stays empty unless `--json` is given. `auth status` keeps one
-    human-readable form on both TTY and pipe (it reports state rather than
-    returning a record) and offers `--json`.
+  - `printSuccess()` — a single `✓` line on stderr for actions that produce no
+    URL (`post delete` / `comment delete`, `auth refresh`, `config set`,
+    `feedback create`, `attachment download -o`); stdout stays empty. It takes
+    only a message, so a command that wants a machine-readable result after the
+    change calls `printJsonAfterChange()` itself — `auth refresh` is the only
+    one that does, and the delete commands have no `--json` at all.
+    `printNotice()` is its `!` counterpart for a non-failure warning.
+    `auth status` keeps one human-readable form on both TTY and pipe (it reports
+    state rather than returning a record) and offers `--json`.
   - `displayValue()` — substitutes a `-` for empty values, but only on the TTY
     paths, so piped output stays exactly what the API returned.
   - `singleLine()` — collapses tabs and newlines inside a cell or field value to
@@ -146,13 +158,14 @@ generated from esa's `openapi.yaml` via `openapi-typescript`.
 
 ```
 src/
-  index.ts               # CLI entry point (commander)
+  index.ts               # CLI entry point (commander, global --timeout)
+  cli-error.ts           # Top-level error message (stack trace only on ESA_DEBUG)
   commands/              # Subcommand definitions
     index.ts             # Aggregates command registration
     auth.ts              # `esa auth` commands (login/logout/refresh/status)
     user.ts              # `esa user`
     team.ts              # `esa team` commands (list/stats)
-    post.ts              # `esa post` commands (list/search/view/backlinks/revisions/create/update/append/prepend/duplicate/rollback/archive/delete)
+    post.ts              # `esa post` commands (list/search/view/backlinks/revisions/create/update/append/prepend/archive/duplicate/rollback/delete)
     comment.ts           # `esa comment` commands (list/view/create/update/delete)
     category.ts          # `esa category` commands (list)
     tag.ts               # `esa tag list` (list tags)
@@ -163,11 +176,11 @@ src/
     body-input.ts        # Body input (--body / --body-file / stdin)
     confirm.ts           # y/N confirmation prompt (used by delete)
     config.ts            # `esa config set/get` (default team, language)
-    parse.ts             # Shared option/argument validation
+    parse.ts             # Shared option/argument validation (incl. --timeout)
   output/                # Output formatting
     list.ts              # Shared list rendering (columns + --json) for list commands
     detail.ts            # Shared single-resource rendering (fields + body + --json)
-    mutation.ts          # Create/update result (URL on stdout, ✓ on stderr)
+    mutation.ts          # Create/update result (URL on stdout, ✓/! on stderr)
     table.ts             # Aligned table on a TTY / tab-separated when piped
     stream.ts            # Whether stdout is a TTY, and the terminal width
     color.ts             # util.styleText (Node handles NO_COLOR / TTY detection)
@@ -176,8 +189,12 @@ src/
     json-fields.ts       # --json field projection
   api/                   # esa API client
     client.ts            # openapi-fetch client (auth, pre-request token refresh)
+    request-timeout.ts   # Per-request timeout set from the global --timeout
     resolve-team.ts      # Resolve the target team (--team / ESA_TEAM / default / sole membership)
     response.ts          # Response unwrapping and error formatting
+  network/               # Low-level networking helpers
+    fetch.ts             # fetch with a whole-request timeout (keeps the caller's signal)
+    loopback.ts          # Loopback host check (base URL validation / OAuth discovery)
   i18n/                  # Localization (i18next)
     index.ts             # i18next init and the t() translation function
     resolve-language.ts  # Language resolution (ESA_LANG / config / OS locale)
