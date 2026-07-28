@@ -297,6 +297,7 @@ post / comment 系コマンドはチームを対象に動きます。チーム�
 ```bash
 esa config set default-team docs   # 既定チームを設定
 esa config get default-team        # 設定値を表示
+esa config --help                  # 対応している設定キーの一覧
 esa post list --team docs          # 明示指定
 ```
 

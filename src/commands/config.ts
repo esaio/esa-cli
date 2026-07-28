@@ -11,8 +11,31 @@ import { printSuccess } from "../output/mutation.js";
 
 const KEY_DEFAULT_TEAM = "default-team";
 const KEY_LANGUAGE = "language";
-const KNOWN_KEYS = [KEY_DEFAULT_TEAM, KEY_LANGUAGE];
+
+// 設定キーは一覧の唯一の出どころにする。ここに足せば検証・引数説明・
+// `esa config --help` のキー一覧がまとめて追従する。
+const CONFIG_KEYS = [
+  { name: KEY_DEFAULT_TEAM, describe: () => t("config.defaultTeamKeyDesc") },
+  {
+    name: KEY_LANGUAGE,
+    describe: () =>
+      t("config.languageKeyDesc", { langs: SUPPORTED_LANGUAGES.join(" | ") }),
+  },
+];
+const KNOWN_KEYS = CONFIG_KEYS.map((key) => key.name);
 const KEY_LIST = KNOWN_KEYS.join(" / ");
+
+/**
+ * --help の末尾に出すキー一覧。description に混ぜると commander が 80 桁で
+ * 折り返して桁が崩れるので、そのまま出力される addHelpText に載せる。
+ */
+function keyHelp(): string {
+  const width = Math.max(...KNOWN_KEYS.map((key) => key.length));
+  const lines = CONFIG_KEYS.map(
+    (key) => `  ${key.name.padEnd(width)}  ${key.describe()}`,
+  );
+  return `\n${t("config.keysHeading")}\n${lines.join("\n")}`;
+}
 
 function assertKnownKey(key: string): void {
   if (!KNOWN_KEYS.includes(key)) {
@@ -22,6 +45,10 @@ function assertKnownKey(key: string): void {
 
 export function registerConfigCommand(program: Command): void {
   const config = program.command("config").description(t("config.desc"));
+
+  // afterAll は自身と配下の help に出るので、config / set / get の
+  // どれに --help を付けてもキーの一覧が読める。
+  config.addHelpText("afterAll", keyHelp);
 
   config
     .command("set")

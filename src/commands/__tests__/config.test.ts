@@ -22,6 +22,25 @@ function run(args: string[]): Promise<Command> {
   return program.parseAsync(args, { from: "user" });
 }
 
+// --help は exitOverride で例外を投げて終わるので、出力を横取りしてから捨てる。
+function help(args: string[]): string {
+  let out = "";
+  const program = new Command();
+  program.exitOverride();
+  program.configureOutput({
+    writeOut: (str) => {
+      out += str;
+    },
+  });
+  registerConfigCommand(program);
+  try {
+    program.parse(args, { from: "user" });
+  } catch {
+    // commander.helpDisplayed
+  }
+  return out;
+}
+
 beforeEach(() => {
   getDefaultTeam.mockReset();
   setDefaultTeam.mockReset();
@@ -32,6 +51,27 @@ beforeEach(() => {
 afterEach(() => {
   vi.restoreAllMocks();
 });
+
+test("`config --help` lists every supported key and what it does", () => {
+  const out = help(["config", "--help"]);
+
+  expect(out).toContain("Supported keys:");
+  expect(out).toMatch(/default-team {2}Team to use when --team and ESA_TEAM/);
+  expect(out).toMatch(
+    /language {6}Language for messages and --help \(en \| ja\)/,
+  );
+});
+
+test.each([["set"], ["get"]])(
+  "`config %s --help` lists the supported keys too",
+  (subcommand) => {
+    const out = help(["config", subcommand, "--help"]);
+
+    expect(out).toContain("Supported keys:");
+    expect(out).toContain("default-team");
+    expect(out).toContain("language");
+  },
+);
 
 test("`config set default-team` stores the value", async () => {
   vi.spyOn(console, "error").mockImplementation(() => {});
