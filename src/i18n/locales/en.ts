@@ -69,14 +69,14 @@ export const en = {
     pageOpt: "Page number",
     perPageOpt: "Items per page",
     queryOpt: "Search query",
-    getDesc: "Get a post (GET /v1/teams/{team_name}/posts/{post_number})",
+    viewDesc: "View a post (GET /v1/teams/{team_name}/posts/{post_number})",
     numberArg: "Post number",
     revisionArg: "Revision number",
     revisionLabel: "revision number",
     sourceTeamOpt: "Source team to duplicate from",
     targetTeamOpt:
       "Destination team for the copy (defaults to the source team)",
-    getTeamOpt: "Target team",
+    teamOpt: "Target team",
     idLabel: "post number",
     searchDesc: "Search posts in a team (GET /v1/teams/{team_name}/posts)",
     searchQueryArg: "Search query",
@@ -129,7 +129,8 @@ export const en = {
     listDesc:
       "List comments in a team (GET /v1/teams/{team_name}/comments), or in a post with --post",
     listPostOpt: "List comments on this post number instead of the whole team",
-    getDesc: "Get a comment (GET /v1/teams/{team_name}/comments/{comment_id})",
+    viewDesc:
+      "View a comment (GET /v1/teams/{team_name}/comments/{comment_id})",
     createDesc:
       "Create a comment on a post (POST /v1/teams/{team_name}/posts/{post_number}/comments)",
     updateDesc:

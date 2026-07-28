@@ -123,7 +123,24 @@ test("`comment list` rejects an invalid --post before any network call", async (
   expect(get).not.toHaveBeenCalled();
 });
 
-test("`comment get` calls GET with the comment id in the path", async () => {
+test("`comment view` calls GET with the comment id in the path", async () => {
+  get.mockResolvedValue(ok200(commentDetail()));
+  vi.spyOn(console, "log").mockImplementation(() => {});
+
+  await run(["comment", "view", "7"]);
+
+  expect(get).toHaveBeenCalledWith(
+    "/v1/teams/{team_name}/comments/{comment_id}",
+    {
+      params: {
+        path: { team_name: "resolved-team", comment_id: 7 },
+        query: {},
+      },
+    },
+  );
+});
+
+test("`comment get` is an alias for `comment view`", async () => {
   get.mockResolvedValue(ok200(commentDetail()));
   vi.spyOn(console, "log").mockImplementation(() => {});
 
@@ -140,12 +157,12 @@ test("`comment get` calls GET with the comment id in the path", async () => {
   );
 });
 
-test("`comment get` renders the fields and the raw body", async () => {
+test("`comment view` renders the fields and the raw body", async () => {
   get.mockResolvedValue(ok200(commentDetail()));
   const log = vi.spyOn(console, "log").mockImplementation(() => {});
   process.stdout.isTTY = false;
 
-  await run(["comment", "get", "7"]);
+  await run(["comment", "view", "7"]);
 
   // 本文の前に -- を挟み、どこまでがメタ情報かを機械が判定できるようにする。
   expect((log.mock.calls[0][0] as string).split("\n")).toEqual([
@@ -160,17 +177,17 @@ test("`comment get` renders the fields and the raw body", async () => {
   ]);
 });
 
-test("`comment get --stargazers` includes stargazers", async () => {
+test("`comment view --stargazers` includes stargazers", async () => {
   get.mockResolvedValue(ok200(commentDetail()));
   vi.spyOn(console, "log").mockImplementation(() => {});
 
-  await run(["comment", "get", "7", "--stargazers"]);
+  await run(["comment", "view", "7", "--stargazers"]);
 
   expect(get.mock.calls[0][1].params.query).toEqual({ include: "stargazers" });
 });
 
-test("`comment get` rejects a non-numeric id before any network call", async () => {
-  await expect(run(["comment", "get", "abc"])).rejects.toThrow(
+test("`comment view` rejects a non-numeric id before any network call", async () => {
+  await expect(run(["comment", "view", "abc"])).rejects.toThrow(
     /comment ID.*positive integer/,
   );
   expect(resolveTeam).not.toHaveBeenCalled();

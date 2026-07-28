@@ -116,9 +116,11 @@ export function registerCommentCommand(program: Command): void {
     });
 
   comment
-    .command("get")
+    .command("view")
+    // esa API の GET に合わせて get でも引ける。
+    .alias("get")
     .argument("<id>", t("comment.idArg"))
-    .description(t("comment.getDesc"))
+    .description(t("comment.viewDesc"))
     .option("--team <name>", t("comment.teamOpt"))
     .option("--stargazers", t("comment.stargazersOpt"))
     .option("--json [fields]", t("output.jsonOpt"))
