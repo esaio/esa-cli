@@ -64,7 +64,7 @@ esa post list -q "wip:true"          # 検索クエリで絞り込み
 esa post list --page 2 --per-page 50 # ページング
 esa post list --json number,url      # 指定フィールドだけを JSON で
 esa post search "keyword"            # 記事を検索（list -q と同じエンドポイント）
-esa post get 123            # 記事を1件取得
+esa post view 123           # 記事を1件表示（get でも引ける）
 esa post backlinks 123      # この記事を参照している記事の一覧
 esa post revisions 123      # リビジョン一覧（rollback 用の番号を調べる）
 ```
@@ -95,8 +95,8 @@ esa post delete 123 --yes   # 確認をスキップ（非対話環境では --ye
 ```bash
 esa comment list            # チーム全体のコメント一覧 (GET /v1/teams/{team}/comments)
 esa comment list --post 123 # 特定の記事のコメントに絞り込み
-esa comment get 456         # コメントを1件取得
-esa comment get 456 --stargazers # スターしたメンバーも含める
+esa comment view 456        # コメントを1件表示（get でも引ける）
+esa comment view 456 --stargazers # スターしたメンバーも含める
 
 esa comment create 123 --body "コメント本文"        # 記事 123 にコメント
 cat comment.md | esa comment create 123 --body-file - # 標準入力から本文
@@ -196,14 +196,14 @@ esa post list                   # 端末ではテーブル
 esa post list | cut -f1,2       # パイプではタブ区切り（列位置で扱える）
 ```
 
-#### 1件の取得
+#### 1件の表示
 
-`post get` / `comment get` / `user` / `team stats`
+`post view` / `comment view` / `user` / `team stats`
 
-端末では見出しと項目を並べます。本文を持つ `post get` / `comment get` は続けて本文も出します。本文（Markdown）は描画せずそのまま出すので、コピーして編集元へ貼り戻せます。
+端末では見出しと項目を並べます。本文を持つ `post view` / `comment view` は続けて本文も出します。本文（Markdown）は描画せずそのまま出すので、コピーして編集元へ貼り戻せます。
 
 ```
-$ esa post get 14184
+$ esa post view 14184
 日報/2026/07/26/esa-cli微調整 #14184
   - State: Ship
   - Category: 日報/2026/07/26
@@ -221,7 +221,7 @@ $ esa post get 14184
 パイプ時はタブ区切りのキーと値になり、本文の前に `--` が入ります。
 
 ```
-$ esa post get 14184 | head -3
+$ esa post view 14184 | head -3
 wip	Ship
 category	日報/2026/07/26
 tags
@@ -252,7 +252,7 @@ https://ware2.esa.io/posts/14187        # stdout
 
 ```bash
 esa post list --json number,full_name,url
-esa post get 14184 --json body_md
+esa post view 14184 --json body_md
 esa post list --json            # 指定できるフィールドを表示
 ```
 
@@ -269,7 +269,7 @@ esa post list --json            # 指定できるフィールドを表示
 
 ```bash
 # 取得した JSON を jq -r でコメント本文に整形して投稿
-esa post get 123 --json tags \
+esa post view 123 --json tags \
   | jq -r '"現在のタグ（\(.tags | length)個）: \(.tags | join(", "))"' \
   | esa comment create 123 --body-file -
 
@@ -279,7 +279,7 @@ jq -n --arg body "LGTM :+1:" --arg user alice \
   | esa api /v1/teams/{team}/posts/123/comments --input -
 
 # 取得 → 加工 → 書き戻し（既存タグに1つ追加して PATCH）
-esa post get 123 --json tags \
+esa post view 123 --json tags \
   | jq '{post: {tags: (.tags + ["新タグ"])}}' \
   | esa api /v1/teams/{team}/posts/123 -X PATCH --input -
 ```

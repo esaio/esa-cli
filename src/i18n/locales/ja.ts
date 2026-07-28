@@ -69,14 +69,14 @@ export const ja: Resources = {
     pageOpt: "ページ番号",
     perPageOpt: "1ページあたりの件数",
     queryOpt: "検索クエリ",
-    getDesc:
-      "記事を1件取得します (GET /v1/teams/{team_name}/posts/{post_number})",
+    viewDesc:
+      "記事を1件表示します (GET /v1/teams/{team_name}/posts/{post_number})",
     numberArg: "記事番号",
     revisionArg: "リビジョン番号",
     revisionLabel: "リビジョン番号",
     sourceTeamOpt: "複製元のチーム",
     targetTeamOpt: "複製先のチーム（省略時は複製元と同じチーム）",
-    getTeamOpt: "対象チーム",
+    teamOpt: "対象チーム",
     idLabel: "記事番号",
     searchDesc: "チームの記事を検索します (GET /v1/teams/{team_name}/posts)",
     searchQueryArg: "検索クエリ",
@@ -131,8 +131,8 @@ export const ja: Resources = {
     listDesc:
       "チームのコメント一覧を表示します (GET /v1/teams/{team_name}/comments)。--post で記事に絞り込みます",
     listPostOpt: "チーム全体ではなく、指定した記事番号のコメントを表示します",
-    getDesc:
-      "コメントを1件取得します (GET /v1/teams/{team_name}/comments/{comment_id})",
+    viewDesc:
+      "コメントを1件表示します (GET /v1/teams/{team_name}/comments/{comment_id})",
     createDesc:
       "記事にコメントを作成します (POST /v1/teams/{team_name}/posts/{post_number}/comments)",
     updateDesc:

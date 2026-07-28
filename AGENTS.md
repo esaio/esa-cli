@@ -152,8 +152,8 @@ src/
     auth.ts              # `esa auth` commands (login/logout/refresh/status)
     user.ts              # `esa user`
     team.ts              # `esa team` commands (list/stats)
-    post.ts              # `esa post` commands (list/search/get/backlinks/revisions/create/update/append/prepend/duplicate/rollback/archive/delete)
-    comment.ts           # `esa comment` commands (list/get/create/update/delete)
+    post.ts              # `esa post` commands (list/search/view/backlinks/revisions/create/update/append/prepend/duplicate/rollback/archive/delete)
+    comment.ts           # `esa comment` commands (list/view/create/update/delete)
     category.ts          # `esa category` commands (list)
     tag.ts               # `esa tag list` (list tags)
     member.ts            # `esa member list` (list members)

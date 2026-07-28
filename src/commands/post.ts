@@ -262,10 +262,12 @@ export function registerPostCommand(program: Command): void {
     });
 
   post
-    .command("get")
+    .command("view")
+    // esa API の GET に合わせて get でも引ける。
+    .alias("get")
     .argument("<number>", t("post.numberArg"))
-    .description(t("post.getDesc"))
-    .option("--team <name>", t("post.getTeamOpt"))
+    .description(t("post.viewDesc"))
+    .option("--team <name>", t("post.teamOpt"))
     .option("--json [fields]", t("output.jsonOpt"))
     .action(
       async (
@@ -297,7 +299,7 @@ export function registerPostCommand(program: Command): void {
     .command("backlinks")
     .argument("<number>", t("post.numberArg"))
     .description(t("post.backlinksDesc"))
-    .option("--team <name>", t("post.getTeamOpt"))
+    .option("--team <name>", t("post.teamOpt"))
     .option("--page <number>", t("post.pageOpt"))
     .option("--per-page <number>", t("post.perPageOpt"))
     .option("--json [fields]", t("output.jsonOpt"))
@@ -335,7 +337,7 @@ export function registerPostCommand(program: Command): void {
     .command("revisions")
     .argument("<number>", t("post.numberArg"))
     .description(t("post.revisionsDesc"))
-    .option("--team <name>", t("post.getTeamOpt"))
+    .option("--team <name>", t("post.teamOpt"))
     .option("--page <number>", t("post.pageOpt"))
     .option("--per-page <number>", t("post.perPageOpt"))
     .option("--json [fields]", t("output.jsonOpt"))
@@ -382,7 +384,7 @@ export function registerPostCommand(program: Command): void {
     .command("create")
     .argument("<name>", t("post.createNameArg"))
     .description(t("post.createDesc"))
-    .option("--team <name>", t("post.getTeamOpt"))
+    .option("--team <name>", t("post.teamOpt"))
     .option("--body <markdown>", t("post.bodyOpt"))
     .option("--body-file <path>", t("post.bodyFileOpt"))
     .option("--category <path>", t("post.categoryOpt"))
@@ -440,7 +442,7 @@ export function registerPostCommand(program: Command): void {
     .command("update")
     .argument("<number>", t("post.numberArg"))
     .description(t("post.updateDesc"))
-    .option("--team <name>", t("post.getTeamOpt"))
+    .option("--team <name>", t("post.teamOpt"))
     .option("--name <name>", t("post.nameOpt"))
     .option("--body <markdown>", t("post.bodyOpt"))
     .option("--body-file <path>", t("post.bodyFileOpt"))
@@ -500,7 +502,7 @@ export function registerPostCommand(program: Command): void {
     .command("append")
     .argument("<number>", t("post.numberArg"))
     .description(t("post.appendDesc"))
-    .option("--team <name>", t("post.getTeamOpt"))
+    .option("--team <name>", t("post.teamOpt"))
     .option("--body <markdown>", t("post.bodyOpt"))
     .option("--body-file <path>", t("post.bodyFileOpt"))
     .option("--wip", t("post.wipOpt"))
@@ -537,7 +539,7 @@ export function registerPostCommand(program: Command): void {
     .command("prepend")
     .argument("<number>", t("post.numberArg"))
     .description(t("post.prependDesc"))
-    .option("--team <name>", t("post.getTeamOpt"))
+    .option("--team <name>", t("post.teamOpt"))
     .option("--body <markdown>", t("post.bodyOpt"))
     .option("--body-file <path>", t("post.bodyFileOpt"))
     .option("--wip", t("post.wipOpt"))
@@ -574,7 +576,7 @@ export function registerPostCommand(program: Command): void {
     .command("archive")
     .argument("<number>", t("post.numberArg"))
     .description(t("post.archiveDesc"))
-    .option("--team <name>", t("post.getTeamOpt"))
+    .option("--team <name>", t("post.teamOpt"))
     .option("-m, --message <message>", t("post.messageOpt"))
     .option("--json [fields]", t("output.jsonOpt"))
     .action(
@@ -690,7 +692,7 @@ export function registerPostCommand(program: Command): void {
     .argument("<number>", t("post.numberArg"))
     .argument("<revision>", t("post.revisionArg"))
     .description(t("post.rollbackDesc"))
-    .option("--team <name>", t("post.getTeamOpt"))
+    .option("--team <name>", t("post.teamOpt"))
     .option("--wip", t("post.wipOpt"))
     .option("--ship", t("post.shipOpt"))
     .option("-m, --message <message>", t("post.messageOpt"))
@@ -744,7 +746,7 @@ export function registerPostCommand(program: Command): void {
     .command("delete")
     .argument("<number>", t("post.numberArg"))
     .description(t("post.deleteDesc"))
-    .option("--team <name>", t("post.getTeamOpt"))
+    .option("--team <name>", t("post.teamOpt"))
     .option("-y, --yes", t("post.yesOpt"))
     .action(
       async (number: string, options: { team?: string; yes?: boolean }) => {

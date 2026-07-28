@@ -215,12 +215,12 @@ function postDetail(overrides: Record<string, unknown> = {}) {
   };
 }
 
-test("`post get` calls GET with the post number in the path", async () => {
+test("`post view` calls GET with the post number in the path", async () => {
   get.mockResolvedValue(ok200(postDetail()));
   const log = vi.spyOn(console, "log").mockImplementation(() => {});
   process.stdout.isTTY = false;
 
-  await run(["post", "get", "123"]);
+  await run(["post", "view", "123"]);
 
   expect(get).toHaveBeenCalledWith(
     "/v1/teams/{team_name}/posts/{post_number}",
@@ -242,13 +242,25 @@ test("`post get` calls GET with the post number in the path", async () => {
   ]);
 });
 
-test("`post get` renders a readable summary and the raw body on a TTY", async () => {
+test("`post get` is an alias for `post view`", async () => {
+  get.mockResolvedValue(ok200(postDetail()));
+  vi.spyOn(console, "log").mockImplementation(() => {});
+
+  await run(["post", "get", "123"]);
+
+  expect(get).toHaveBeenCalledWith(
+    "/v1/teams/{team_name}/posts/{post_number}",
+    { params: { path: { team_name: "resolved-team", post_number: 123 } } },
+  );
+});
+
+test("`post view` renders a readable summary and the raw body on a TTY", async () => {
   get.mockResolvedValue(ok200(postDetail()));
   const log = vi.spyOn(console, "log").mockImplementation(() => {});
   process.stdout.isTTY = true;
   process.stdout.columns = 100;
 
-  await run(["post", "get", "123"]);
+  await run(["post", "view", "123"]);
 
   const lines = stripVTControlCharacters(log.mock.calls[0][0] as string).split(
     "\n",
@@ -275,7 +287,7 @@ test("`post get --json` narrows the fields", async () => {
   get.mockResolvedValue(ok200(postDetail()));
   const log = vi.spyOn(console, "log").mockImplementation(() => {});
 
-  await run(["post", "get", "123", "--json", "number,tags"]);
+  await run(["post", "view", "123", "--json", "number,tags"]);
 
   expect(JSON.parse(log.mock.calls[0][0] as string)).toEqual({
     number: 123,
@@ -283,10 +295,10 @@ test("`post get --json` narrows the fields", async () => {
   });
 });
 
-test("`post get` rejects a non-numeric post number before any network call", async () => {
+test("`post view` rejects a non-numeric post number before any network call", async () => {
   vi.spyOn(console, "log").mockImplementation(() => {});
 
-  await expect(run(["post", "get", "abc"])).rejects.toThrow(
+  await expect(run(["post", "view", "abc"])).rejects.toThrow(
     /post number.*positive integer/,
   );
   expect(resolveTeam).not.toHaveBeenCalled();
