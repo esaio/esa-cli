@@ -1,3 +1,4 @@
+import { stripVTControlCharacters } from "node:util";
 import { Command } from "commander";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import type { TokenSet } from "../../auth/types.js";
@@ -22,17 +23,34 @@ function mockTokenStore() {
   vi.doMock("../../auth/oauth.js", () => ({ revoke, refresh }));
 }
 
-/** status を実行して stdout に出力された JSON を返す。 */
-async function runStatus(): Promise<Record<string, unknown>> {
+/** status --json を実行して stdout の JSON を返す。 */
+async function runStatus(
+  fields = "auth_method,backend,token_type,scope,has_refresh_token,expired,expires_in_seconds",
+): Promise<Record<string, unknown>> {
   const { registerAuthCommand } = await import("../auth.js");
   const log = vi.spyOn(console, "log").mockImplementation(() => {});
   const program = new Command();
   registerAuthCommand(program);
 
-  await program.parseAsync(["auth", "status"], { from: "user" });
+  await program.parseAsync(["auth", "status", "--json", fields], {
+    from: "user",
+  });
 
   const output = log.mock.calls[0]?.[0] as string;
   return JSON.parse(output) as Record<string, unknown>;
+}
+
+/** status を実行し、装飾を外した人間向けの表示を返す。 */
+async function runStatusOnTTY(): Promise<string> {
+  const { registerAuthCommand } = await import("../auth.js");
+  const log = vi.spyOn(console, "log").mockImplementation(() => {});
+  process.stdout.isTTY = true;
+  const program = new Command();
+  registerAuthCommand(program);
+
+  await program.parseAsync(["auth", "status"], { from: "user" });
+
+  return stripVTControlCharacters(log.mock.calls[0]?.[0] as string);
 }
 
 async function runLogout(): Promise<void> {
@@ -42,6 +60,8 @@ async function runLogout(): Promise<void> {
   registerAuthCommand(program);
   await program.parseAsync(["auth", "logout"], { from: "user" });
 }
+
+const originalStdoutIsTTY = process.stdout.isTTY;
 
 beforeEach(() => {
   vi.resetModules();
@@ -56,6 +76,7 @@ afterEach(() => {
   vi.restoreAllMocks();
   vi.doUnmock("../../auth/token-store.js");
   vi.doUnmock("../../auth/oauth.js");
+  process.stdout.isTTY = originalStdoutIsTTY;
   process.env.ESA_ACCESS_TOKEN = undefined;
   delete process.env.ESA_ACCESS_TOKEN;
 });
@@ -64,14 +85,14 @@ describe("esa auth status", () => {
   test("reports none when there is no token at all", async () => {
     loadTokens.mockReturnValue(null);
 
-    expect(await runStatus()).toEqual({ auth_method: "none" });
+    expect(await runStatus("auth_method")).toEqual({ auth_method: "none" });
   });
 
   test("reports the env token when ESA_ACCESS_TOKEN is set", async () => {
     loadTokens.mockReturnValue(null);
     process.env.ESA_ACCESS_TOKEN = "dummy";
 
-    expect(await runStatus()).toEqual({
+    expect(await runStatus("auth_method,source")).toEqual({
       auth_method: "env",
       source: "ESA_ACCESS_TOKEN",
     });
@@ -132,6 +153,75 @@ describe("esa auth status", () => {
   });
 });
 
+describe("esa auth status on a TTY", () => {
+  test("renders the stored token as a readable summary", async () => {
+    loadTokens.mockReturnValue({
+      access_token: "at",
+      refresh_token: "rt",
+      token_type: "Bearer",
+      scope: "read:post write:post",
+      // 単位の境界ちょうどだと、実行までの経過で表示が下の単位に落ちる。
+      expires_at: Math.floor(Date.now() / 1000) + 3600 + 300,
+      client_id: "cid",
+    });
+
+    expect(await runStatusOnTTY()).toBe(
+      [
+        "api.esa.io",
+        "  ✓ Logged in to api.esa.io (macOS Keychain)",
+        "  - Token scopes: 'read:post', 'write:post'",
+        "  - Token expires: in 1 hour",
+        "  - Refresh token: available",
+      ].join("\n"),
+    );
+  });
+
+  test("never prints the token itself", async () => {
+    loadTokens.mockReturnValue({
+      access_token: "super-secret-token",
+      token_type: "Bearer",
+      client_id: "cid",
+    });
+
+    const output = await runStatusOnTTY();
+
+    expect(output).not.toContain("super-secret-token");
+    expect(output).toContain("Refresh token: none");
+  });
+
+  test("calls out an expired token instead of showing a past time", async () => {
+    loadTokens.mockReturnValue({
+      access_token: "at",
+      token_type: "Bearer",
+      expires_at: Math.floor(Date.now() / 1000) - 10,
+      client_id: "cid",
+    });
+
+    expect(await runStatusOnTTY()).toContain("Token expires: expired");
+  });
+
+  test("points at the login command when there is no token", async () => {
+    loadTokens.mockReturnValue(null);
+
+    expect(await runStatusOnTTY()).toBe(
+      [
+        "api.esa.io",
+        "  X Not logged in to api.esa.io",
+        "  - To log in, run: esa auth login",
+      ].join("\n"),
+    );
+  });
+
+  test("names ESA_ACCESS_TOKEN as the source when it is used", async () => {
+    loadTokens.mockReturnValue(null);
+    process.env.ESA_ACCESS_TOKEN = "dummy";
+
+    expect(await runStatusOnTTY()).toContain(
+      "✓ Logged in to api.esa.io (ESA_ACCESS_TOKEN)",
+    );
+  });
+});
+
 describe("esa auth logout", () => {
   const TOKENS: TokenSet = {
     access_token: "at",
@@ -185,12 +275,40 @@ describe("esa auth refresh", () => {
     const program = new Command();
     program.exitOverride();
     registerAuthCommand(program);
-    await program.parseAsync(["auth", "refresh"], { from: "user" });
+    await program.parseAsync(
+      [
+        "auth",
+        "refresh",
+        "--json",
+        "auth_method,backend,token_type,has_refresh_token,expires_in_seconds",
+      ],
+      { from: "user" },
+    );
     return JSON.parse(log.mock.calls[0]?.[0] as string) as Record<
       string,
       unknown
     >;
   }
+
+  test("refresh writes nothing to stdout without --json", async () => {
+    loadTokens.mockReturnValue(TOKENS);
+    refresh.mockResolvedValue({
+      access_token: "new-at",
+      token_type: "Bearer",
+      client_id: "cid",
+    });
+    const { registerAuthCommand } = await import("../auth.js");
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const program = new Command();
+    registerAuthCommand(program);
+
+    await program.parseAsync(["auth", "refresh"], { from: "user" });
+
+    // 新しいリソースは生まれないので stdout は空のまま（削除と同じ）。
+    expect(log).not.toHaveBeenCalled();
+    expect(error).toHaveBeenCalledOnce();
+  });
 
   test("refreshes the OAuth token and prints the new expiry", async () => {
     loadTokens.mockReturnValue(TOKENS);

@@ -7,8 +7,10 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { stripVTControlCharacters } from "node:util";
 import { Command } from "commander";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
+import { captureStdout } from "../../test-utils/stdout.js";
 
 const get = vi.fn();
 const post = vi.fn();
@@ -42,6 +44,8 @@ const fetchMock = vi.fn();
 
 let tmpDir: string;
 
+const originalStdoutIsTTY = process.stdout.isTTY;
+
 beforeEach(() => {
   tmpDir = mkdtempSync(join(tmpdir(), "esa-att-"));
   get
@@ -49,11 +53,15 @@ beforeEach(() => {
     .mockResolvedValue(
       ok200({ signed_urls: [["/uploads/x.png", "https://s3/signed"]] }),
     );
-  post
-    .mockReset()
-    .mockResolvedValue(
-      ok201({ attachment: { url: "https://img.esa.io/uploads/x.png" } }),
-    );
+  post.mockReset().mockResolvedValue(
+    ok201({
+      attachment: {
+        url: "https://img.esa.io/uploads/x.png",
+        name: "x.png",
+        size: 3,
+      },
+    }),
+  );
   resolveTeam.mockReset().mockResolvedValue("resolved-team");
   // 各呼び出しで本文（ストリーム）が未消費の新しい Response を返す。
   fetchMock
@@ -64,12 +72,14 @@ beforeEach(() => {
 
 afterEach(() => {
   rmSync(tmpDir, { recursive: true, force: true });
+  process.stdout.isTTY = originalStdoutIsTTY;
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });
 
 test("`attachment sign` gets signed URLs with v2 (comma-joined) and prints them", async () => {
-  const log = vi.spyOn(console, "log").mockImplementation(() => {});
+  const { output } = captureStdout();
+  process.stdout.isTTY = false;
 
   await run([
     "attachment",
@@ -91,9 +101,18 @@ test("`attachment sign` gets signed URLs with v2 (comma-joined) and prints them"
       },
     },
   });
-  expect(JSON.parse(log.mock.calls[0][0] as string)).toEqual({
-    signed_urls: [["/uploads/x.png", "https://s3/signed"]],
-  });
+  // API はペアの配列を返すので、扱いやすい2列に均して出す。
+  expect(output()).toBe("/uploads/x.png\thttps://s3/signed\n");
+});
+
+test("`attachment sign --json` narrows the flattened pairs", async () => {
+  const log = vi.spyOn(console, "log").mockImplementation(() => {});
+
+  await run(["attachment", "sign", "/uploads/x.png", "--json", "signed_url"]);
+
+  expect(JSON.parse(log.mock.calls[0][0] as string)).toEqual([
+    { signed_url: "https://s3/signed" },
+  ]);
 });
 
 test("`attachment sign` passes --expires-in through", async () => {
@@ -187,11 +206,21 @@ test("`attachment download` ignores --expires-in for a public URL that needs no 
 });
 
 test("`attachment download` streams to stdout when no --output is given", async () => {
+  // 添付はバイト列なので captureStdout（文字列）ではなくこちらで受ける。
+  // pipeline が完了通知を待つ場合に備えて callback は呼び返す。
   const chunks: number[] = [];
-  vi.spyOn(process.stdout, "write").mockImplementation((chunk) => {
-    chunks.push(...(chunk as Buffer));
-    return true;
-  });
+  vi.spyOn(process.stdout, "write").mockImplementation(
+    (
+      chunk: Uint8Array | string,
+      encoding?: BufferEncoding | ((error?: Error | null) => void),
+      callback?: (error?: Error | null) => void,
+    ) => {
+      chunks.push(...(chunk as Buffer));
+      const done = typeof encoding === "function" ? encoding : callback;
+      done?.();
+      return true;
+    },
+  );
 
   await run(["attachment", "download", "/uploads/x.png"]);
 
@@ -227,8 +256,9 @@ test("`attachment download` rejects an out-of-range --expires-in before any netw
   expect(fetchMock).not.toHaveBeenCalled();
 });
 
-test("`attachment upload` posts the file as multipart and prints the result", async () => {
+test("`attachment upload` posts the file as multipart and prints the URL", async () => {
   const log = vi.spyOn(console, "log").mockImplementation(() => {});
+  const err = vi.spyOn(console, "error").mockImplementation(() => {});
   const file = join(tmpDir, "diagram.png");
   writeFileSync(file, new Uint8Array([1, 2, 3]));
 
@@ -245,8 +275,25 @@ test("`attachment upload` posts the file as multipart and prints the result", as
   expect(filePart).toBeInstanceOf(Blob);
   expect(filePart.name).toBe("diagram.png");
   expect(body.has("name")).toBe(false);
+  // 記事に貼れる URL を stdout に、確認行は stderr に出す。
+  expect(log.mock.calls).toEqual([["https://img.esa.io/uploads/x.png"]]);
+  expect(stripVTControlCharacters(err.mock.calls[0][0] as string)).toBe(
+    "✓ Uploaded x.png (3 bytes).",
+  );
+});
+
+test("`attachment upload --json` narrows the attachment fields", async () => {
+  vi.spyOn(console, "error").mockImplementation(() => {});
+  const log = vi.spyOn(console, "log").mockImplementation(() => {});
+  const file = join(tmpDir, "diagram.png");
+  writeFileSync(file, new Uint8Array([1, 2, 3]));
+
+  await run(["attachment", "upload", file, "--json", "url,size"]);
+
+  // 包みではなく attachment 自体が絞り込む対象になる。
   expect(JSON.parse(log.mock.calls[0][0] as string)).toEqual({
-    attachment: { url: "https://img.esa.io/uploads/x.png" },
+    url: "https://img.esa.io/uploads/x.png",
+    size: 3,
   });
 });
 

@@ -98,10 +98,49 @@ generated from esa's `openapi.yaml` via `openapi-typescript`.
   completion. Do not impose a manual import order beyond using `import type` for
   type-only imports.
 - **Node Version**: Requires Node.js >= 24.18.0, npm >= 11.7.0
-- **Output convention**: machine-readable data goes to stdout (usually JSON, or
-  binary data for attachment downloads); human-facing messages go to stderr
+- **Output convention**: command results go to stdout; human-facing notes
+  (confirmations, progress, "nothing found") go to stderr
+- **JSON only on request**: no command emits JSON unless `--json <fields>` is
+  given. `esa api` is the sole exception — it is a raw passthrough whose whole
+  job is to return the API response verbatim. `attachment download` is outside
+  the rule too: it streams the attachment bytes themselves to stdout.
+  Everything in `src/output/` follows from that rule.
+  - `printList()` — list commands. An aligned table on a TTY, tab-separated rows
+    when piped. Adding a list command means defining its `Column[]`; never
+    hand-roll the table, the empty case, or `--json`. Widths are display widths,
+    not character counts, so Japanese and emoji stay aligned.
+  - `printDetail()` — single resources. A labelled summary on a TTY,
+    `key<TAB>value` lines plus a `--` separator before the body when piped.
+    Bodies are emitted as raw Markdown, never rendered.
+  - `printMutation()` — create/update. The URL on stdout, a `✓` line on stderr,
+    so `esa post create ... > url.txt` yields just the URL. Pass `notice: true`
+    when nothing changed: the symbol becomes `!` but the output shape stays the
+    same, so callers need not branch on the target's state. A bad `--json` field
+    name here is reported as a `!` line and the command still exits 0 — the
+    change already happened, and failing would invite a retry that applies it
+    twice. Read commands keep failing on a bad field: retrying those is free.
+  - `printSuccess()` — actions that produce no URL (delete, `auth refresh`);
+    stdout stays empty unless `--json` is given. `auth status` keeps one
+    human-readable form on both TTY and pipe (it reports state rather than
+    returning a record) and offers `--json`.
+  - `displayValue()` — substitutes a `-` for empty values, but only on the TTY
+    paths, so piped output stays exactly what the API returned.
+  - `singleLine()` — collapses tabs and newlines inside a cell or field value to
+    a space. A tab in a comment body would otherwise read as a column break and
+    a newline as a row break, so `cut -fN` would pick up the wrong field. The
+    untouched value is still reachable through `--json`.
+  - Colour is decided per output stream. Use `greenOnStderr`/`yellowOnStderr`
+    for anything written to stderr; deciding from stdout drops the colour when
+    only stdout is redirected, and leaks escapes when only stderr is.
+  - `--json <fields>` projects fields on all three, taking the candidate list
+    from the response itself rather than a hand-maintained list.
+  - Use `displayTime()` for timestamps so the TTY/pipe split stays consistent.
 - **Validate before the network**: validate input before `createEsaClient()` /
-  `resolveTeam()` so bad input fails fast without an API call
+  `resolveTeam()` so bad input fails fast without an API call. The one exception
+  is `--json` field names, whose candidates come from the response itself, so the
+  check necessarily runs after the request. On create/update that means the
+  change is already made when a bad field name is rejected; the `✓` line is
+  printed to stderr before the projection so the outcome is still reported
 
 ## Project structure
 
@@ -125,6 +164,16 @@ src/
     confirm.ts           # y/N confirmation prompt (used by delete)
     config.ts            # `esa config set/get` (default team, language)
     parse.ts             # Shared option/argument validation
+  output/                # Output formatting
+    list.ts              # Shared list rendering (columns + --json) for list commands
+    detail.ts            # Shared single-resource rendering (fields + body + --json)
+    mutation.ts          # Create/update result (URL on stdout, ✓ on stderr)
+    table.ts             # Aligned table on a TTY / tab-separated when piped
+    stream.ts            # Whether stdout is a TTY, and the terminal width
+    color.ts             # util.styleText (Node handles NO_COLOR / TTY detection)
+    time.ts              # Relative time (Intl.RelativeTimeFormat)
+    value.ts             # Empty-value placeholder (TTY) and single-line collapsing
+    json-fields.ts       # --json field projection
   api/                   # esa API client
     client.ts            # openapi-fetch client (auth, pre-request token refresh)
     resolve-team.ts      # Resolve the target team (--team / ESA_TEAM / default / sole membership)
@@ -151,6 +200,7 @@ src/
     index.ts
     paths.ts             # Config/token storage directories
     file-store.ts        # Config file (~/.config/esa-cli/config.json) read/write
+  test-utils/            # Shared test helpers (stdout capture)
   generated/             # API types generated from openapi.yaml (npm run update-esa-api)
     api-types.ts
 ```

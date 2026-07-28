@@ -1,5 +1,6 @@
 import { Command } from "commander";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
+import { captureStdout } from "../../test-utils/stdout.js";
 
 const get = vi.fn();
 const postReq = vi.fn();
@@ -22,12 +23,27 @@ vi.mock("../confirm.js", () => ({ confirm }));
 const { registerCommentCommand } = await import("../comment.js");
 
 const originalIsTTY = process.stdin.isTTY;
+const originalStdoutIsTTY = process.stdout.isTTY;
 
 function run(args: string[]): Promise<Command> {
   const program = new Command();
   program.exitOverride();
   registerCommentCommand(program);
   return program.parseAsync(args, { from: "user" });
+}
+
+/** 詳細表示が読むフィールドを揃えたコメント。 */
+function commentDetail(overrides: Record<string, unknown> = {}) {
+  return {
+    id: 7,
+    post_number: 42,
+    body_md: "LGTM :+1:\n続きの行",
+    created_at: "2026-07-26T10:40:30+09:00",
+    created_by: { screen_name: "ppworks" },
+    stargazers_count: 3,
+    url: "https://ware2.esa.io/posts/42#comment-7",
+    ...overrides,
+  };
 }
 
 const ok200 = (data: unknown) => ({
@@ -49,11 +65,27 @@ beforeEach(() => {
 
 afterEach(() => {
   process.stdin.isTTY = originalIsTTY;
+  process.stdout.isTTY = originalStdoutIsTTY;
   vi.restoreAllMocks();
 });
 
 test("`comment list` fetches team comments by default", async () => {
-  const log = vi.spyOn(console, "log").mockImplementation(() => {});
+  const { output } = captureStdout();
+  process.stdout.isTTY = false;
+  get.mockResolvedValue(
+    ok200({
+      comments: [
+        {
+          id: 7,
+          post_number: 42,
+          body_md: "LGTM :+1:\n続きの行",
+          created_at: "2026-07-26T10:40:30+09:00",
+          created_by: { screen_name: "ppworks" },
+        },
+      ],
+      total_count: 1,
+    }),
+  );
 
   await run(["comment", "list", "--team", "docs", "--per-page", "5"]);
 
@@ -61,10 +93,10 @@ test("`comment list` fetches team comments by default", async () => {
   expect(get).toHaveBeenCalledWith("/v1/teams/{team_name}/comments", {
     params: { path: { team_name: "resolved-team" }, query: { per_page: 5 } },
   });
-  expect(JSON.parse(log.mock.calls[0][0] as string)).toEqual({
-    comments: [],
-    total_count: 0,
-  });
+  // 本文は桁揃えを壊さないよう先頭行だけにする。
+  expect(output()).toBe(
+    "7\t42\tLGTM :+1:\tppworks\t2026-07-26T10:40:30+09:00\n",
+  );
 });
 
 test("`comment list --post` fetches that post's comments", async () => {
@@ -92,7 +124,7 @@ test("`comment list` rejects an invalid --post before any network call", async (
 });
 
 test("`comment get` calls GET with the comment id in the path", async () => {
-  get.mockResolvedValue(ok200({ id: 7, body_md: "hi" }));
+  get.mockResolvedValue(ok200(commentDetail()));
   vi.spyOn(console, "log").mockImplementation(() => {});
 
   await run(["comment", "get", "7"]);
@@ -108,8 +140,28 @@ test("`comment get` calls GET with the comment id in the path", async () => {
   );
 });
 
+test("`comment get` renders the fields and the raw body", async () => {
+  get.mockResolvedValue(ok200(commentDetail()));
+  const log = vi.spyOn(console, "log").mockImplementation(() => {});
+  process.stdout.isTTY = false;
+
+  await run(["comment", "get", "7"]);
+
+  // 本文の前に -- を挟み、どこまでがメタ情報かを機械が判定できるようにする。
+  expect((log.mock.calls[0][0] as string).split("\n")).toEqual([
+    "post_number\t42",
+    "created_by\tppworks",
+    "created_at\t2026-07-26T10:40:30+09:00",
+    "stargazers_count\t3",
+    "url\thttps://ware2.esa.io/posts/42#comment-7",
+    "--",
+    "LGTM :+1:",
+    "続きの行",
+  ]);
+});
+
 test("`comment get --stargazers` includes stargazers", async () => {
-  get.mockResolvedValue(ok200({ id: 7 }));
+  get.mockResolvedValue(ok200(commentDetail()));
   vi.spyOn(console, "log").mockImplementation(() => {});
 
   await run(["comment", "get", "7", "--stargazers"]);

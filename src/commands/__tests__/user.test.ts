@@ -12,12 +12,44 @@ beforeEach(() => {
   get.mockReset();
 });
 
+const originalStdoutIsTTY = process.stdout.isTTY;
+
 afterEach(() => {
+  process.stdout.isTTY = originalStdoutIsTTY;
   vi.restoreAllMocks();
 });
 
-test("`esa user` prints the GET /v1/user response as JSON", async () => {
-  const user = { myself: true, name: "Someone", screen_name: "someone" };
+test("`esa user` prints tab-separated fields when piped", async () => {
+  const user = {
+    id: 16490,
+    name: "Someone",
+    screen_name: "someone",
+    email: "someone@example.com",
+  };
+  get.mockResolvedValue({
+    data: user,
+    response: new Response(null, { status: 200 }),
+  });
+  const log = vi.spyOn(console, "log").mockImplementation(() => {});
+  process.stdout.isTTY = false;
+
+  const program = new Command();
+  registerUserCommand(program);
+  await program.parseAsync(["user"], { from: "user" });
+
+  expect(get).toHaveBeenCalledWith("/v1/user");
+  expect(log.mock.calls[0][0]).toBe(
+    "screen_name\tsomeone\nemail\tsomeone@example.com",
+  );
+});
+
+test("`esa user --json` can select fields the summary does not show", async () => {
+  const user = {
+    id: 16490,
+    name: "Someone",
+    screen_name: "someone",
+    created_at: "2020-01-01T00:00:00+09:00",
+  };
   get.mockResolvedValue({
     data: user,
     response: new Response(null, { status: 200 }),
@@ -26,10 +58,15 @@ test("`esa user` prints the GET /v1/user response as JSON", async () => {
 
   const program = new Command();
   registerUserCommand(program);
-  await program.parseAsync(["user"], { from: "user" });
+  await program.parseAsync(["user", "--json", "id,created_at"], {
+    from: "user",
+  });
 
-  expect(get).toHaveBeenCalledWith("/v1/user");
-  expect(JSON.parse(log.mock.calls[0][0] as string)).toEqual(user);
+  // 絞り込む対象は応答そのものなので、表示に使う項目に縛られない。
+  expect(JSON.parse(log.mock.calls[0][0] as string)).toEqual({
+    id: 16490,
+    created_at: "2020-01-01T00:00:00+09:00",
+  });
 });
 
 test("`esa user` surfaces a 401 as an error", async () => {

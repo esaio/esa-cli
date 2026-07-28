@@ -2,8 +2,13 @@ import type { Command } from "commander";
 import { createEsaClient } from "../api/client.js";
 import { resolveTeam } from "../api/resolve-team.js";
 import { unwrap } from "../api/response.js";
-import type { paths } from "../generated/api-types.js";
+import type { components, paths } from "../generated/api-types.js";
 import { t } from "../i18n/index.js";
+import { cyan, dim } from "../output/color.js";
+import { printDetail } from "../output/detail.js";
+import { type Column, printList } from "../output/list.js";
+import { printMutation, printSuccess } from "../output/mutation.js";
+import { displayTime } from "../output/time.js";
 import { type BodyOptions, requireBody } from "./body-input.js";
 import { confirm } from "./confirm.js";
 import { positiveInt } from "./parse.js";
@@ -12,15 +17,41 @@ type CommentsQuery = NonNullable<
   paths["/v1/teams/{team_name}/comments"]["get"]["parameters"]["query"]
 >;
 
-function print(value: unknown): void {
-  console.log(JSON.stringify(value, null, 2));
-}
+type Comment = components["schemas"]["Comment"];
 
 /** 削除確認用に本文の先頭行を短く整える。 */
 function preview(body: string): string {
   const firstLine = body.split("\n")[0] ?? "";
   return firstLine.length > 40 ? `${firstLine.slice(0, 40)}…` : firstLine;
 }
+
+const COMMENT_COLUMNS: Column<Comment>[] = [
+  {
+    header: t("output.colId"),
+    value: (comment) => String(comment.id),
+    color: cyan,
+    truncate: false,
+  },
+  {
+    header: t("output.colPost"),
+    value: (comment) => String(comment.post_number),
+    truncate: false,
+  },
+  {
+    header: t("output.colBody"),
+    // 本文は複数行になりうるので、桁揃えを壊さないよう先頭行だけを出す。
+    value: (comment) => comment.body_md.split("\n")[0] ?? "",
+  },
+  {
+    header: t("output.colAuthor"),
+    value: (comment) => comment.created_by?.screen_name ?? "",
+  },
+  {
+    header: t("output.colCreated"),
+    value: (comment) => displayTime(comment.created_at),
+    color: dim,
+  },
+];
 
 export function registerCommentCommand(program: Command): void {
   const comment = program.command("comment").description(t("comment.desc"));
@@ -30,6 +61,7 @@ export function registerCommentCommand(program: Command): void {
     post?: string;
     page?: string;
     perPage?: string;
+    json?: string | true;
   };
 
   comment
@@ -39,6 +71,7 @@ export function registerCommentCommand(program: Command): void {
     .option("--post <number>", t("comment.listPostOpt"))
     .option("--page <number>", t("comment.pageOpt"))
     .option("--per-page <number>", t("comment.perPageOpt"))
+    .option("--json [fields]", t("output.jsonOpt"))
     .action(async (options: ListOptions) => {
       // 入力の検証はネットワーク（resolveTeam の GET /v1/teams）より先に行う。
       const query: CommentsQuery = {};
@@ -54,24 +87,32 @@ export function registerCommentCommand(program: Command): void {
       const client = createEsaClient();
       const team = await resolveTeam(client, options.team);
       // openapi-fetch は GET のパスにリテラル文字列を要求するので、記事絞り込みと
-      // チーム全体で分岐する。
-      if (postNumber !== undefined) {
-        const result = await client.GET(
-          "/v1/teams/{team_name}/posts/{post_number}/comments",
-          {
-            params: {
-              path: { team_name: team, post_number: postNumber },
-              query,
-            },
-          },
-        );
-        print(unwrap(result));
-        return;
-      }
-      const result = await client.GET("/v1/teams/{team_name}/comments", {
-        params: { path: { team_name: team }, query },
+      // チーム全体で分岐する。応答の形は同じなので、出力はまとめて行う。
+      const payload =
+        postNumber !== undefined
+          ? unwrap(
+              await client.GET(
+                "/v1/teams/{team_name}/posts/{post_number}/comments",
+                {
+                  params: {
+                    path: { team_name: team, post_number: postNumber },
+                    query,
+                  },
+                },
+              ),
+            )
+          : unwrap(
+              await client.GET("/v1/teams/{team_name}/comments", {
+                params: { path: { team_name: team }, query },
+              }),
+            );
+      printList({
+        items: payload.comments ?? [],
+        columns: COMMENT_COLUMNS,
+        emptyMessage: t("output.noResults"),
+        json: options.json,
+        wrapJson: (comments) => ({ ...payload, comments }),
       });
-      print(unwrap(result));
     });
 
   comment
@@ -80,8 +121,16 @@ export function registerCommentCommand(program: Command): void {
     .description(t("comment.getDesc"))
     .option("--team <name>", t("comment.teamOpt"))
     .option("--stargazers", t("comment.stargazersOpt"))
+    .option("--json [fields]", t("output.jsonOpt"))
     .action(
-      async (id: string, options: { team?: string; stargazers?: boolean }) => {
+      async (
+        id: string,
+        options: {
+          team?: string;
+          stargazers?: boolean;
+          json?: string | true;
+        },
+      ) => {
         const commentId = positiveInt(id, t("comment.idLabel"));
 
         const client = createEsaClient();
@@ -95,11 +144,44 @@ export function registerCommentCommand(program: Command): void {
             },
           },
         );
-        print(unwrap(result));
+        const comment = unwrap(result);
+        printDetail({
+          item: comment,
+          title: `#${comment.id}`,
+          fields: [
+            {
+              key: "post_number",
+              label: t("output.fieldPost"),
+              value: String(comment.post_number),
+            },
+            {
+              key: "created_by",
+              label: t("output.fieldCreatedBy"),
+              value: comment.created_by?.screen_name ?? "",
+            },
+            {
+              key: "created_at",
+              label: t("output.fieldCreated"),
+              value: displayTime(comment.created_at),
+            },
+            {
+              key: "stargazers_count",
+              label: t("output.fieldStars"),
+              value: String(comment.stargazers_count ?? 0),
+            },
+            { key: "url", label: t("output.fieldUrl"), value: comment.url },
+          ],
+          body: comment.body_md,
+          json: options.json,
+        });
       },
     );
 
-  type CreateOptions = BodyOptions & { team?: string; user?: string };
+  type CreateOptions = BodyOptions & {
+    team?: string;
+    user?: string;
+    json?: string | true;
+  };
 
   comment
     .command("create")
@@ -109,6 +191,7 @@ export function registerCommentCommand(program: Command): void {
     .option("--body <markdown>", t("comment.bodyOpt"))
     .option("--body-file <path>", t("comment.bodyFileOpt"))
     .option("--user <screen_name>", t("comment.userOpt"))
+    .option("--json [fields]", t("output.jsonOpt"))
     .action(async (postNumberArg: string, options: CreateOptions) => {
       // 記事番号・本文の検証をネットワークより先に行う。
       const postNumber = positiveInt(postNumberArg, t("post.idLabel"));
@@ -123,10 +206,23 @@ export function registerCommentCommand(program: Command): void {
           body: { comment: { body_md: bodyMd, user: options.user } },
         },
       );
-      print(unwrap(result));
+      const created = unwrap(result);
+      printMutation({
+        item: created,
+        url: created.url,
+        message: t("comment.createDone", {
+          id: created.id,
+          number: created.post_number,
+        }),
+        json: options.json,
+      });
     });
 
-  type UpdateOptions = BodyOptions & { team?: string; user?: string };
+  type UpdateOptions = BodyOptions & {
+    team?: string;
+    user?: string;
+    json?: string | true;
+  };
 
   comment
     .command("update")
@@ -136,6 +232,7 @@ export function registerCommentCommand(program: Command): void {
     .option("--body <markdown>", t("comment.bodyOpt"))
     .option("--body-file <path>", t("comment.bodyFileOpt"))
     .option("--user <screen_name>", t("comment.userOpt"))
+    .option("--json [fields]", t("output.jsonOpt"))
     .action(async (id: string, options: UpdateOptions) => {
       const commentId = positiveInt(id, t("comment.idLabel"));
       const bodyMd = requireBody(options);
@@ -149,7 +246,13 @@ export function registerCommentCommand(program: Command): void {
           body: { comment: { body_md: bodyMd, user: options.user } },
         },
       );
-      print(unwrap(result));
+      const updated = unwrap(result);
+      printMutation({
+        item: updated,
+        url: updated.url,
+        message: t("comment.updateDone", { id: updated.id }),
+        json: options.json,
+      });
     });
 
   comment
@@ -194,6 +297,6 @@ export function registerCommentCommand(program: Command): void {
         { params: { path: { team_name: team, comment_id: commentId } } },
       );
       unwrap(result); // 204 No Content。エラー時はここで投げる。
-      console.error(t("comment.deleteDone", { id: commentId }));
+      printSuccess(t("comment.deleteDone", { id: commentId }));
     });
 }
