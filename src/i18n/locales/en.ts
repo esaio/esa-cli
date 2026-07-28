@@ -17,6 +17,10 @@ export const en = {
     desc: "Manage esa-cli settings (~/.config/esa-cli/config.json)",
     setDesc: "Set a config value",
     getDesc: "Get a config value",
+    keysHeading: "Supported keys:",
+    defaultTeamKeyDesc: "Team to use when --team and ESA_TEAM are not set",
+    languageKeyDesc:
+      "Language for messages and --help ({{langs}}); ESA_LANG overrides it",
     keyArg: "Config key ({{keys}})",
     valueArg: "Value",
     unknownKey: "Unknown config key: {{key}} (supported: {{keys}})",
