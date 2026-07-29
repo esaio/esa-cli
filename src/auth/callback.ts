@@ -1,6 +1,7 @@
 import { createServer as createHttpServer } from "node:http";
 import type { AddressInfo } from "node:net";
-import { currentLanguage, t } from "../i18n/index.js";
+import { OAUTH_FAILURE_URL, OAUTH_SUCCESS_URL } from "../config/index.js";
+import { t } from "../i18n/index.js";
 
 export type CallbackServer = {
   port: number;
@@ -13,20 +14,20 @@ const CALLBACK_TIMEOUT_MS = 5 * 60 * 1000;
 
 export type CallbackResult = {
   status: number;
-  contentType: string;
+  headers: Record<string, string>;
   body: string;
   code?: string;
   error?: Error;
 };
 
-/** 認証完了をブラウザに表示する HTML。lang 属性は現在の言語に合わせる。 */
-function successHtml(): string {
-  return `<!doctype html>
-<html lang="${currentLanguage()}"><head><meta charset="utf-8"><title>esa CLI</title></head>
-<body style="font-family: system-ui, sans-serif; text-align: center; padding: 4rem;">
-<h1>${t("callback.successTitle")}</h1>
-<p>${t("callback.successBody")}</p>
-</body></html>`;
+/** ブラウザを結果ページへ送る。Location は固定値で、クエリは引き継がない。 */
+function redirect(location: string, error?: Error): CallbackResult {
+  return {
+    status: 302,
+    headers: { Location: location, "Referrer-Policy": "no-referrer" },
+    body: "",
+    error,
+  };
 }
 
 /** callback リクエストの URL と期待 state から、応答内容と結果を決める。 */
@@ -35,10 +36,11 @@ export function evaluateCallback(
   expectedState: string,
 ): CallbackResult {
   const url = new URL(requestUrl, "http://127.0.0.1");
+  // favicon 取得やポートスキャンでログインを失敗させない。
   if (url.pathname !== "/callback") {
     return {
       status: 404,
-      contentType: "text/plain; charset=utf-8",
+      headers: { "Content-Type": "text/plain; charset=utf-8" },
       body: t("callback.notFound"),
     };
   }
@@ -46,45 +48,32 @@ export function evaluateCallback(
   const oauthError = url.searchParams.get("error");
   if (oauthError) {
     const description = url.searchParams.get("error_description") ?? "";
-    return {
-      status: 400,
-      contentType: "text/plain; charset=utf-8",
-      body: t("callback.canceledBrowser", { error: oauthError }),
-      error: new Error(
+    return redirect(
+      OAUTH_FAILURE_URL,
+      new Error(
         t("callback.canceledError", {
           error: oauthError,
           description,
         }).trim(),
       ),
-    };
+    );
   }
 
   const state = url.searchParams.get("state");
   if (state !== expectedState) {
-    return {
-      status: 400,
-      contentType: "text/plain; charset=utf-8",
-      body: t("callback.stateMismatchBrowser"),
-      error: new Error(t("callback.stateMismatchError")),
-    };
+    return redirect(
+      OAUTH_FAILURE_URL,
+      new Error(t("callback.stateMismatchError")),
+    );
   }
 
   const code = url.searchParams.get("code");
   if (!code) {
-    return {
-      status: 400,
-      contentType: "text/plain; charset=utf-8",
-      body: t("callback.noCodeBrowser"),
-      error: new Error(t("callback.noCodeError")),
-    };
+    return redirect(OAUTH_FAILURE_URL, new Error(t("callback.noCodeError")));
   }
 
-  return {
-    status: 200,
-    contentType: "text/html; charset=utf-8",
-    body: successHtml(),
-    code,
-  };
+  // 認可レスポンスの受け取りはここで完了。以降の表示は RFC 8252 の範囲外。
+  return { ...redirect(OAUTH_SUCCESS_URL), code };
 }
 
 /** ループバックのランダムポートで待ち受ける (RFC 8252)。 */
@@ -100,10 +89,11 @@ export function startCallbackServer(
 
   const server = createHttpServer((req, res) => {
     const result = evaluateCallback(req.url ?? "/", expectedState);
-    res.writeHead(result.status, { "Content-Type": result.contentType });
-    res.end(result.body);
+    // 完了画面への遷移に失敗しても認証は成立させるため、応答より先に確定させる。
     if (result.error) rejectCode(result.error);
     else if (result.code) resolveCode(result.code);
+    res.writeHead(result.status, result.headers);
+    res.end(result.body);
   });
 
   return new Promise((resolve, reject) => {

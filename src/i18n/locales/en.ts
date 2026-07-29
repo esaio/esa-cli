@@ -355,13 +355,8 @@ export const en = {
   },
   callback: {
     notFound: "Not Found",
-    successTitle: "Authentication complete",
-    successBody: "You can close this tab and return to your terminal.",
-    canceledBrowser: "Authorization was canceled: {{error}}",
     canceledError: "Authorization error: {{error}} {{description}}",
-    stateMismatchBrowser: "state does not match",
     stateMismatchError: "state does not match (possible CSRF)",
-    noCodeBrowser: "No authorization code",
     noCodeError: "No authorization code was returned",
     timeout: "Authentication timed out (5 minutes)",
   },
