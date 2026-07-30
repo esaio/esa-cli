@@ -283,6 +283,8 @@ export const en = {
     requestFailed: "esa API request failed ({{status}}): {{detail}}",
   },
   resolveTeam: {
+    forbidden:
+      "Could not list your teams; that needs the read:team scope. Name the team with --team, set a default with `esa config set default-team <name>`, or log in again with `esa auth login --scopes read:team,...`.",
     noTeams: "You do not belong to any team.",
     multipleTeams:
       "You belong to multiple teams. Specify one with --team, or set a default with `esa config set default-team <name>`.\nTeams: {{teams}}",

@@ -287,6 +287,8 @@ export const ja: Resources = {
     requestFailed: "API リクエストに失敗しました ({{status}}): {{detail}}",
   },
   resolveTeam: {
+    forbidden:
+      "所属チームの一覧を取得できませんでした。取得には read:team が必要です。--team で対象チームを指定するか、`esa config set default-team <name>` で既定を設定するか、`esa auth login --scopes read:team,...` で入り直してください。",
     noTeams: "所属しているチームがありません。",
     multipleTeams:
       "複数のチームに所属しています。--team で指定するか、`esa config set default-team <name>` で既定を設定してください。\n所属チーム: {{teams}}",

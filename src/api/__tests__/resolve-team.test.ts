@@ -86,6 +86,15 @@ test("propagates a 401 from GET /v1/teams instead of swallowing it", async () =>
   await expect(resolveTeam(client)).rejects.toThrow(/Authentication failed/);
 });
 
+test("points at --team when the token lacks read:team", async () => {
+  // 所属チームの問い合わせは read:team を使うが、チームが分かっていれば要らない。
+  // スコープを足し直すより先に、直接指定する道を案内する。
+  getDefaultTeam.mockReturnValue(undefined);
+  const { client } = makeClient([], 403);
+
+  await expect(resolveTeam(client)).rejects.toThrow(/--team/);
+});
+
 test("ignores a whitespace-only ESA_TEAM and falls through", async () => {
   // trim して空になる値は未指定として扱う。
   process.env.ESA_TEAM = "  ";
