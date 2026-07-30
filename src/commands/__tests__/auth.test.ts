@@ -2,6 +2,7 @@ import { stripVTControlCharacters } from "node:util";
 import { Command } from "commander";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import type { TokenSet } from "../../auth/types.js";
+import type { OAuthConfig } from "../../config/index.js";
 
 /**
  * `esa auth status` の出力分岐を検証する。
@@ -12,6 +13,7 @@ const loadTokens = vi.fn<() => TokenSet | null>();
 const deleteTokens = vi.fn<() => Promise<void>>();
 const revoke = vi.fn<() => Promise<void>>();
 const refresh = vi.fn<() => Promise<TokenSet>>();
+const login = vi.fn<(oauth: OAuthConfig) => Promise<TokenSet>>();
 
 function mockTokenStore() {
   vi.doMock("../../auth/token-store.js", () => ({
@@ -20,7 +22,7 @@ function mockTokenStore() {
     getBackend: () => "keychain",
     backendLabel: () => "macOS Keychain",
   }));
-  vi.doMock("../../auth/oauth.js", () => ({ revoke, refresh }));
+  vi.doMock("../../auth/oauth.js", () => ({ login, revoke, refresh }));
 }
 
 /** status --json を実行して stdout の JSON を返す。 */
@@ -69,6 +71,11 @@ beforeEach(() => {
   deleteTokens.mockReset().mockResolvedValue();
   revoke.mockReset().mockResolvedValue();
   refresh.mockReset();
+  login.mockReset().mockResolvedValue({
+    access_token: "at",
+    token_type: "Bearer",
+    client_id: "cid",
+  });
   mockTokenStore();
 });
 
@@ -79,6 +86,7 @@ afterEach(() => {
   process.stdout.isTTY = originalStdoutIsTTY;
   process.env.ESA_ACCESS_TOKEN = undefined;
   delete process.env.ESA_ACCESS_TOKEN;
+  delete process.env.ESA_OAUTH_SCOPE;
 });
 
 describe("esa auth status", () => {
@@ -220,6 +228,70 @@ describe("esa auth status on a TTY", () => {
       "✓ Logged in to api.esa.io (ESA_ACCESS_TOKEN)",
     );
   });
+});
+
+describe("esa auth login", () => {
+  /** login を実行し、認可リクエストに載る scope を返す。 */
+  async function runLogin(...args: string[]): Promise<string> {
+    const { registerAuthCommand } = await import("../auth.js");
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const program = new Command();
+    registerAuthCommand(program);
+
+    await program.parseAsync(["auth", "login", ...args], { from: "user" });
+
+    return login.mock.calls[0]?.[0].scope as string;
+  }
+
+  test("requests every scope esa-cli uses by default", async () => {
+    const scope = await runLogin();
+
+    expect(scope.split(" ")).toEqual(
+      expect.arrayContaining(["read:post", "write:post", "delete:post"]),
+    );
+  });
+
+  test("requests only the given scopes", async () => {
+    expect(await runLogin("--scopes", "read:post,read:comment")).toBe(
+      "read:post read:comment",
+    );
+  });
+
+  test("takes the scopes space-separated too, and folds duplicates", async () => {
+    expect(await runLogin("-s", "write:post read:post write:post")).toBe(
+      "write:post read:post",
+    );
+  });
+
+  test("takes the singular --scope as an alias", async () => {
+    expect(await runLogin("--scope", "read:post")).toBe("read:post");
+  });
+
+  test("passes through a scope it does not know (the server decides)", async () => {
+    expect(await runLogin("--scopes", "admin:post")).toBe("admin:post");
+  });
+
+  test("--scopes wins over ESA_OAUTH_SCOPE", async () => {
+    process.env.ESA_OAUTH_SCOPE = "read:team";
+
+    expect(await runLogin("--scopes", "read:post")).toBe("read:post");
+  });
+
+  test.each([
+    // 区切り忘れ。2 語とも action:resource の形になっていない。
+    "read post",
+    // resource だけ、action だけ、区切りが多いもの。
+    "read:post,post",
+    "read::post",
+    // 空。
+    " , ",
+  ])(
+    "rejects a malformed --scopes (%s) before opening the browser",
+    async (scopes) => {
+      await expect(runLogin("--scopes", scopes)).rejects.toThrow(/--scopes/);
+      expect(login).not.toHaveBeenCalled();
+    },
+  );
 });
 
 describe("esa auth logout", () => {

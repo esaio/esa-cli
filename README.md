@@ -45,6 +45,20 @@ esa auth status    # 現在の認証状態を表示（--json で機械可読に�
 esa auth logout    # トークンを失効・削除
 ```
 
+既定では esa-cli の全コマンドが使うスコープを要求します。読み取りだけに絞るなど、
+要求するスコープを選びたい場合は `-s, --scopes` で指定します（スペースまたはカンマ区切り。
+環境変数 `ESA_OAUTH_SCOPE` より優先されます）。
+
+```bash
+esa auth login --scopes "read:post read:comment"   # 読み取りのみ
+esa auth login --scopes read:post,write:post       # カンマ区切りでも指定できる
+```
+
+指定できるスコープは `action:resource` の形です（`read:post` / `write:post` /
+`delete:post` など）。実際に許可されるかはチームの設定にもよります。要求しなかった
+スコープが必要なコマンドは失敗するので、その場合は改めて `esa auth login` します。
+許可されたスコープは `esa auth status` で確認できます。
+
 CI など非対話環境で使う場合は、OAuth ログインの代わりに環境変数 `ESA_ACCESS_TOKEN`
 に Personal Access Token を設定すれば認証できます（**PAT v2 を推奨**）。
 
@@ -351,7 +365,7 @@ npx skills add esaio/esa-skills
 
 | 変数 | 説明 | 既定値 |
 | --- | --- | --- |
-| `ESA_OAUTH_SCOPE` | 要求するスコープ（スペース区切り） | `read:post write:post delete:post read:comment write:comment delete:comment read:category read:tag read:attachment write:attachment read:revision read:member read:team read:user write:feedback` |
+| `ESA_OAUTH_SCOPE` | 要求するスコープ（スペース区切り）。`esa auth login --scopes` が優先される | `read:post write:post delete:post read:comment write:comment delete:comment read:category read:tag read:attachment write:attachment read:revision read:member read:team read:user write:feedback` |
 | `ESA_OAUTH_CLIENT_ID` | public app の client_id を上書き | 内蔵の公式 public app |
 | `ESA_API_BASE_URL` | API のベース URL。discovery の取得元でもある | `https://api.esa.io` |
 | `ESA_ACCESS_TOKEN` | OAuth を使わずアクセストークンを直接指定 | （未設定） |

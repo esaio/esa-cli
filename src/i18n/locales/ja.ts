@@ -33,6 +33,11 @@ export const ja: Resources = {
     loginDesc: "OAuth（ブラウザ）で esa.io にログインします",
     loginSuccess: "認証に成功しました。トークンを {{backend}} に保存しました。",
     loginScope: "許可されたスコープ: {{scope}}",
+    scopesOpt:
+      "要求するスコープ（スペースまたはカンマ区切り。既定は esa-cli の全コマンドが使うスコープ）",
+    scopesEmpty: "--scopes にはスコープを 1 つ以上指定してください。",
+    scopesInvalid:
+      "--scopes は action:resource の形（例: read:post）でスペースまたはカンマ区切りで指定してください: {{scopes}}",
     logoutDesc: "ログアウトして保存済みトークンを削除します",
     revokeFailed: "トークンの失効に失敗しました（削除は続行します）: {{error}}",
     logoutDone: "ログアウトしました。",
@@ -282,6 +287,8 @@ export const ja: Resources = {
     requestFailed: "API リクエストに失敗しました ({{status}}): {{detail}}",
   },
   resolveTeam: {
+    forbidden:
+      "所属チームの一覧を取得できませんでした。取得には read:team が必要です。--team で対象チームを指定するか、`esa config set default-team <name>` で既定を設定するか、`esa auth login --scopes read:team,...` で入り直してください。",
     noTeams: "所属しているチームがありません。",
     multipleTeams:
       "複数のチームに所属しています。--team で指定するか、`esa config set default-team <name>` で既定を設定してください。\n所属チーム: {{teams}}",

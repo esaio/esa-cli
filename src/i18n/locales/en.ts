@@ -33,6 +33,11 @@ export const en = {
     loginDesc: "Log in to esa.io via OAuth (browser)",
     loginSuccess: "Logged in. Saved the token to {{backend}}.",
     loginScope: "Granted scope: {{scope}}",
+    scopesOpt:
+      "Scopes to request, space- or comma-separated (defaults to every scope esa-cli commands use)",
+    scopesEmpty: "--scopes needs at least one scope.",
+    scopesInvalid:
+      "--scopes takes scopes in the form action:resource (e.g. read:post), separated by a space or a comma: {{scopes}}",
     logoutDesc: "Log out and remove the stored token",
     revokeFailed:
       "Failed to revoke the token (continuing with deletion): {{error}}",
@@ -278,6 +283,8 @@ export const en = {
     requestFailed: "esa API request failed ({{status}}): {{detail}}",
   },
   resolveTeam: {
+    forbidden:
+      "Could not list your teams; that needs the read:team scope. Name the team with --team, set a default with `esa config set default-team <name>`, or log in again with `esa auth login --scopes read:team,...`.",
     noTeams: "You do not belong to any team.",
     multipleTeams:
       "You belong to multiple teams. Specify one with --team, or set a default with `esa config set default-team <name>`.\nTeams: {{teams}}",

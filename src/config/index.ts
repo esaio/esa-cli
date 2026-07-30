@@ -87,12 +87,17 @@ function normalizeApiBaseUrl(apiBaseUrl: string): string {
   return `${url.origin}${pathname}`;
 }
 
-export function getOAuthConfig(): OAuthConfig {
+/**
+ * scope は `esa auth login --scopes` > ESA_OAUTH_SCOPE > 既定（全コマンド分）の
+ * 順で決まる。login 以外（refresh / logout）は scope を送らないので既定のままで
+ * よい。
+ */
+export function getOAuthConfig(scope?: string): OAuthConfig {
   const apiBaseUrl = config.esa.apiBaseUrl;
   const normalizedApiBaseUrl = normalizeApiBaseUrl(apiBaseUrl);
   return {
     clientId: process.env.ESA_OAUTH_CLIENT_ID || DEFAULT_CLIENT_ID,
-    scope: process.env.ESA_OAUTH_SCOPE || DEFAULT_SCOPE,
+    scope: scope || process.env.ESA_OAUTH_SCOPE || DEFAULT_SCOPE,
     apiBaseUrl: normalizedApiBaseUrl,
   };
 }

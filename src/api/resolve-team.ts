@@ -25,7 +25,14 @@ export async function resolveTeam(
   const configured = getDefaultTeam()?.trim();
   if (configured) return configured;
 
-  const data = unwrap(await client.GET("/v1/teams"));
+  const result = await client.GET("/v1/teams");
+  // 所属チームを調べるためだけに read:team を使う。スコープを絞ったトークンでは
+  // ここで 403 になるが、対象チームが分かっていれば要らない問い合わせなので、
+  // スコープを足し直すより先にチームを直接指定する道を案内する。
+  if (result.response.status === 403) {
+    throw new Error(t("resolveTeam.forbidden"));
+  }
+  const data = unwrap(result);
   const teams = data.teams ?? [];
   if (teams.length === 1) return teams[0].name;
   if (teams.length === 0) {
