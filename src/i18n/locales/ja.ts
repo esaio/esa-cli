@@ -33,6 +33,11 @@ export const ja: Resources = {
     loginDesc: "OAuth（ブラウザ）で esa.io にログインします",
     loginSuccess: "認証に成功しました。トークンを {{backend}} に保存しました。",
     loginScope: "許可されたスコープ: {{scope}}",
+    scopesOpt:
+      "要求するスコープ（スペースまたはカンマ区切り。既定は esa-cli の全コマンドが使うスコープ）",
+    scopesEmpty: "--scopes にはスコープを 1 つ以上指定してください。",
+    scopesInvalid:
+      "--scopes は action:resource の形（例: read:post）でスペースまたはカンマ区切りで指定してください: {{scopes}}",
     logoutDesc: "ログアウトして保存済みトークンを削除します",
     revokeFailed: "トークンの失効に失敗しました（削除は続行します）: {{error}}",
     logoutDone: "ログアウトしました。",

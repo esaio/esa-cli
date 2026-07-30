@@ -68,7 +68,10 @@ follows a simple, command-oriented structure.
 4. **Auth** (`src/auth/`): OAuth (PKCE) flow, RFC 8414 discovery, and token
    storage. Tokens are saved to the OS credential store (macOS Keychain / Windows
    Credential Manager / Linux Secret Service), falling back to an AES-256-GCM
-   encrypted file under `~/.config/esa-cli`.
+   encrypted file under `~/.config/esa-cli`. The requested scope comes from
+   `esa auth login --scopes`, then `ESA_OAUTH_SCOPE`, then the built-in default
+   (every scope the commands use); which scopes exist is the authorization
+   server's call, so `commands/auth.ts` only normalizes and shape-checks them.
 
 5. **Configuration** (`src/config/index.ts`): Defines the API and OAuth config.
    `ESA_TEAM` is read by `src/api/resolve-team.ts`, and `ESA_LANG` is read by

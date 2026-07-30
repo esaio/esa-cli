@@ -1,4 +1,4 @@
-import type { Command } from "commander";
+import { type Command, Option } from "commander";
 import { login, refresh, revoke } from "../auth/oauth.js";
 import { type ResolvedAuth, resolveAuth } from "../auth/resolve-auth.js";
 import {
@@ -14,6 +14,29 @@ import { fieldLine } from "../output/detail.js";
 import { printJson } from "../output/json-fields.js";
 import { printJsonAfterChange, printSuccess } from "../output/mutation.js";
 import { relativeTime } from "../output/time.js";
+
+/** esa のスコープは `read:post` のような action:resource の対で表される。 */
+const SCOPE_PATTERN = /^[^\s:]+:[^\s:]+$/;
+
+/**
+ * --scopes を OAuth の scope 値（スペース区切り）に整える。カンマ区切りでも
+ * 書けるようにし、重複は畳む。どのスコープを認めるかは認可サーバーの持ち物なので
+ * 名前は検証しないが、区切り忘れ（`--scopes "read post"`）のような形の崩れは
+ * ブラウザを開く前に弾く。
+ */
+function parseScopes(raw: string | undefined): string | undefined {
+  if (raw === undefined) return undefined;
+
+  const scopes = [...new Set(raw.split(/[\s,]+/).filter((s) => s.length > 0))];
+  if (scopes.length === 0) {
+    throw new Error(t("auth.scopesEmpty"));
+  }
+  const invalid = scopes.filter((scope) => !SCOPE_PATTERN.test(scope));
+  if (invalid.length > 0) {
+    throw new Error(t("auth.scopesInvalid", { scopes: invalid.join(", ") }));
+  }
+  return scopes.join(" ");
+}
 
 /** 見出しに出す接続先ホスト。base URL が不正でもここでは落とさない。 */
 function apiHost(): string {
@@ -110,8 +133,12 @@ export function registerAuthCommand(program: Command): void {
   auth
     .command("login")
     .description(t("auth.loginDesc"))
-    .action(async () => {
-      const oauth = getOAuthConfig();
+    .option("-s, --scopes <scopes>", t("auth.scopesOpt"))
+    .addOption(new Option("--scope <scopes>").hideHelp())
+    .action(async (options: { scopes?: string; scope?: string }) => {
+      // ブラウザを開いてから弾かれることのないよう、要求スコープは先に整える。
+      const scope = parseScopes(options.scopes ?? options.scope);
+      const oauth = getOAuthConfig(scope);
       const tokens = await login(oauth);
       console.error(
         t("auth.loginSuccess", { backend: backendLabel(getBackend()) }),
