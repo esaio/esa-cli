@@ -9,8 +9,8 @@ test("default t() returns English (ESA_LANG=en in test env)", () => {
 test("getFixedT resolves each language independently", () => {
   const en = i18n.getFixedT("en");
   const ja = i18n.getFixedT("ja");
-  expect(en("callback.successTitle")).toBe("Authentication complete");
-  expect(ja("callback.successTitle")).toBe("認証が完了しました");
+  expect(en("callback.notFound")).toBe("Not Found");
+  expect(ja("callback.notFound")).toBe("見つかりません");
 });
 
 test("interpolation fills placeholders in both languages", () => {

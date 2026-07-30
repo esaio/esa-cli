@@ -99,3 +99,10 @@ export function getOAuthConfig(): OAuthConfig {
 
 /** OAuth フロー（メタデータ取得・トークン交換／更新）のタイムアウト（ミリ秒）。 */
 export const OAUTH_REQUEST_TIMEOUT_MS = 10_000;
+
+/**
+ * 認証の完了・失敗後にブラウザを送る先。ESA_API_BASE_URL をローカルに
+ * 差し替えて開発するときも本番を指すよう、独立した定数にする。
+ */
+export const OAUTH_SUCCESS_URL = "https://api.esa.io/oauth/cli/success";
+export const OAUTH_FAILURE_URL = "https://api.esa.io/oauth/cli/failure";

@@ -359,13 +359,8 @@ export const ja: Resources = {
   },
   callback: {
     notFound: "見つかりません",
-    successTitle: "認証が完了しました",
-    successBody: "このタブを閉じてターミナルに戻ってください。",
-    canceledBrowser: "認可がキャンセルされました: {{error}}",
     canceledError: "認可エラー: {{error}} {{description}}",
-    stateMismatchBrowser: "state が一致しません",
     stateMismatchError: "state が一致しません（CSRF の可能性）",
-    noCodeBrowser: "認可コードがありません",
     noCodeError: "認可コードが返されませんでした",
     timeout: "認証がタイムアウトしました（5分）",
   },
