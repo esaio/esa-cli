@@ -121,7 +121,8 @@ generated from esa's `openapi.yaml` via `openapi-typescript`.
     not character counts, so Japanese and emoji stay aligned. A paginated
     endpoint's response goes in `pagination` as well as `wrapJson` — the
     table alone cannot say whether it is the whole set or the first page of
-    many, so a `30 / 6654 件 (page 1/222)` line follows it on stderr, TTY only.
+    many, so a `Showing 30 of 6654 (page 1/222)` line follows it on stderr,
+    TTY only.
     It carries no next-page command: `page 1/222` already implies both that
     there is more and that `--page` is the knob, and a script reaching for the
     exact next page has `next_page` in `--json`. `formatPageSummary()` derives
