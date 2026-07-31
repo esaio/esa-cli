@@ -60,6 +60,7 @@ export function registerTeamCommand(program: Command): void {
         emptyMessage: t("output.noResults"),
         json: options.json,
         wrapJson: (teams) => ({ ...payload, teams }),
+        pagination: payload,
       });
     });
 

@@ -210,6 +210,19 @@ esa post list                   # 端末ではテーブル
 esa post list | cut -f1,2       # パイプではタブ区切り（列位置で扱える）
 ```
 
+ページングのある一覧は、端末のときだけ末尾に件数と現在ページを標準エラー出力へ出します。表からは「これで全部なのか1ページ目なのか」が分からないため、続きの有無にかかわらず出します。続きは `--page` で辿ってください。
+
+```
+$ esa post list --per-page 30
+NUMBER  TITLE                          UPDATED
+14184   日報/2026/07/26/esa-cli微調整   1 hour ago
+...
+
+30 / 6654 件 (page 1/222)
+```
+
+機械的に辿る場合は `--json` を使ってください。`next_page` / `prev_page` / `total_count` がそのまま入ります。
+
 #### 1件の表示
 
 `post view` / `comment view` / `user` / `team stats`

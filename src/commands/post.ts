@@ -228,6 +228,7 @@ export function registerPostCommand(program: Command): void {
         json: options.json,
         // ページ情報は残す。次ページの有無は絞り込みとは無関係に必要になる。
         wrapJson: (posts) => ({ ...payload, posts }),
+        pagination: payload,
       });
     });
 
@@ -258,6 +259,7 @@ export function registerPostCommand(program: Command): void {
         emptyMessage: t("output.noResults"),
         json: options.json,
         wrapJson: (posts) => ({ ...payload, posts }),
+        pagination: payload,
       });
     });
 
@@ -330,6 +332,7 @@ export function registerPostCommand(program: Command): void {
         emptyMessage: t("output.noResults"),
         json: options.json,
         wrapJson: (posts) => ({ ...payload, posts }),
+        pagination: payload,
       });
     });
 
@@ -368,6 +371,7 @@ export function registerPostCommand(program: Command): void {
         emptyMessage: t("output.noResults"),
         json: options.json,
         wrapJson: (revisions) => ({ ...payload, revisions }),
+        pagination: payload,
       });
     });
 

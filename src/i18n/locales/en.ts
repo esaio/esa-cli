@@ -337,6 +337,10 @@ export const en = {
     stateWip: "WIP",
     stateShip: "Ship",
     noResults: "No results found.",
+    pageSummary: "Showing {{shown}} of {{total}}",
+    pageSummaryPage: "Showing {{shown}} of {{total}} (page {{page}})",
+    pageSummaryPages:
+      "Showing {{shown}} of {{total}} (page {{page}}/{{pages}})",
     fieldState: "State",
     fieldCategory: "Category",
     fieldTags: "Tags",
