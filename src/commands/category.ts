@@ -120,6 +120,9 @@ export function registerCategoryCommand(program: Command): void {
             categories: projected,
             total_count: totalCount,
           }),
+          // 全ページを辿った後なので現在ページは無い。総数だけを出して、
+          // 取りこぼしなく集約できたことが分かるようにする。
+          pagination: { total_count: totalCount },
         });
         return;
       }
@@ -139,6 +142,7 @@ export function registerCategoryCommand(program: Command): void {
         emptyMessage: t("output.noResults"),
         json: options.json,
         wrapJson: (categories) => ({ ...payload, categories }),
+        pagination: payload,
       });
     });
 }

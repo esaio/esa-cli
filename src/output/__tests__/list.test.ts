@@ -155,3 +155,91 @@ test("wrapJson を渡すとページ情報を保ったまま絞り込める", ()
     total_count: 99,
   });
 });
+
+test("端末では表の後にページ情報を出す", () => {
+  const { output } = captureStdout();
+  const error = vi.spyOn(console, "error").mockImplementation(() => {});
+  process.stdout.isTTY = true;
+  process.stdout.columns = 60;
+
+  printList({
+    items: ROWS,
+    columns: COLUMNS,
+    emptyMessage: "none",
+    pagination: { total_count: 99, page: 2, per_page: 2 },
+  });
+
+  // 表は stdout、人間向けの注記は stderr。
+  expect(stripVTControlCharacters(output())).toBe(
+    ["ID  TITLE", "1   あいうえお", "22  second", ""].join("\n"),
+  );
+  expect(stripVTControlCharacters(error.mock.calls[0][0] as string)).toBe(
+    "\nShowing 2 of 99 (page 2/50)",
+  );
+});
+
+test("パイプ時はページ情報を出さない", () => {
+  const { output } = captureStdout();
+  const error = vi.spyOn(console, "error").mockImplementation(() => {});
+
+  printList({
+    items: ROWS,
+    columns: COLUMNS,
+    emptyMessage: "none",
+    pagination: { total_count: 99, page: 2, per_page: 2 },
+  });
+
+  expect(output()).toBe("1\tあいうえお\n22\tsecond\n");
+  expect(error).not.toHaveBeenCalled();
+});
+
+test("--json ではページ情報の行を出さない", () => {
+  vi.spyOn(console, "log").mockImplementation(() => {});
+  const error = vi.spyOn(console, "error").mockImplementation(() => {});
+  process.stdout.isTTY = true;
+
+  printList({
+    items: ROWS,
+    columns: COLUMNS,
+    emptyMessage: "none",
+    json: "id",
+    pagination: { total_count: 99, page: 2, per_page: 2 },
+  });
+
+  expect(error).not.toHaveBeenCalled();
+});
+
+test("範囲外のページで空になったときは案内に件数を添える", () => {
+  captureStdout();
+  const error = vi.spyOn(console, "error").mockImplementation(() => {});
+  process.stdout.isTTY = true;
+
+  printList({
+    items: [],
+    columns: COLUMNS,
+    emptyMessage: "none",
+    pagination: { total_count: 99, page: 99, per_page: 2 },
+  });
+
+  // 「無い」ではなく「そのページには無い」と分かるようにする。
+  expect(error).toHaveBeenCalledWith("none");
+  expect(stripVTControlCharacters(error.mock.calls[1][0] as string)).toBe(
+    "\nShowing 0 of 99 (page 99/50)",
+  );
+});
+
+test("本当に 0 件のときは案内だけにとどめる", () => {
+  captureStdout();
+  const error = vi.spyOn(console, "error").mockImplementation(() => {});
+  process.stdout.isTTY = true;
+
+  printList({
+    items: [],
+    columns: COLUMNS,
+    emptyMessage: "none",
+    pagination: { total_count: 0, page: 1, per_page: 2 },
+  });
+
+  expect(error).toHaveBeenCalledTimes(1);
+  expect(error).toHaveBeenCalledWith("none");
+});

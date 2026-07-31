@@ -112,6 +112,7 @@ export function registerCommentCommand(program: Command): void {
         emptyMessage: t("output.noResults"),
         json: options.json,
         wrapJson: (comments) => ({ ...payload, comments }),
+        pagination: payload,
       });
     });
 

@@ -118,7 +118,14 @@ generated from esa's `openapi.yaml` via `openapi-typescript`.
   - `printList()` — list commands. An aligned table on a TTY, tab-separated rows
     when piped. Adding a list command means defining its `Column[]`; never
     hand-roll the table, the empty case, or `--json`. Widths are display widths,
-    not character counts, so Japanese and emoji stay aligned.
+    not character counts, so Japanese and emoji stay aligned. A paginated
+    endpoint's response goes in `pagination` as well as `wrapJson` — the
+    table alone cannot say whether it is the whole set or the first page of
+    many, so a `30 / 6654 件 (page 1/222)` line follows it on stderr, TTY only.
+    It carries no next-page command: `page 1/222` already implies both that
+    there is more and that `--page` is the knob, and a script reaching for the
+    exact next page has `next_page` in `--json`. `formatPageSummary()` derives
+    the page count from `total_count / per_page` since esa does not return it.
   - `printDetail()` — single resources. A labelled summary on a TTY,
     `key<TAB>value` lines plus a `--` separator before the body when piped.
     Bodies are emitted as raw Markdown, never rendered.
@@ -189,6 +196,7 @@ src/
     color.ts             # util.styleText (Node handles NO_COLOR / TTY detection)
     time.ts              # Relative time (Intl.RelativeTimeFormat)
     value.ts             # Empty-value placeholder (TTY) and single-line collapsing
+    pagination.ts        # Count and current page shown under a list (TTY)
     json-fields.ts       # --json field projection
   api/                   # esa API client
     client.ts            # openapi-fetch client (auth, pre-request token refresh)

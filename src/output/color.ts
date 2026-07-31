@@ -25,5 +25,6 @@ export const red = paint("red");
 export const cyan = paint("cyan");
 export const underlineHeader = paint(["dim", "underline"]);
 
+export const dimOnStderr = paint("dim", process.stderr);
 export const greenOnStderr = paint("green", process.stderr);
 export const yellowOnStderr = paint("yellow", process.stderr);

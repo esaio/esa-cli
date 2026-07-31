@@ -82,6 +82,7 @@ export function registerMemberCommand(program: Command): void {
         emptyMessage: t("output.noResults"),
         json: options.json,
         wrapJson: (members) => ({ ...payload, members }),
+        pagination: payload,
       });
     });
 }

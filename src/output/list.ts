@@ -1,5 +1,6 @@
-import { underlineHeader } from "./color.js";
+import { dimOnStderr, underlineHeader } from "./color.js";
 import { projectItems } from "./json-fields.js";
+import { formatPageSummary, type PageInfo } from "./pagination.js";
 import { isStdoutTTY } from "./stream.js";
 import { createTablePrinter } from "./table.js";
 import { displayValue } from "./value.js";
@@ -31,6 +32,12 @@ export type ListOutput<T> = {
    * 無関係に必要な次ページの有無などを残すために使う。
    */
   wrapJson?: (projected: Record<string, unknown>[]) => unknown;
+  /**
+   * ページ情報を持つ応答。端末に件数と現在ページを出すために使う。
+   * 表からは「これで全部なのか1ページ目なのか」が判別できないため、
+   * 続きの有無にかかわらず出す。
+   */
+  pagination?: PageInfo;
 };
 
 /**
@@ -39,7 +46,7 @@ export type ListOutput<T> = {
  * 一覧を出すコマンドはすべてここを通し、表示の差が列の定義だけに収まるようにする。
  */
 export function printList<T extends object>(output: ListOutput<T>): void {
-  const { items, columns, emptyMessage, json, wrapJson } = output;
+  const { items, columns, emptyMessage, json, wrapJson, pagination } = output;
 
   if (json !== undefined) {
     const projected = projectItems(items, json);
@@ -52,7 +59,12 @@ export function printList<T extends object>(output: ListOutput<T>): void {
   const isTTY = isStdoutTTY();
   if (items.length === 0) {
     // stdout は空のままにして、パイプの下流に見出しだけが流れないようにする。
-    if (isTTY) console.error(emptyMessage);
+    if (isTTY) {
+      console.error(emptyMessage);
+      // 総数があるのにここが空なのは、範囲外のページを見ているとき。
+      // 「無い」ではなく「そのページには無い」だと分かるように件数を添える。
+      if (pagination?.total_count) printPageSummary(pagination, 0);
+    }
     return;
   }
 
@@ -75,4 +87,12 @@ export function printList<T extends object>(output: ListOutput<T>): void {
     );
   }
   process.stdout.write(table.render());
+  if (isTTY && pagination) printPageSummary(pagination, items.length);
+}
+
+/** 件数と現在ページを表と1行空けて stderr に出す。表示は端末のときだけ。 */
+function printPageSummary(pagination: PageInfo, shown: number): void {
+  const summary = formatPageSummary(pagination, shown);
+  if (summary === undefined) return;
+  console.error(`\n${dimOnStderr(summary)}`);
 }

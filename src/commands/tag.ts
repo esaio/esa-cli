@@ -60,6 +60,7 @@ export function registerTagCommand(program: Command): void {
         emptyMessage: t("output.noResults"),
         json: options.json,
         wrapJson: (tags) => ({ ...payload, tags }),
+        pagination: payload,
       });
     });
 }
