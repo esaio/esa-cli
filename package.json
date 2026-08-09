@@ -1,6 +1,6 @@
 {
   "name": "@esaio/esa-cli",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Official CLI for esa.io",
   "type": "module",
   "main": "bin/index.js",
