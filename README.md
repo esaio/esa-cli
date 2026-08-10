@@ -1,4 +1,4 @@
-# esa-cli
+# esa CLI
 
 Official CLI for [esa.io](https://esa.io).
 
@@ -45,7 +45,7 @@ esa auth status    # 現在の認証状態を表示（--json で機械可読に�
 esa auth logout    # トークンを失効・削除
 ```
 
-既定では esa-cli の全コマンドが使うスコープを要求します。読み取りだけに絞るなど、
+既定では esa CLI の全コマンドが使うスコープを要求します。読み取りだけに絞るなど、
 要求するスコープを選びたい場合は `-s, --scopes` で指定します（スペースまたはカンマ区切り。
 環境変数 `ESA_OAUTH_SCOPE` より優先されます）。
 
@@ -159,7 +159,7 @@ esa attachment download /uploads/x.png > x.png        # 標準出力に書き出
 
 esa.io 運営へのフィードバックを送信します。本文は `-m, --message` でインライン指定するか、
 `--message-file <path>`（`-` で標準入力）で渡します（`--body` / `--body-file` は
-それぞれの別名）。送信元クライアント（esa-cli のバージョン・OS など）は自動で添付されます。
+それぞれの別名）。送信元クライアント（esa CLI のバージョン・OS など）は自動で添付されます。
 
 ```bash
 esa feedback create -m "改善要望です"                    # 運営へ送信 (POST /v1/feedbacks)
@@ -353,8 +353,8 @@ API リクエストの認証は次の順で選ばれます:
 
 ## AI エージェントから使う
 
-Claude Code / Cursor / Gemini CLI / Codex CLI などの AI エージェントから esa-cli を
-操作させるためのスキルを [esa-skills](https://github.com/esaio/esa-skills) で配布して
+Claude Code / Cursor / Gemini CLI / Codex CLI などの AI エージェントから esa CLI を
+操作させるためのスキルを [esa Skills](https://github.com/esaio/esa-skills) で配布して
 います。自然言語で記事の検索・作成・コメントなどを行えます。
 
 各エージェントの marketplace / extension からの導入に加え、横断ツール
@@ -364,7 +364,7 @@ Claude Code / Cursor / Gemini CLI / Codex CLI などの AI エージェントか
 npx skills add esaio/esa-skills
 ```
 
-導入方法の詳細は [esa-skills の README](https://github.com/esaio/esa-skills#installation) を参照してください。
+導入方法の詳細は [esa Skills の README](https://github.com/esaio/esa-skills#installation) を参照してください。
 
 ## Authentication flow
 

@@ -7,7 +7,7 @@ const DEFAULT_CLIENT_ID =
   "b29aa0a592d3eb6651db57a39994b57b2670613bd1b48b5937d97d34278bb133";
 
 /**
- * esa-cli が提供するコマンドが必要とするスコープ一式。esa では read / write /
+ * esa CLI が提供するコマンドが必要とするスコープ一式。esa では read / write /
  * delete が別スコープなので、delete コマンドには delete:* が要る。revision は
  * 独立リソースで、post revisions に read:revision が要る。
  */
