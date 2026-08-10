@@ -32,7 +32,7 @@ function readMessage(options: CreateOptions): string {
   throw new Error(t("feedback.messageRequired"));
 }
 
-/** 運営が仕分けしやすいよう、送信元クライアント（esa-cli）の情報を meta に添える。 */
+/** 運営が仕分けしやすいよう、送信元クライアント（esa CLI）の情報を meta に添える。 */
 function clientMeta(): Record<string, unknown> {
   return {
     client_name: "esa-cli",

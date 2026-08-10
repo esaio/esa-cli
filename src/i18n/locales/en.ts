@@ -14,7 +14,7 @@ export const en = {
       "API base URL is not allowed (only api.esa.io or localhost): {{url}}",
   },
   config: {
-    desc: "Manage esa-cli settings (~/.config/esa-cli/config.json)",
+    desc: "Manage esa CLI settings (~/.config/esa-cli/config.json)",
     setDesc: "Set a config value",
     getDesc: "Get a config value",
     keysHeading: "Supported keys:",
@@ -29,12 +29,12 @@ export const en = {
     invalidLanguage: "{{key}} must be one of: {{langs}}",
   },
   auth: {
-    desc: "Authenticate esa-cli with esa.io",
+    desc: "Authenticate esa CLI with esa.io",
     loginDesc: "Log in to esa.io via OAuth (browser)",
     loginSuccess: "Logged in. Saved the token to {{backend}}.",
     loginScope: "Granted scope: {{scope}}",
     scopesOpt:
-      "Scopes to request, space- or comma-separated (defaults to every scope esa-cli commands use)",
+      "Scopes to request, space- or comma-separated (defaults to every scope esa CLI commands use)",
     scopesEmpty: "--scopes needs at least one scope.",
     scopesInvalid:
       "--scopes takes scopes in the form action:resource (e.g. read:post), separated by a space or a comma: {{scopes}}",

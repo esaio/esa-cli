@@ -243,7 +243,7 @@ describe("esa auth login", () => {
     return login.mock.calls[0]?.[0].scope as string;
   }
 
-  test("requests every scope esa-cli uses by default", async () => {
+  test("requests every scope esa CLI uses by default", async () => {
     const scope = await runLogin();
 
     expect(scope.split(" ")).toEqual(

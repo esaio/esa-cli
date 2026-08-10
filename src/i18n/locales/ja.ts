@@ -14,7 +14,7 @@ export const ja: Resources = {
       "許可されていない API のベース URL です（api.esa.io または localhost のみ）: {{url}}",
   },
   config: {
-    desc: "esa-cli の設定を管理します (~/.config/esa-cli/config.json)",
+    desc: "esa CLI の設定を管理します (~/.config/esa-cli/config.json)",
     setDesc: "設定値を保存します",
     getDesc: "設定値を表示します",
     keysHeading: "対応している設定キー:",
@@ -29,12 +29,12 @@ export const ja: Resources = {
     invalidLanguage: "{{key}} は次のいずれかを指定してください: {{langs}}",
   },
   auth: {
-    desc: "esa.io と esa-cli を認証します",
+    desc: "esa.io と esa CLI を認証します",
     loginDesc: "OAuth（ブラウザ）で esa.io にログインします",
     loginSuccess: "認証に成功しました。トークンを {{backend}} に保存しました。",
     loginScope: "許可されたスコープ: {{scope}}",
     scopesOpt:
-      "要求するスコープ（スペースまたはカンマ区切り。既定は esa-cli の全コマンドが使うスコープ）",
+      "要求するスコープ（スペースまたはカンマ区切り。既定は esa CLI の全コマンドが使うスコープ）",
     scopesEmpty: "--scopes にはスコープを 1 つ以上指定してください。",
     scopesInvalid:
       "--scopes は action:resource の形（例: read:post）でスペースまたはカンマ区切りで指定してください: {{scopes}}",
