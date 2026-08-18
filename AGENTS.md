@@ -131,9 +131,7 @@ generated from esa's `openapi.yaml` via `openapi-typescript`.
     `key<TAB>value` lines plus a `--` separator before the body when piped.
     Bodies are emitted as raw Markdown, never rendered.
   - `printMutation()` — create/update. The URL on stdout, a `✓` line on stderr,
-    so `esa post create ... > url.txt` yields just the URL. Pass `notice: true`
-    when nothing changed: the symbol becomes `!` but the output shape stays the
-    same, so callers need not branch on the target's state. A bad `--json` field
+    so `esa post create ... > url.txt` yields just the URL. A bad `--json` field
     name here is reported as a `!` line and the command still exits 0 — the
     change already happened, and failing would invite a retry that applies it
     twice. Read commands keep failing on a bad field: retrying those is free.

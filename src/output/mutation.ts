@@ -38,12 +38,6 @@ export type MutationOutput<T> = {
   url: string;
   /** stderr に出す確認行。 */
   message: string;
-  /**
-   * 変更が起きなかったことを示す。記号だけが ! に変わり、出力の形は変えない。
-   * --json の扱いが対象の状態によって変わると、呼び出し側が状態ごとに
-   * 分岐させられるため。
-   */
-  notice?: boolean;
   /** `--json` に渡された生の値。未指定なら URL を出す。 */
   json?: string | true;
 };
@@ -56,10 +50,9 @@ export type MutationOutput<T> = {
 export function printMutation<T extends object>(
   output: MutationOutput<T>,
 ): void {
-  const { item, url, message, notice, json } = output;
+  const { item, url, message, json } = output;
 
-  if (notice) printNotice(message);
-  else printSuccess(message);
+  printSuccess(message);
 
   if (json !== undefined && printJsonAfterChange(item, json)) return;
   // --json が使えなかったときも、変更したものを辿れるよう URL は出す。
