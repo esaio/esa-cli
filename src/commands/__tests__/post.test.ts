@@ -425,66 +425,63 @@ test("`post prepend` posts content to the prepend endpoint", async () => {
   );
 });
 
-test("`post archive` moves the current category under Archived/", async () => {
-  get.mockResolvedValue(ok200({ number: 9, category: "dev/docs" }));
+/** アーカイブ後の記事。Archived/ の付け替えは API 側が行う。 */
+function archiveMock() {
+  postReq.mockResolvedValue(
+    ok200({
+      number: 9,
+      full_name: "Archived/dev/docs/a",
+      url: "https://ware2.esa.io/posts/9",
+    }),
+  );
+}
+
+test("`post archive` posts to the archive endpoint", async () => {
+  archiveMock();
+  vi.spyOn(console, "error").mockImplementation(() => {});
   vi.spyOn(console, "log").mockImplementation(() => {});
 
   await run(["post", "archive", "9"]);
 
-  expect(patch).toHaveBeenCalledWith(
-    "/v1/teams/{team_name}/posts/{post_number}",
+  // Archived/ の組み立ては API 側の責務。記事を先に読む必要もない。
+  expect(get).not.toHaveBeenCalled();
+  expect(postReq).toHaveBeenCalledWith(
+    "/v1/teams/{team_name}/posts/{post_number}/archive",
     {
       params: { path: { team_name: "resolved-team", post_number: 9 } },
-      body: {
-        post: { category: "Archived/dev/docs", message: undefined },
-      },
+      body: { post: { message: undefined } },
     },
   );
 });
 
 test("`post archive -m` sends the given message", async () => {
-  get.mockResolvedValue(ok200({ number: 9, category: "dev" }));
+  archiveMock();
+  vi.spyOn(console, "error").mockImplementation(() => {});
   vi.spyOn(console, "log").mockImplementation(() => {});
 
   await run(["post", "archive", "9", "-m", "retire"]);
 
-  expect(patch.mock.calls[0][1].body.post.message).toBe("retire");
+  expect(postReq.mock.calls[0][1].body.post.message).toBe("retire");
 });
 
-test("`post archive` is a no-op but still prints the URL when already archived", async () => {
-  get.mockResolvedValue(
-    ok200({
-      number: 9,
-      category: "Archived/dev",
-      url: "https://ware2.esa.io/posts/9",
-    }),
-  );
+test("`post archive` prints the URL and the confirmation", async () => {
+  archiveMock();
   const err = vi.spyOn(console, "error").mockImplementation(() => {});
   const log = vi.spyOn(console, "log").mockImplementation(() => {});
 
   await run(["post", "archive", "9"]);
 
-  expect(patch).not.toHaveBeenCalled();
-  expect(err.mock.calls[0][0]).toMatch(/already archived/);
-  // 変更は起きないが、記事を辿れるよう URL は出す。
+  expect(err.mock.calls[0][0]).toMatch(/Archived post #9/);
   expect(log.mock.calls[0][0]).toBe("https://ware2.esa.io/posts/9");
 });
 
-test("`post archive --json` narrows the fields even when already archived", async () => {
-  get.mockResolvedValue(
-    ok200({
-      number: 9,
-      category: "Archived/dev",
-      url: "https://ware2.esa.io/posts/9",
-    }),
-  );
+test("`post archive --json` narrows the fields", async () => {
+  archiveMock();
   vi.spyOn(console, "error").mockImplementation(() => {});
   const log = vi.spyOn(console, "log").mockImplementation(() => {});
 
   await run(["post", "archive", "9", "--json", "number,url"]);
 
-  expect(patch).not.toHaveBeenCalled();
-  // 記事の状態によって --json の扱いが変わらないようにする。
   expect(JSON.parse(log.mock.calls[0][0] as string)).toEqual({
     number: 9,
     url: "https://ware2.esa.io/posts/9",

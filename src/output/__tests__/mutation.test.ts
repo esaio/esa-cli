@@ -56,25 +56,6 @@ test("--json でも確認行は stderr に出す", () => {
   expect(error).toHaveBeenCalledOnce();
 });
 
-test("notice でも出力の形は変わらず、記号だけが変わる", () => {
-  const log = vi.spyOn(console, "log").mockImplementation(() => {});
-  const error = vi.spyOn(console, "error").mockImplementation(() => {});
-
-  printMutation({
-    item: ITEM,
-    url: ITEM.url,
-    message: "Already archived",
-    notice: true,
-    json: "number",
-  });
-
-  // --json の扱いが対象の状態で変わると、呼び出し側が分岐させられる。
-  expect(JSON.parse(log.mock.calls[0][0] as string)).toEqual({ number: 14187 });
-  expect(stripVTControlCharacters(error.mock.calls[0][0] as string)).toBe(
-    "! Already archived",
-  );
-});
-
 test("--json の指定が誤っていても、変更後は失敗させず URL を出す", () => {
   const log = vi.spyOn(console, "log").mockImplementation(() => {});
   const error = vi.spyOn(console, "error").mockImplementation(() => {});

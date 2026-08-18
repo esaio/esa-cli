@@ -120,8 +120,6 @@ export const ja: Resources = {
     bodyRequired: "本文を指定してください（--body または --body-file）。",
     wipConflict: "--wip と --ship は同時に指定できません。",
     emptyName: "記事名が空です。",
-    alreadyArchived:
-      "記事 #{{number}} はすでにアーカイブ済みです（{{category}}）。",
     deleteConfirm: "記事 #{{number}}「{{name}}」を削除しますか？ [y/N]:",
     deleteConfirmRequired:
       "削除には確認が必要です。非対話環境では --yes を指定してください。",

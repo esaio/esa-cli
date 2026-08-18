@@ -725,6 +725,70 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/v1/teams/{team_name}/posts/{post_number}/archive": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * 記事のアーカイブ
+     * @description 指定された記事を `Archived/` 配下へ移動し、新しいリビジョンとして保存します。
+     *     元のカテゴリは維持され、`Foo/Bar` の記事は `Archived/Foo/Bar` になります。
+     *     変更メッセージは `post.message` で任意に指定できます。
+     *     既に `Archived/` 配下にある記事に対しては何も変更せず、現在の記事を返します（`Archived/Archived/...` にはなりません）。このとき `post.message` を指定しても無視されます。
+     */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          /** @description チーム名 */
+          team_name: components["parameters"]["team_name"];
+          /** @description 記事番号 */
+          post_number: components["parameters"]["post_number"];
+        };
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
+            post?: {
+              /** @description 変更メッセージ。空文字（空白のみの文字列を含む）は未指定と同じ扱いです。省略時は直前の変更メッセージを引き継ぎます（未設定または既定の作成 / 更新メッセージ "Create post." / "Update post." だった場合は "Archived!" になります）。この 2 つの既定文言は明示的に指定した場合も "Archived!" に置き換わります */
+              message?: string;
+            };
+          };
+        };
+      };
+      responses: {
+        /** @description アーカイブ成功 */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["Post"];
+          };
+        };
+        400: components["responses"]["BadRequestError"];
+        401: components["responses"]["UnauthorizedError"];
+        402: components["responses"]["PaymentRequiredError"];
+        403: components["responses"]["ForbiddenError"];
+        404: components["responses"]["NotFoundError"];
+        405: components["responses"]["MethodNotAllowedError"];
+        429: components["responses"]["TooManyRequestsError"];
+        500: components["responses"]["InternalServerError"];
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/v1/teams/{team_name}/posts/{post_number}/backlinks": {
     parameters: {
       query?: never;

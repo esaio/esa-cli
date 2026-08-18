@@ -592,36 +592,16 @@ export function registerPostCommand(program: Command): void {
 
         const client = createEsaClient();
         const team = await resolveTeam(client, options.team);
-        const got = await client.GET(
-          "/v1/teams/{team_name}/posts/{post_number}",
-          { params: { path: { team_name: team, post_number: postNumber } } },
-        );
-        const post = unwrap(got);
-        const current = post.category ?? "";
-        if (current === "Archived" || current.startsWith("Archived/")) {
-          // 変更は起きないが、出力の形は成功時と揃える。
-          printMutation({
-            item: post,
-            url: post.url,
-            message: t("post.alreadyArchived", {
-              number: postNumber,
-              category: current,
-            }),
-            notice: true,
-            json: options.json,
-          });
-          return;
-        }
-
-        const archived = current === "" ? "Archived" : `Archived/${current}`;
-        const result = await client.PATCH(
-          "/v1/teams/{team_name}/posts/{post_number}",
+        // Archived/ の付け替えも、すでにアーカイブ済みのときに何も変えない
+        // ことも API 側の責務。CLI はカテゴリを組み立てない。
+        const result = await client.POST(
+          "/v1/teams/{team_name}/posts/{post_number}/archive",
           {
             params: { path: { team_name: team, post_number: postNumber } },
             body: {
               // message は既定を付けず、--message 指定時のみ送る（未指定なら
               // esa 側の既定に委ねる。保存データを実行時の言語で変えない）。
-              post: { category: archived, message: options.message },
+              post: { message: options.message },
             },
           },
         );
