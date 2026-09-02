@@ -12,6 +12,7 @@ import { t } from "../i18n/index.js";
 import { dim } from "../output/color.js";
 import { type Column, printList } from "../output/list.js";
 import { printMutation, printSuccess } from "../output/mutation.js";
+import { nonEmpty } from "./parse.js";
 
 type SignedUrlsQuery = NonNullable<
   paths["/v1/teams/{team_name}/signed_urls"]["get"]["parameters"]["query"]
@@ -201,10 +202,11 @@ export function registerAttachmentCommand(program: Command): void {
       } catch {
         throw new Error(t("attachment.notReadable", { path: file }));
       }
-      // --name を明示したなら空文字は許さない（省略時はファイル名にフォールバック）。
-      if (options.name === "") {
-        throw new Error(t("attachment.emptyName"));
-      }
+      // --name を明示したなら空は許さない（省略時はファイル名にフォールバック）。
+      const name =
+        options.name === undefined
+          ? undefined
+          : nonEmpty(options.name, "--name");
 
       const client = createEsaClient();
       const team = await resolveTeam(client, options.team);
@@ -215,7 +217,7 @@ export function registerAttachmentCommand(program: Command): void {
       const form = new FormData();
       form.set("file", blob, basename(file));
       // name を渡すとサーバ側でファイル名（URL の拡張子）として使われる。
-      if (options.name) form.set("name", options.name);
+      if (name) form.set("name", name);
 
       const result = await client.POST("/v1/teams/{team_name}/attachments", {
         params: { path: { team_name: team } },

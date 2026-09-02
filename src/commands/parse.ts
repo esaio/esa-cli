@@ -27,8 +27,9 @@ export function serverEnum<T extends string>(
 }
 
 /**
- * パスに埋め込む名前など、空では意味を成さない値を検証する。空白だけの値も
- * 空とみなす。素通しすると URL に空のセグメントができ、意図しないパスを叩く。
+ * 空では意味を成さない値を検証し、前後の空白を除いて返す。空白だけの値も空と
+ * みなす。素通しすると空のまま URL やリクエストや設定ファイルへ渡り、離れた
+ * ところの失敗として現れるので、どの入力が悪いのかを名前付きで手前から返す。
  */
 export function nonEmpty(value: string, name: string): string {
   const trimmed = value.trim();

@@ -24,7 +24,6 @@ export const ja: Resources = {
     keyArg: "設定キー（{{keys}}）",
     valueArg: "値",
     unknownKey: "未知の設定キーです: {{key}}（対応: {{keys}}）",
-    emptyValue: "{{key}} の値が空です。",
     setDone: "{{key}} を {{value}} に設定しました。",
     invalidLanguage: "{{key}} は次のいずれかを指定してください: {{langs}}",
   },
@@ -242,7 +241,6 @@ export const ja: Resources = {
     notFound: "添付ファイルが見つかりません: {{url}}",
     notAFile: "ファイルではありません: {{path}}",
     notReadable: "ファイルを読み取れません: {{path}}",
-    emptyName: "--name が空です。",
     fetchFailed:
       "添付ファイルのダウンロードに失敗しました ({{status}} {{statusText}})。",
     saved: "{{bytes}} バイトを {{path}} に保存しました。",

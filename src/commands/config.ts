@@ -8,6 +8,7 @@ import {
 import { t } from "../i18n/index.js";
 import { SUPPORTED_LANGUAGES } from "../i18n/resolve-language.js";
 import { printSuccess } from "../output/mutation.js";
+import { nonEmpty } from "./parse.js";
 
 const KEY_DEFAULT_TEAM = "default-team";
 const KEY_LANGUAGE = "language";
@@ -58,10 +59,7 @@ export function registerConfigCommand(program: Command): void {
     .action((key: string, value: string) => {
       assertKnownKey(key);
       // 前後の空白を除き、空文字は保存しない（resolveTeam の trim と揃える）。
-      const trimmed = value.trim();
-      if (!trimmed) {
-        throw new Error(t("config.emptyValue", { key }));
-      }
+      const trimmed = nonEmpty(value, key);
       if (key === KEY_LANGUAGE) {
         if (!(SUPPORTED_LANGUAGES as readonly string[]).includes(trimmed)) {
           throw new Error(

@@ -24,7 +24,6 @@ export const en = {
     keyArg: "Config key ({{keys}})",
     valueArg: "Value",
     unknownKey: "Unknown config key: {{key}} (supported: {{keys}})",
-    emptyValue: "Value for {{key}} is empty.",
     setDone: "Set {{key}} to {{value}}.",
     invalidLanguage: "{{key}} must be one of: {{langs}}",
   },
@@ -239,7 +238,6 @@ export const en = {
     notFound: "Attachment not found: {{url}}",
     notAFile: "Not a file: {{path}}",
     notReadable: "Cannot read file: {{path}}",
-    emptyName: "--name is empty.",
     fetchFailed:
       "Failed to download the attachment ({{status}} {{statusText}}).",
     saved: "Saved {{bytes}} bytes to {{path}}.",
