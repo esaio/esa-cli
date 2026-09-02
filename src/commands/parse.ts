@@ -1,10 +1,14 @@
 import { t } from "../i18n/index.js";
 
-/** 1 以上の整数として解釈する。CLI オプションや引数の共通バリデーション。 */
-export function positiveInt(value: string, name: string): number {
+/**
+ * 1 以上の整数として解釈する。CLI オプションや引数の共通バリデーション。
+ * label は検証した値そのものではなく、エラーに出すその入力の呼び名
+ * （"--page" や t("post.idLabel") など）。
+ */
+export function positiveInt(value: string, label: string): number {
   const n = Number(value);
   if (!Number.isInteger(n) || n < 1) {
-    throw new Error(t("parse.notPositiveInt", { name, value }));
+    throw new Error(t("parse.notPositiveInt", { label, value }));
   }
   return n;
 }
@@ -29,10 +33,11 @@ export function serverEnum<T extends string>(
 /**
  * 空では意味を成さない値を検証し、前後の空白を除いて返す。空白だけの値も空と
  * みなす。素通しすると空のまま URL やリクエストや設定ファイルへ渡り、離れた
- * ところの失敗として現れるので、どの入力が悪いのかを名前付きで手前から返す。
+ * ところの失敗として現れるので、どの入力が悪いのかを label 付きで手前から返す。
+ * label は positiveInt と同じく、エラーに出すその入力の呼び名。
  */
-export function nonEmpty(value: string, name: string): string {
+export function nonEmpty(value: string, label: string): string {
   const trimmed = value.trim();
-  if (!trimmed) throw new Error(t("parse.empty", { name }));
+  if (!trimmed) throw new Error(t("parse.empty", { label }));
   return trimmed;
 }

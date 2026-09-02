@@ -257,8 +257,8 @@ export const en = {
     sent: "Sent your feedback. Thank you!",
   },
   parse: {
-    notPositiveInt: "{{name}} must be a positive integer (>= 1): {{value}}",
-    empty: "{{name}} must not be empty.",
+    notPositiveInt: "{{label}} must be a positive integer (>= 1): {{value}}",
+    empty: "{{label}} must not be empty.",
   },
   oauth: {
     fetchingMetadata: "Fetching authorization server metadata...",

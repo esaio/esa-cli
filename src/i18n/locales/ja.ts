@@ -261,8 +261,8 @@ export const ja: Resources = {
     sent: "フィードバックを送信しました。ありがとうございます！",
   },
   parse: {
-    notPositiveInt: "{{name}} は 1 以上の整数で指定してください: {{value}}",
-    empty: "{{name}} は空にできません。",
+    notPositiveInt: "{{label}} は 1 以上の整数で指定してください: {{value}}",
+    empty: "{{label}} は空にできません。",
   },
   oauth: {
     fetchingMetadata: "認可サーバーの情報を取得しています...",
