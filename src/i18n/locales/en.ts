@@ -24,7 +24,6 @@ export const en = {
     keyArg: "Config key ({{keys}})",
     valueArg: "Value",
     unknownKey: "Unknown config key: {{key}} (supported: {{keys}})",
-    emptyValue: "Value for {{key}} is empty.",
     setDone: "Set {{key}} to {{value}}.",
     invalidLanguage: "{{key}} must be one of: {{langs}}",
   },
@@ -65,6 +64,8 @@ export const en = {
     desc: "Work with teams",
     listDesc: "List teams you belong to (GET /v1/teams)",
     statsDesc: "Show team stats (GET /v1/teams/{team_name}/stats)",
+    childrenDesc:
+      "List child teams linked by consolidated billing (GET /v1/teams/{team_name}/child_teams)",
     teamOpt: "Target team",
     pageOpt: "Page number",
     perPageOpt: "Items per page",
@@ -203,7 +204,14 @@ export const en = {
   member: {
     desc: "Work with team members",
     listDesc: "List members in a team (GET /v1/teams/{team_name}/members)",
+    viewDesc:
+      "View a member (GET /v1/teams/{team_name}/members/{screen_name_or_email})",
+    identifierArg: "Screen name or email",
+    identifierLabel: "screen name or email",
     teamOpt: "Target team",
+    childTeamOpt:
+      "Look at this child team of the target team instead (needs read:child_team_member and owner on the parent team)",
+    childTeamSortConflict: "Cannot use --sort / --order with --child-team.",
     pageOpt: "Page number",
     perPageOpt: "Items per page",
     sortOpt: "Sort by (posts_count | joined | last_accessed)",
@@ -230,7 +238,6 @@ export const en = {
     notFound: "Attachment not found: {{url}}",
     notAFile: "Not a file: {{path}}",
     notReadable: "Cannot read file: {{path}}",
-    emptyName: "--name is empty.",
     fetchFailed:
       "Failed to download the attachment ({{status}} {{statusText}}).",
     saved: "Saved {{bytes}} bytes to {{path}}.",
@@ -250,7 +257,8 @@ export const en = {
     sent: "Sent your feedback. Thank you!",
   },
   parse: {
-    notPositiveInt: "{{name}} must be a positive integer (>= 1): {{value}}",
+    notPositiveInt: "{{label}} must be a positive integer (>= 1): {{value}}",
+    empty: "{{label}} must not be empty.",
   },
   oauth: {
     fetchingMetadata: "Fetching authorization server metadata...",
@@ -330,6 +338,7 @@ export const en = {
     colScreenName: "SCREEN NAME",
     colName: "NAME",
     colRole: "ROLE",
+    colEmail: "EMAIL",
     colLastAccess: "LAST ACCESS",
     colDescription: "DESCRIPTION",
     colPrivacy: "PRIVACY",
@@ -354,6 +363,9 @@ export const en = {
     fieldUrl: "URL",
     fieldScreenName: "Screen name",
     fieldEmail: "Email",
+    fieldRole: "Role",
+    fieldJoined: "Joined",
+    fieldLastAccess: "Last access",
     fieldTeams: "Teams",
     fieldMembers: "Members",
     fieldPosts: "Posts",

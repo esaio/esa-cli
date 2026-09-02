@@ -72,6 +72,7 @@ CI など非対話環境で使う場合は、OAuth ログインの代わりに�
 esa user                    # 認証ユーザーの情報 (GET /v1/user)
 esa team list                        # 所属チーム一覧 (GET /v1/teams)
 esa team list --role owner           # 権限で絞り込み (member | owner)
+esa team children                    # 子チーム一覧 (GET /v1/teams/{team}/child_teams)
 
 esa post list                        # 記事一覧 (GET /v1/teams/{team}/posts)
 esa post list -q "wip:true"          # 検索クエリで絞り込み
@@ -130,8 +131,34 @@ esa category list --prefix dev/   # 前方一致で絞り込み（--suffix / --m
 esa tag list                      # タグ一覧 (GET /v1/teams/{team}/tags)
 esa member list                   # メンバー一覧 (GET /v1/teams/{team}/members)
 esa member list --sort posts_count --order desc # 投稿数の多い順に並べる
+esa member view ppworks           # メンバーを1件表示（get でも引ける）
 esa team stats                    # チームの統計情報 (GET /v1/teams/{team}/stats)
 ```
+
+連結請求で子チームを持つチームでは、`--child-team` で子チームのメンバーを見られます（親チームの owner 権限が必要）。子チーム名は `esa team children` で調べられます。
+
+```bash
+esa team children                            # 子チーム一覧
+esa member list --child-team sub             # 子チームのメンバー一覧
+esa member view alice --child-team sub       # 子チームのメンバーを1件表示
+```
+
+**`--child-team` には `read:child_team_member` が必要です。** 既定の要求スコープには含めていないので、使う場合は要求スコープに足して認証し直してください。`esa team children` は `read:team` なので既定のままで動きます。
+
+```bash
+esa auth login --scopes "read:team read:child_team_member"
+```
+
+このスコープを持たないトークンで実行すると、API が要求スコープを添えて 403 を返します。
+
+```
+$ esa member list --child-team sub
+esa API request failed (403): {"error":"forbidden","message":"Required scopes are missing. (read:child_team_member or admin:child_team_member)"}
+```
+
+`ESA_ACCESS_TOKEN` で使う場合は **PAT v2 が必要です**。
+
+子チームのメンバー一覧は並び替えに対応していないため、`--child-team` と `--sort` / `--order` は同時に指定できません。
 
 ### 添付ファイル
 
@@ -196,7 +223,7 @@ esa api /v1/teams/{team}/comments/456 -X PATCH --input body.json
 
 `post list` / `post search` / `post backlinks` / `post revisions` /
 `comment list` / `category list` / `tag list` / `member list` / `team list` /
-`attachment sign`
+`team children` / `attachment sign`
 
 | 出力先 | 形式 |
 | --- | --- |
@@ -225,7 +252,7 @@ NUMBER  TITLE                          UPDATED
 
 #### 1件の表示
 
-`post view` / `comment view` / `user` / `team stats`
+`post view` / `comment view` / `user` / `member view` / `team stats`
 
 端末では見出しと項目を並べます。本文を持つ `post view` / `comment view` は続けて本文も出します。本文（Markdown）は描画せずそのまま出すので、コピーして編集元へ貼り戻せます。
 

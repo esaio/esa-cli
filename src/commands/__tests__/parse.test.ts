@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { parseTimeoutMs, positiveInt } from "../parse.js";
+import { nonEmpty, parseTimeoutMs, positiveInt } from "../parse.js";
 
 test("parses a positive integer", () => {
   expect(positiveInt("3", "--page")).toBe(3);
@@ -31,4 +31,18 @@ test("parseTimeoutMs returns undefined when unset", () => {
 test("parseTimeoutMs rejects a non-positive-integer value", () => {
   expect(() => parseTimeoutMs("abc")).toThrow(/--timeout.*positive integer/);
   expect(() => parseTimeoutMs("0")).toThrow(/positive integer/);
+});
+
+test("nonEmpty strips surrounding whitespace", () => {
+  expect(nonEmpty("  docs  ", "--team")).toBe("docs");
+});
+
+test("nonEmpty rejects an empty value", () => {
+  expect(() => nonEmpty("", "--child-team")).toThrow(
+    /--child-team must not be empty/,
+  );
+});
+
+test("nonEmpty rejects a whitespace-only value", () => {
+  expect(() => nonEmpty("   ", "--child-team")).toThrow(/must not be empty/);
 });

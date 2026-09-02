@@ -330,7 +330,18 @@ test("`attachment upload` rejects an empty --name before any network call", asyn
 
   await expect(
     run(["attachment", "upload", file, "--name", ""]),
-  ).rejects.toThrow(/--name is empty/i);
+  ).rejects.toThrow(/--name must not be empty/i);
+  expect(resolveTeam).not.toHaveBeenCalled();
+  expect(post).not.toHaveBeenCalled();
+});
+
+test("`attachment upload` rejects a whitespace-only --name", async () => {
+  const file = join(tmpDir, "diagram.png");
+  writeFileSync(file, new Uint8Array([1, 2, 3]));
+
+  await expect(
+    run(["attachment", "upload", file, "--name", "  "]),
+  ).rejects.toThrow(/--name must not be empty/i);
   expect(resolveTeam).not.toHaveBeenCalled();
   expect(post).not.toHaveBeenCalled();
 });

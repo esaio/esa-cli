@@ -16,10 +16,10 @@ test("getFixedT resolves each language independently", () => {
 test("interpolation fills placeholders in both languages", () => {
   const en = i18n.getFixedT("en");
   const ja = i18n.getFixedT("ja");
-  expect(en("parse.notPositiveInt", { name: "--page", value: "x" })).toBe(
+  expect(en("parse.notPositiveInt", { label: "--page", value: "x" })).toBe(
     "--page must be a positive integer (>= 1): x",
   );
-  expect(ja("parse.notPositiveInt", { name: "--page", value: "x" })).toBe(
+  expect(ja("parse.notPositiveInt", { label: "--page", value: "x" })).toBe(
     "--page は 1 以上の整数で指定してください: x",
   );
 });

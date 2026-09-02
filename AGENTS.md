@@ -173,12 +173,12 @@ src/
     index.ts             # Aggregates command registration
     auth.ts              # `esa auth` commands (login/logout/refresh/status)
     user.ts              # `esa user`
-    team.ts              # `esa team` commands (list/stats)
+    team.ts              # `esa team` commands (list/children/stats)
     post.ts              # `esa post` commands (list/search/view/backlinks/revisions/create/update/append/prepend/archive/duplicate/rollback/delete)
     comment.ts           # `esa comment` commands (list/view/create/update/delete)
     category.ts          # `esa category` commands (list)
     tag.ts               # `esa tag list` (list tags)
-    member.ts            # `esa member list` (list members)
+    member.ts            # `esa member` commands (list/view; --child-team for child teams)
     attachment.ts        # `esa attachment` commands (upload/sign/download)
     feedback.ts          # `esa feedback create` (send feedback to esa.io)
     api.ts               # `esa api` escape hatch to any path

@@ -90,7 +90,7 @@ test("`config set` rejects an unknown key", async () => {
 
 test("`config set` rejects a whitespace-only value", async () => {
   await expect(run(["config", "set", "default-team", "  "])).rejects.toThrow(
-    /is empty/,
+    /default-team must not be empty/,
   );
   expect(setDefaultTeam).not.toHaveBeenCalled();
 });
