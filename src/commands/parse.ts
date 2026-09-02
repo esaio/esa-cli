@@ -25,3 +25,13 @@ export function serverEnum<T extends string>(
 ): T | undefined {
   return value as T | undefined;
 }
+
+/**
+ * パスに埋め込む名前など、空では意味を成さない値を検証する。空白だけの値も
+ * 空とみなす。素通しすると URL に空のセグメントができ、意図しないパスを叩く。
+ */
+export function nonEmpty(value: string, name: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) throw new Error(t("parse.empty", { name }));
+  return trimmed;
+}

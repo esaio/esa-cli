@@ -32,6 +32,17 @@ const ok200 = (data: unknown) => ({
   response: new Response(null, { status: 200 }),
 });
 
+/** member view の応答。表示に使う項目がすべて埋まっている最小の Member。 */
+const memberFixture = {
+  screen_name: "ppworks",
+  name: "Koshikawa Naoto",
+  email: "ppworks@example.com",
+  role: "owner",
+  posts_count: 3330,
+  joined_at: "2020-01-01T00:00:00+09:00",
+  last_accessed_at: "2026-07-27T09:03:16+09:00",
+};
+
 const originalStdoutIsTTY = process.stdout.isTTY;
 
 beforeEach(() => {
@@ -163,6 +174,7 @@ test("`member list` renders the member columns", async () => {
         {
           screen_name: "ppworks",
           name: "Koshikawa Naoto",
+          email: "ppworks@example.com",
           role: "owner",
           posts_count: 3330,
           last_accessed_at: "2026-07-27T09:03:16+09:00",
@@ -176,8 +188,158 @@ test("`member list` renders the member columns", async () => {
 
   // screen_name と name を取り違えないことを、値の並びで確かめる。
   expect(output()).toBe(
-    "ppworks\tKoshikawa Naoto\towner\t3330\t2026-07-27T09:03:16+09:00\n",
+    "ppworks\tKoshikawa Naoto\tppworks@example.com\towner\t3330\t2026-07-27T09:03:16+09:00\n",
   );
+});
+
+test("`member list` leaves the email column empty when email is null", async () => {
+  const { output } = captureStdout();
+  // 子チームに有効な id_provider が無いと email は null で返る。
+  get.mockResolvedValue(
+    ok200({
+      members: [
+        {
+          screen_name: "ppworks",
+          name: "Koshikawa Naoto",
+          email: null,
+          role: "member",
+          posts_count: 1,
+          last_accessed_at: "2026-07-27T09:03:16+09:00",
+        },
+      ],
+      total_count: 1,
+    }),
+  );
+
+  await run(["member", "list", "--child-team", "child"]);
+
+  expect(output()).toBe(
+    "ppworks\tKoshikawa Naoto\t\tmember\t1\t2026-07-27T09:03:16+09:00\n",
+  );
+});
+
+test("`member list --child-team` lists the child team's members", async () => {
+  vi.spyOn(console, "log").mockImplementation(() => {});
+
+  await run(["member", "list", "--child-team", "child", "--per-page", "50"]);
+
+  expect(resolveTeam).toHaveBeenCalledWith(expect.anything(), undefined);
+  expect(get).toHaveBeenCalledWith(
+    "/v1/teams/{team_name}/child_teams/{child_team_name}/members",
+    {
+      params: {
+        path: { team_name: "resolved-team", child_team_name: "child" },
+        query: { per_page: 50 },
+      },
+    },
+  );
+});
+
+test("`member list --child-team` rejects --sort / --order before any network call", async () => {
+  await expect(
+    run(["member", "list", "--child-team", "child", "--sort", "joined"]),
+  ).rejects.toThrow(/--sort/);
+  expect(resolveTeam).not.toHaveBeenCalled();
+  expect(get).not.toHaveBeenCalled();
+});
+
+test("`member list` rejects an empty --child-team before any network call", async () => {
+  await expect(run(["member", "list", "--child-team", "  "])).rejects.toThrow(
+    /--child-team/,
+  );
+  expect(resolveTeam).not.toHaveBeenCalled();
+  expect(get).not.toHaveBeenCalled();
+});
+
+test("`member view` reads a member of the resolved team", async () => {
+  get.mockResolvedValue(ok200(memberFixture));
+  const log = vi.spyOn(console, "log").mockImplementation(() => {});
+
+  await run(["member", "view", "ppworks"]);
+
+  expect(get).toHaveBeenCalledWith(
+    "/v1/teams/{team_name}/members/{screen_name_or_email}",
+    {
+      params: {
+        path: { team_name: "resolved-team", screen_name_or_email: "ppworks" },
+      },
+    },
+  );
+  expect((log.mock.calls[0][0] as string).split("\n")).toEqual([
+    "screen_name\tppworks",
+    "email\tppworks@example.com",
+    "role\towner",
+    "posts_count\t3330",
+    "joined_at\t2020-01-01T00:00:00+09:00",
+    "last_accessed_at\t2026-07-27T09:03:16+09:00",
+  ]);
+});
+
+test("`member view --child-team` reads a member of the child team", async () => {
+  vi.spyOn(console, "log").mockImplementation(() => {});
+  get.mockResolvedValue(ok200(memberFixture));
+
+  await run([
+    "member",
+    "view",
+    "someone@example.com",
+    "--child-team",
+    "child",
+    "--team",
+    "parent",
+  ]);
+
+  expect(resolveTeam).toHaveBeenCalledWith(expect.anything(), "parent");
+  expect(get).toHaveBeenCalledWith(
+    "/v1/teams/{team_name}/child_teams/{child_team_name}/members/{screen_name_or_email}",
+    {
+      params: {
+        path: {
+          team_name: "resolved-team",
+          child_team_name: "child",
+          screen_name_or_email: "someone@example.com",
+        },
+      },
+    },
+  );
+});
+
+test("`member get` is an alias for `member view`", async () => {
+  vi.spyOn(console, "log").mockImplementation(() => {});
+  get.mockResolvedValue(ok200(memberFixture));
+
+  await run(["member", "get", "ppworks"]);
+
+  expect(get).toHaveBeenCalledWith(
+    "/v1/teams/{team_name}/members/{screen_name_or_email}",
+    expect.anything(),
+  );
+});
+
+test("`team children` lists the child teams with the team columns", async () => {
+  const { output } = captureStdout();
+  get.mockResolvedValue(
+    ok200({
+      teams: [{ name: "child", description: "子チーム", privacy: "closed" }],
+      total_count: 1,
+    }),
+  );
+
+  await run(["team", "children", "--team", "parent", "--page", "2"]);
+
+  expect(resolveTeam).toHaveBeenCalledWith(expect.anything(), "parent");
+  expect(get).toHaveBeenCalledWith("/v1/teams/{team_name}/child_teams", {
+    params: { path: { team_name: "resolved-team" }, query: { page: 2 } },
+  });
+  expect(output()).toBe("child\t子チーム\tclosed\n");
+});
+
+test("`team children` rejects an invalid --page before any network call", async () => {
+  await expect(run(["team", "children", "--page", "0"])).rejects.toThrow(
+    /--page/,
+  );
+  expect(resolveTeam).not.toHaveBeenCalled();
+  expect(get).not.toHaveBeenCalled();
 });
 
 test("`member list` passes unknown enum values through to the server", async () => {

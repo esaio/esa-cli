@@ -11,12 +11,23 @@ import { positiveInt, serverEnum } from "./parse.js";
 
 type TeamsQuery = NonNullable<paths["/v1/teams"]["get"]["parameters"]["query"]>;
 
+type ChildTeamsQuery = NonNullable<
+  paths["/v1/teams/{team_name}/child_teams"]["get"]["parameters"]["query"]
+>;
+
 type Team = components["schemas"]["Team"];
 
 type ListOptions = {
   page?: string;
   perPage?: string;
   role?: string;
+  json?: string | true;
+};
+
+type ChildrenOptions = {
+  team?: string;
+  page?: string;
+  perPage?: string;
   json?: string | true;
 };
 
@@ -54,6 +65,37 @@ export function registerTeamCommand(program: Command): void {
       const client = createEsaClient();
       const result = await client.GET("/v1/teams", { params: { query } });
       const payload = unwrap(result);
+      printList({
+        items: payload.teams ?? [],
+        columns: TEAM_COLUMNS,
+        emptyMessage: t("output.noResults"),
+        json: options.json,
+        wrapJson: (teams) => ({ ...payload, teams }),
+        pagination: payload,
+      });
+    });
+
+  team
+    .command("children")
+    .description(t("team.childrenDesc"))
+    .option("--team <name>", t("team.teamOpt"))
+    .option("--page <number>", t("team.pageOpt"))
+    .option("--per-page <number>", t("team.perPageOpt"))
+    .option("--json [fields]", t("output.jsonOpt"))
+    .action(async (options: ChildrenOptions) => {
+      const query: ChildTeamsQuery = {};
+      if (options.page) query.page = positiveInt(options.page, "--page");
+      if (options.perPage) {
+        query.per_page = positiveInt(options.perPage, "--per-page");
+      }
+
+      const client = createEsaClient();
+      const teamName = await resolveTeam(client, options.team);
+      const result = await client.GET("/v1/teams/{team_name}/child_teams", {
+        params: { path: { team_name: teamName }, query },
+      });
+      const payload = unwrap(result);
+      // 子チームも同じ Team なので、所属チーム一覧と列を揃える。
       printList({
         items: payload.teams ?? [],
         columns: TEAM_COLUMNS,

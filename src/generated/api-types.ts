@@ -22,6 +22,8 @@ export interface paths {
           page?: components["parameters"]["page"];
           /** @description 1ページあたりの要素数 */
           per_page?: components["parameters"]["per_page"];
+          /** @description 追加で含める情報（カンマ区切り） */
+          include?: components["parameters"]["team_include"];
           /** @description 権限によるフィルタ */
           role?: "member" | "owner";
         };
@@ -70,7 +72,10 @@ export interface paths {
      */
     get: {
       parameters: {
-        query?: never;
+        query?: {
+          /** @description 追加で含める情報（カンマ区切り） */
+          include?: components["parameters"]["team_include"];
+        };
         header?: never;
         path: {
           /** @description チーム名 */
@@ -273,6 +278,215 @@ export interface paths {
         path: {
           /** @description チーム名 */
           team_name: components["parameters"]["team_name"];
+          /** @description スクリーンネームまたはメールアドレス */
+          screen_name_or_email: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description 削除成功 */
+        204: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+        400: components["responses"]["BadRequestError"];
+        401: components["responses"]["UnauthorizedError"];
+        402: components["responses"]["PaymentRequiredError"];
+        403: components["responses"]["ForbiddenError"];
+        404: components["responses"]["NotFoundError"];
+        405: components["responses"]["MethodNotAllowedError"];
+        429: components["responses"]["TooManyRequestsError"];
+        500: components["responses"]["InternalServerError"];
+      };
+    };
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/teams/{team_name}/child_teams": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * 子チーム一覧取得
+     * @description 連結請求で紐付けた子チームの一覧を取得します（親チームのowner権限必要）。
+     *     子チームのメンバー管理 API に渡す `child_team_name` はここで取得します。
+     */
+    get: {
+      parameters: {
+        query?: {
+          /** @description ページ番号（1から開始） */
+          page?: components["parameters"]["page"];
+          /** @description 1ページあたりの要素数 */
+          per_page?: components["parameters"]["per_page"];
+        };
+        header?: never;
+        path: {
+          /** @description チーム名 */
+          team_name: components["parameters"]["team_name"];
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description 成功 */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["TeamList"];
+          };
+        };
+        400: components["responses"]["BadRequestError"];
+        401: components["responses"]["UnauthorizedError"];
+        402: components["responses"]["PaymentRequiredError"];
+        403: components["responses"]["ForbiddenError"];
+        404: components["responses"]["NotFoundError"];
+        405: components["responses"]["MethodNotAllowedError"];
+        429: components["responses"]["TooManyRequestsError"];
+        500: components["responses"]["InternalServerError"];
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/teams/{team_name}/child_teams/{child_team_name}/members": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * 子チームのメンバー一覧取得
+     * @description 連結請求で紐付けた子チームのメンバー一覧を取得します（親チームのowner権限必要）。
+     *     親チームのownerであれば、子チームに所属していなくても実行できます。
+     *     レスポンスには常に `email` が含まれます（子チームに有効なid_providerが無い場合はnull）。
+     *     なお `email` は表示用で、メンバー指定の識別子として使えるとは限りません
+     *     （子チームのid_providerに紐づかないアドレスが返ることがあります）。
+     */
+    get: {
+      parameters: {
+        query?: {
+          /** @description ページ番号（1から開始） */
+          page?: components["parameters"]["page"];
+          /** @description 1ページあたりの要素数 */
+          per_page?: components["parameters"]["per_page"];
+        };
+        header?: never;
+        path: {
+          /** @description チーム名 */
+          team_name: components["parameters"]["team_name"];
+          /** @description 子チーム名（連結請求で親チームに紐付いているチーム） */
+          child_team_name: components["parameters"]["child_team_name"];
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description 成功 */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["MemberList"];
+          };
+        };
+        400: components["responses"]["BadRequestError"];
+        401: components["responses"]["UnauthorizedError"];
+        402: components["responses"]["PaymentRequiredError"];
+        403: components["responses"]["ForbiddenError"];
+        404: components["responses"]["NotFoundError"];
+        405: components["responses"]["MethodNotAllowedError"];
+        429: components["responses"]["TooManyRequestsError"];
+        500: components["responses"]["InternalServerError"];
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/teams/{team_name}/child_teams/{child_team_name}/members/{screen_name_or_email}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * 子チームのメンバー情報取得
+     * @description 子チームの指定されたメンバーの情報を取得します（親チームのowner権限必要）。
+     *     レスポンスには常に `email` が含まれます（子チームに有効なid_providerが無い場合はnull）。
+     */
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          /** @description チーム名 */
+          team_name: components["parameters"]["team_name"];
+          /** @description 子チーム名（連結請求で親チームに紐付いているチーム） */
+          child_team_name: components["parameters"]["child_team_name"];
+          /** @description スクリーンネームまたはメールアドレス */
+          screen_name_or_email: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description 成功 */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["Member"];
+          };
+        };
+        400: components["responses"]["BadRequestError"];
+        401: components["responses"]["UnauthorizedError"];
+        402: components["responses"]["PaymentRequiredError"];
+        403: components["responses"]["ForbiddenError"];
+        404: components["responses"]["NotFoundError"];
+        405: components["responses"]["MethodNotAllowedError"];
+        429: components["responses"]["TooManyRequestsError"];
+        500: components["responses"]["InternalServerError"];
+      };
+    };
+    put?: never;
+    post?: never;
+    /**
+     * 子チームのメンバー削除
+     * @description 子チームの指定されたメンバーを削除します（親チームのowner権限必要）。
+     *     子チームのownerも削除できますが、そのチームの最後のownerは削除できません。
+     */
+    delete: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          /** @description チーム名 */
+          team_name: components["parameters"]["team_name"];
+          /** @description 子チーム名（連結請求で親チームに紐付いているチーム） */
+          child_team_name: components["parameters"]["child_team_name"];
           /** @description スクリーンネームまたはメールアドレス */
           screen_name_or_email: string;
         };
@@ -2917,8 +3131,8 @@ export interface paths {
     get: {
       parameters: {
         query?: {
-          /** @description teams を指定すると所属チーム一覧を含みます */
-          include?: "teams";
+          /** @description 追加で含める情報（カンマ区切り）。`available_scopes` は `teams` と併記した場合のみ有効。 */
+          include?: components["parameters"]["user_include"];
         };
         header?: never;
         path?: never;
@@ -3036,6 +3250,26 @@ export interface components {
        * @description チームのURL
        */
       url: string;
+      /**
+       * @description このアクセストークンがこのチームで利用可能なスコープ(include=available_scopes)。
+       *     チーム側の API アクセス設定やアクセスポリシーによる制限を反映済みだが、カテゴリ制限や
+       *     メンバーの権限による制限までは表現していないため、この値があってもリクエストが 403 になることがある。
+       */
+      available_scopes?: {
+        /**
+         * @description scopes の語彙（アクセストークンの世代）
+         * @enum {string}
+         */
+        version: "v1" | "v2";
+        /**
+         * @description 利用可能なスコープ。`admin:*` は個別のアクションに展開済み
+         * @example [
+         *       "read",
+         *       "write"
+         *     ]
+         */
+        scopes: string[];
+      };
     };
     TeamList: components["schemas"]["Pagination"] & {
       teams: components["schemas"]["Team"][];
@@ -3063,9 +3297,9 @@ export interface components {
     Member: components["schemas"]["User"] & {
       /**
        * Format: email
-       * @description メンバーのemail
+       * @description メンバーのemail（emailを解決できない場合はnull）
        */
-      email: string;
+      email?: string | null;
       /**
        * @description メンバーのロール
        * @enum {string}
@@ -3737,6 +3971,8 @@ export interface components {
     per_page: number;
     /** @description チーム名 */
     team_name: string;
+    /** @description 子チーム名（連結請求で親チームに紐付いているチーム） */
+    child_team_name: string;
     /** @description 記事番号 */
     post_number: number;
     /** @description コメントID */
@@ -3756,6 +3992,10 @@ export interface components {
       | "comments.stargazers"
       | "backlinks"
     )[];
+    /** @description 追加で含める情報（カンマ区切り） */
+    team_include: "available_scopes"[];
+    /** @description 追加で含める情報（カンマ区切り）。`available_scopes` は `teams` と併記した場合のみ有効。 */
+    user_include: ("teams" | "available_scopes")[];
     /**
      * @description 本文中のsecure attachment URL（https://files.esa.io/ または https://dl.esa.io/）を署名付きURLに変換するかどうか。
      *     - `false`: 変換しない（デフォルト）

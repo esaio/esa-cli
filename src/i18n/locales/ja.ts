@@ -65,6 +65,8 @@ export const ja: Resources = {
     desc: "チームを操作します",
     listDesc: "所属しているチームの一覧を表示します (GET /v1/teams)",
     statsDesc: "チームの統計情報を表示します (GET /v1/teams/{team_name}/stats)",
+    childrenDesc:
+      "連結請求で紐付いた子チームの一覧を表示します (GET /v1/teams/{team_name}/child_teams)",
     teamOpt: "対象チーム",
     pageOpt: "ページ番号",
     perPageOpt: "1ページあたりの件数",
@@ -206,7 +208,15 @@ export const ja: Resources = {
     desc: "チームメンバーを操作します",
     listDesc:
       "チームのメンバー一覧を表示します (GET /v1/teams/{team_name}/members)",
+    viewDesc:
+      "メンバーを1件表示します (GET /v1/teams/{team_name}/members/{screen_name_or_email})",
+    identifierArg: "スクリーンネームまたはメールアドレス",
+    identifierLabel: "スクリーンネームまたはメールアドレス",
     teamOpt: "対象チーム",
+    childTeamOpt:
+      "対象チームの代わりに、その子チームを見る（read:child_team_member と親チームの owner 権限が必要）",
+    childTeamSortConflict:
+      "--sort / --order は --child-team と同時に指定できません。",
     pageOpt: "ページ番号",
     perPageOpt: "1ページあたりの件数",
     sortOpt: "ソート基準 (posts_count | joined | last_accessed)",
@@ -254,6 +264,7 @@ export const ja: Resources = {
   },
   parse: {
     notPositiveInt: "{{name}} は 1 以上の整数で指定してください: {{value}}",
+    empty: "{{name}} は空にできません。",
   },
   oauth: {
     fetchingMetadata: "認可サーバーの情報を取得しています...",
@@ -333,6 +344,7 @@ export const ja: Resources = {
     colScreenName: "ユーザー名",
     colName: "名前",
     colRole: "権限",
+    colEmail: "メールアドレス",
     colLastAccess: "最終アクセス",
     colDescription: "説明",
     colPrivacy: "公開範囲",
@@ -356,6 +368,9 @@ export const ja: Resources = {
     fieldUrl: "URL",
     fieldScreenName: "ユーザー名",
     fieldEmail: "メールアドレス",
+    fieldRole: "権限",
+    fieldJoined: "参加",
+    fieldLastAccess: "最終アクセス",
     fieldTeams: "チーム",
     fieldMembers: "メンバー",
     fieldPosts: "記事数",
