@@ -351,6 +351,7 @@ post / comment 系コマンドはチームを対象に動きます。チーム�
 ```bash
 esa config set default-team docs   # 既定チームを設定
 esa config get default-team        # 設定値を表示
+esa config unset default-team      # 設定値を削除
 esa config --help                  # 対応している設定キーの一覧
 esa post list --team docs          # 明示指定
 ```
@@ -368,6 +369,7 @@ esa post list --team docs          # 明示指定
 ESA_LANG=ja esa --help        # 一時的に日本語で実行
 esa config set language ja    # 既定を日本語にする
 esa config get language       # 設定値を表示
+esa config unset language     # 設定値を削除（OS のロケールに戻る）
 ```
 
 ### 認証の優先順位

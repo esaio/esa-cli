@@ -1,4 +1,4 @@
-import { getLanguage } from "../config/file-store.js";
+import { getConfigValue } from "../config/file-store.js";
 
 export const SUPPORTED_LANGUAGES = ["en", "ja"] as const;
 export type Language = (typeof SUPPORTED_LANGUAGES)[number];
@@ -45,7 +45,8 @@ export function resolveLanguageFrom(sources: LanguageSources): Language {
  * ESA_LANG で決まる場合は設定ファイルを読まない（遅延評価）。
  */
 export function resolveLanguage(
-  getConfigLanguage: () => string | undefined = getLanguage,
+  getConfigLanguage: () => string | undefined = () =>
+    getConfigValue("language"),
 ): Language {
   const fromEnv = normalize(process.env.ESA_LANG);
   if (fromEnv) return fromEnv;

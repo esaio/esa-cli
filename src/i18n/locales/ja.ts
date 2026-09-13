@@ -17,6 +17,7 @@ export const ja: Resources = {
     desc: "esa CLI の設定を管理します (~/.config/esa-cli/config.json)",
     setDesc: "設定値を保存します",
     getDesc: "設定値を表示します",
+    unsetDesc: "設定値を削除します",
     keysHeading: "対応している設定キー:",
     defaultTeamKeyDesc: "--team と ESA_TEAM が無いときに使うチーム",
     languageKeyDesc:
@@ -25,6 +26,8 @@ export const ja: Resources = {
     valueArg: "値",
     unknownKey: "未知の設定キーです: {{key}}（対応: {{keys}}）",
     setDone: "{{key}} を {{value}} に設定しました。",
+    unsetDone: "{{key}} を削除しました。",
+    unsetNotSet: "{{key}} は設定されていません。",
     invalidLanguage: "{{key}} は次のいずれかを指定してください: {{langs}}",
   },
   auth: {

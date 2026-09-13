@@ -1,11 +1,18 @@
 import type { Client } from "openapi-fetch";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
+import type { FileConfigKey } from "../../config/file-store.js";
 import type { paths } from "../../generated/api-types.js";
 
-const getDefaultTeam = vi.fn<() => string | undefined>();
-// getLanguage は i18n 初期化（言語判定）が参照するため mock に含める。
-const getLanguage = vi.fn<() => string | undefined>();
-vi.mock("../../config/file-store.js", () => ({ getDefaultTeam, getLanguage }));
+// i18n 初期化（言語判定）も同じ関数で language を読むので、mock は
+// default_team を聞かれたときだけ値を返す。
+const getConfigValue = vi.fn<(key: FileConfigKey) => string | undefined>();
+vi.mock("../../config/file-store.js", () => ({ getConfigValue }));
+
+function setConfiguredTeam(team: string | undefined): void {
+  getConfigValue.mockImplementation((key) =>
+    key === "default_team" ? team : undefined,
+  );
+}
 
 const { resolveTeam } = await import("../resolve-team.js");
 
@@ -21,7 +28,7 @@ function makeClient(names: string[], status = 200) {
 }
 
 beforeEach(() => {
-  getDefaultTeam.mockReset();
+  getConfigValue.mockReset();
   delete process.env.ESA_TEAM;
 });
 
@@ -31,7 +38,7 @@ afterEach(() => {
 
 test("prefers the --team flag over everything", async () => {
   process.env.ESA_TEAM = "env-team";
-  getDefaultTeam.mockReturnValue("config-team");
+  setConfiguredTeam("config-team");
   const { client, get } = makeClient(["a", "b"]);
 
   expect(await resolveTeam(client, "flag-team")).toBe("flag-team");
@@ -40,14 +47,14 @@ test("prefers the --team flag over everything", async () => {
 
 test("falls back to ESA_TEAM when no flag is given", async () => {
   process.env.ESA_TEAM = "env-team";
-  getDefaultTeam.mockReturnValue("config-team");
+  setConfiguredTeam("config-team");
   const { client } = makeClient(["a", "b"]);
 
   expect(await resolveTeam(client)).toBe("env-team");
 });
 
 test("falls back to the configured default team", async () => {
-  getDefaultTeam.mockReturnValue("config-team");
+  setConfiguredTeam("config-team");
   const { client, get } = makeClient(["a", "b"]);
 
   expect(await resolveTeam(client)).toBe("config-team");
@@ -55,21 +62,21 @@ test("falls back to the configured default team", async () => {
 });
 
 test("auto-selects the only team when nothing else is set", async () => {
-  getDefaultTeam.mockReturnValue(undefined);
+  setConfiguredTeam(undefined);
   const { client } = makeClient(["only-team"]);
 
   expect(await resolveTeam(client)).toBe("only-team");
 });
 
 test("errors when there are multiple teams and none is chosen", async () => {
-  getDefaultTeam.mockReturnValue(undefined);
+  setConfiguredTeam(undefined);
   const { client } = makeClient(["a", "b"]);
 
   await expect(resolveTeam(client)).rejects.toThrow(/multiple teams/);
 });
 
 test("errors when the user belongs to no team", async () => {
-  getDefaultTeam.mockReturnValue(undefined);
+  setConfiguredTeam(undefined);
   const { client } = makeClient([]);
 
   await expect(resolveTeam(client)).rejects.toThrow(
@@ -80,7 +87,7 @@ test("errors when the user belongs to no team", async () => {
 test("propagates a 401 from GET /v1/teams instead of swallowing it", async () => {
   // ローカル判定に頼らず、認証エラーは握りつぶさず伝える
   // （「所属チームなし」に化けさせない）。unwrap の 401 メッセージが届くこと。
-  getDefaultTeam.mockReturnValue(undefined);
+  setConfiguredTeam(undefined);
   const { client } = makeClient([], 401);
 
   await expect(resolveTeam(client)).rejects.toThrow(/Authentication failed/);
@@ -89,7 +96,7 @@ test("propagates a 401 from GET /v1/teams instead of swallowing it", async () =>
 test("points at --team when the token lacks read:team", async () => {
   // 所属チームの問い合わせは read:team を使うが、チームが分かっていれば要らない。
   // スコープを足し直すより先に、直接指定する道を案内する。
-  getDefaultTeam.mockReturnValue(undefined);
+  setConfiguredTeam(undefined);
   const { client } = makeClient([], 403);
 
   await expect(resolveTeam(client)).rejects.toThrow(/--team/);
@@ -98,7 +105,7 @@ test("points at --team when the token lacks read:team", async () => {
 test("ignores a whitespace-only ESA_TEAM and falls through", async () => {
   // trim して空になる値は未指定として扱う。
   process.env.ESA_TEAM = "  ";
-  getDefaultTeam.mockReturnValue("config-team");
+  setConfiguredTeam("config-team");
   const { client } = makeClient(["a", "b"]);
 
   expect(await resolveTeam(client)).toBe("config-team");
