@@ -54,44 +54,31 @@ export function writeFileConfig(
   );
 }
 
-export function getDefaultTeam(
+/** 設定ファイル上のキー名。コマンドのキー名（default-team）とは別物。 */
+export type FileConfigKey = keyof FileConfig;
+
+export function getConfigValue(
+  key: FileConfigKey,
   configDir = DEFAULT_CONFIG_DIR,
 ): string | undefined {
-  return readFileConfig(configDir).default_team;
+  return readFileConfig(configDir)[key];
 }
 
-export function setDefaultTeam(
-  team: string,
+export function setConfigValue(
+  key: FileConfigKey,
+  value: string,
   configDir = DEFAULT_CONFIG_DIR,
 ): void {
   const config = readFileConfig(configDir);
-  config.default_team = team;
+  config[key] = value;
   writeFileConfig(config, configDir);
 }
 
-export function unsetDefaultTeam(configDir = DEFAULT_CONFIG_DIR): void {
-  const config = readFileConfig(configDir);
-  delete config.default_team;
-  writeFileConfig(config, configDir);
-}
-
-export function getLanguage(
-  configDir = DEFAULT_CONFIG_DIR,
-): string | undefined {
-  return readFileConfig(configDir).language;
-}
-
-export function setLanguage(
-  language: string,
+export function unsetConfigValue(
+  key: FileConfigKey,
   configDir = DEFAULT_CONFIG_DIR,
 ): void {
   const config = readFileConfig(configDir);
-  config.language = language;
-  writeFileConfig(config, configDir);
-}
-
-export function unsetLanguage(configDir = DEFAULT_CONFIG_DIR): void {
-  const config = readFileConfig(configDir);
-  delete config.language;
+  delete config[key];
   writeFileConfig(config, configDir);
 }

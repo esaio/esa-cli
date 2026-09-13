@@ -3,13 +3,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, expect, test } from "vitest";
 import {
-  getDefaultTeam,
-  getLanguage,
+  getConfigValue,
   readFileConfig,
-  setDefaultTeam,
-  setLanguage,
-  unsetDefaultTeam,
-  unsetLanguage,
+  setConfigValue,
+  unsetConfigValue,
 } from "../file-store.js";
 
 let dir: string;
@@ -24,18 +21,18 @@ afterEach(async () => {
 
 test("returns an empty config when the file is absent", () => {
   expect(readFileConfig(dir)).toEqual({});
-  expect(getDefaultTeam(dir)).toBeUndefined();
+  expect(getConfigValue("default_team", dir)).toBeUndefined();
 });
 
 test("set then get round-trips the default team", () => {
-  setDefaultTeam("docs", dir);
-  expect(getDefaultTeam(dir)).toBe("docs");
+  setConfigValue("default_team", "docs", dir);
+  expect(getConfigValue("default_team", dir)).toBe("docs");
 });
 
 test("set overwrites a previous value", () => {
-  setDefaultTeam("docs", dir);
-  setDefaultTeam("dev", dir);
-  expect(getDefaultTeam(dir)).toBe("dev");
+  setConfigValue("default_team", "docs", dir);
+  setConfigValue("default_team", "dev", dir);
+  expect(getConfigValue("default_team", dir)).toBe("dev");
 });
 
 test("treats a corrupted config file as empty", async () => {
@@ -59,7 +56,7 @@ test.each(["null", '"a string"', "[1, 2]", "42"])(
     await mkdir(dir, { recursive: true });
     await writeFile(join(dir, "config.json"), content);
     expect(readFileConfig(dir)).toEqual({});
-    expect(getDefaultTeam(dir)).toBeUndefined();
+    expect(getConfigValue("default_team", dir)).toBeUndefined();
   },
 );
 
@@ -67,47 +64,47 @@ test("ignores a non-string default_team", async () => {
   const { writeFile, mkdir } = await import("node:fs/promises");
   await mkdir(dir, { recursive: true });
   await writeFile(join(dir, "config.json"), '{"default_team": 123}');
-  expect(getDefaultTeam(dir)).toBeUndefined();
+  expect(getConfigValue("default_team", dir)).toBeUndefined();
 });
 
 test("set then get round-trips the language", () => {
-  setLanguage("ja", dir);
-  expect(getLanguage(dir)).toBe("ja");
+  setConfigValue("language", "ja", dir);
+  expect(getConfigValue("language", dir)).toBe("ja");
 });
 
 test("language and default_team coexist without clobbering", () => {
-  setDefaultTeam("docs", dir);
-  setLanguage("ja", dir);
-  expect(getDefaultTeam(dir)).toBe("docs");
-  expect(getLanguage(dir)).toBe("ja");
+  setConfigValue("default_team", "docs", dir);
+  setConfigValue("language", "ja", dir);
+  expect(getConfigValue("default_team", dir)).toBe("docs");
+  expect(getConfigValue("language", dir)).toBe("ja");
 });
 
 test("ignores a non-string language", async () => {
   const { writeFile, mkdir } = await import("node:fs/promises");
   await mkdir(dir, { recursive: true });
   await writeFile(join(dir, "config.json"), '{"language": 123}');
-  expect(getLanguage(dir)).toBeUndefined();
+  expect(getConfigValue("language", dir)).toBeUndefined();
 });
 
 test("unset removes the default team and keeps the language", () => {
-  setDefaultTeam("docs", dir);
-  setLanguage("ja", dir);
-  unsetDefaultTeam(dir);
-  expect(getDefaultTeam(dir)).toBeUndefined();
-  expect(getLanguage(dir)).toBe("ja");
+  setConfigValue("default_team", "docs", dir);
+  setConfigValue("language", "ja", dir);
+  unsetConfigValue("default_team", dir);
+  expect(getConfigValue("default_team", dir)).toBeUndefined();
+  expect(getConfigValue("language", dir)).toBe("ja");
   // キーごと消えていて、undefined で残っていないこと。
   expect(readFileConfig(dir)).toEqual({ language: "ja" });
 });
 
 test("unset removes the language and keeps the default team", () => {
-  setDefaultTeam("docs", dir);
-  setLanguage("ja", dir);
-  unsetLanguage(dir);
-  expect(getLanguage(dir)).toBeUndefined();
-  expect(getDefaultTeam(dir)).toBe("docs");
+  setConfigValue("default_team", "docs", dir);
+  setConfigValue("language", "ja", dir);
+  unsetConfigValue("language", dir);
+  expect(getConfigValue("language", dir)).toBeUndefined();
+  expect(getConfigValue("default_team", dir)).toBe("docs");
 });
 
 test("unset on an absent file leaves an empty config", () => {
-  unsetDefaultTeam(dir);
+  unsetConfigValue("default_team", dir);
   expect(readFileConfig(dir)).toEqual({});
 });

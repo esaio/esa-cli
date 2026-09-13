@@ -1,5 +1,5 @@
 import type { Client } from "openapi-fetch";
-import { getDefaultTeam } from "../config/file-store.js";
+import { getConfigValue } from "../config/file-store.js";
 import type { paths } from "../generated/api-types.js";
 import { t } from "../i18n/index.js";
 import { unwrap } from "./response.js";
@@ -22,7 +22,7 @@ export async function resolveTeam(
   const env = process.env.ESA_TEAM?.trim();
   if (env) return env;
 
-  const configured = getDefaultTeam()?.trim();
+  const configured = getConfigValue("default_team")?.trim();
   if (configured) return configured;
 
   const result = await client.GET("/v1/teams");
