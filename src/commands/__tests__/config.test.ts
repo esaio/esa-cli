@@ -5,12 +5,16 @@ const getDefaultTeam = vi.fn<() => string | undefined>();
 const setDefaultTeam = vi.fn<(team: string) => void>();
 const getLanguage = vi.fn<() => string | undefined>();
 const setLanguage = vi.fn<(language: string) => void>();
+const unsetDefaultTeam = vi.fn<() => void>();
+const unsetLanguage = vi.fn<() => void>();
 
 vi.mock("../../config/file-store.js", () => ({
   getDefaultTeam,
   setDefaultTeam,
   getLanguage,
   setLanguage,
+  unsetDefaultTeam,
+  unsetLanguage,
 }));
 
 const { registerConfigCommand } = await import("../config.js");
@@ -46,6 +50,8 @@ beforeEach(() => {
   setDefaultTeam.mockReset();
   getLanguage.mockReset();
   setLanguage.mockReset();
+  unsetDefaultTeam.mockReset();
+  unsetLanguage.mockReset();
 });
 
 afterEach(() => {
@@ -62,7 +68,7 @@ test("`config --help` lists every supported key and what it does", () => {
   );
 });
 
-test.each([["set"], ["get"]])(
+test.each([["set"], ["get"], ["unset"]])(
   "`config %s --help` lists the supported keys too",
   (subcommand) => {
     const out = help(["config", subcommand, "--help"]);
@@ -155,4 +161,51 @@ test("`config get language` prints the value", async () => {
 
   expect(log).toHaveBeenCalledWith("ja");
   expect(getDefaultTeam).not.toHaveBeenCalled();
+});
+
+test("`config unset default-team` removes the value and reports it", async () => {
+  getDefaultTeam.mockReturnValue("docs");
+  const error = vi.spyOn(console, "error").mockImplementation(() => {});
+
+  await run(["config", "unset", "default-team"]);
+
+  expect(unsetDefaultTeam).toHaveBeenCalledOnce();
+  expect(unsetLanguage).not.toHaveBeenCalled();
+  expect(error).toHaveBeenCalledWith(
+    expect.stringContaining("Removed default-team."),
+  );
+});
+
+test("`config unset language` removes the language only", async () => {
+  getLanguage.mockReturnValue("ja");
+  vi.spyOn(console, "error").mockImplementation(() => {});
+
+  await run(["config", "unset", "language"]);
+
+  expect(unsetLanguage).toHaveBeenCalledOnce();
+  expect(unsetDefaultTeam).not.toHaveBeenCalled();
+});
+
+test("`config unset` on an unset key notes it and exits 0 without writing", async () => {
+  getDefaultTeam.mockReturnValue(undefined);
+  const error = vi.spyOn(console, "error").mockImplementation(() => {});
+
+  await run(["config", "unset", "default-team"]);
+
+  expect(unsetDefaultTeam).not.toHaveBeenCalled();
+  expect(error).toHaveBeenCalledWith(
+    expect.stringContaining("default-team is not set."),
+  );
+});
+
+test("`config unset` rejects an unknown key", async () => {
+  await expect(run(["config", "unset", "bogus"])).rejects.toThrow(
+    /Unknown config key/,
+  );
+  expect(unsetDefaultTeam).not.toHaveBeenCalled();
+  expect(unsetLanguage).not.toHaveBeenCalled();
+});
+
+test("`config unset` without a key errors (key is required)", async () => {
+  await expect(run(["config", "unset"])).rejects.toThrow();
 });

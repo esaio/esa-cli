@@ -136,11 +136,12 @@ generated from esa's `openapi.yaml` via `openapi-typescript`.
     change already happened, and failing would invite a retry that applies it
     twice. Read commands keep failing on a bad field: retrying those is free.
   - `printSuccess()` — a single `✓` line on stderr for actions that produce no
-    URL (`post delete` / `comment delete`, `auth refresh`, `config set`,
-    `feedback create`, `attachment download -o`); stdout stays empty. It takes
-    only a message, so a command that wants a machine-readable result after the
-    change calls `printJsonAfterChange()` itself — `auth refresh` is the only
-    one that does, and the delete commands have no `--json` at all.
+    URL (`post delete` / `comment delete`, `auth refresh`, `config set` /
+    `config unset`, `feedback create`, `attachment download -o`); stdout stays
+    empty. It takes only a message, so a command that wants a machine-readable
+    result after the change calls `printJsonAfterChange()` itself —
+    `auth refresh` is the only one that does, and the delete commands have no
+    `--json` at all.
     `printNotice()` is its `!` counterpart for a non-failure warning.
     `auth status` keeps one human-readable form on both TTY and pipe (it reports
     state rather than returning a record) and offers `--json`.
@@ -184,7 +185,7 @@ src/
     api.ts               # `esa api` escape hatch to any path
     body-input.ts        # Body input (--body / --body-file / stdin)
     confirm.ts           # y/N confirmation prompt (used by delete)
-    config.ts            # `esa config set/get` (default team, language)
+    config.ts            # `esa config set/get/unset` (default team, language)
     parse.ts             # Shared option/argument validation (incl. --timeout)
   output/                # Output formatting
     list.ts              # Shared list rendering (columns + --json) for list commands

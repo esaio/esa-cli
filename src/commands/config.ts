@@ -4,10 +4,12 @@ import {
   getLanguage,
   setDefaultTeam,
   setLanguage,
+  unsetDefaultTeam,
+  unsetLanguage,
 } from "../config/file-store.js";
 import { t } from "../i18n/index.js";
 import { SUPPORTED_LANGUAGES } from "../i18n/resolve-language.js";
-import { printSuccess } from "../output/mutation.js";
+import { printNotice, printSuccess } from "../output/mutation.js";
 import { nonEmpty } from "./parse.js";
 
 const KEY_DEFAULT_TEAM = "default-team";
@@ -47,7 +49,7 @@ function assertKnownKey(key: string): void {
 export function registerConfigCommand(program: Command): void {
   const config = program.command("config").description(t("config.desc"));
 
-  // afterAll は自身と配下の help に出るので、config / set / get の
+  // afterAll は自身と配下の help に出るので、config / set / get / unset の
   // どれに --help を付けてもキーの一覧が読める。
   config.addHelpText("afterAll", keyHelp);
 
@@ -85,5 +87,26 @@ export function registerConfigCommand(program: Command): void {
       const value = key === KEY_LANGUAGE ? getLanguage() : getDefaultTeam();
       // 未設定なら何も出力しない（exit 0）。設定済みなら値のみ出す。
       if (value != null) console.log(value);
+    });
+
+  config
+    .command("unset")
+    .argument("<key>", t("config.keyArg", { keys: KEY_LIST }))
+    .description(t("config.unsetDesc"))
+    .action((key: string) => {
+      assertKnownKey(key);
+      // 未設定のキーを消しても失敗にはしない（exit 0）。ただ ✓ を出すと
+      // 消えたように読めるので、! で「元から無い」と伝える。
+      const value = key === KEY_LANGUAGE ? getLanguage() : getDefaultTeam();
+      if (value == null) {
+        printNotice(t("config.unsetNotSet", { key }));
+        return;
+      }
+      if (key === KEY_LANGUAGE) {
+        unsetLanguage();
+      } else {
+        unsetDefaultTeam();
+      }
+      printSuccess(t("config.unsetDone", { key }));
     });
 }

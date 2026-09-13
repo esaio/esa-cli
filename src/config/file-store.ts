@@ -69,6 +69,12 @@ export function setDefaultTeam(
   writeFileConfig(config, configDir);
 }
 
+export function unsetDefaultTeam(configDir = DEFAULT_CONFIG_DIR): void {
+  const config = readFileConfig(configDir);
+  delete config.default_team;
+  writeFileConfig(config, configDir);
+}
+
 export function getLanguage(
   configDir = DEFAULT_CONFIG_DIR,
 ): string | undefined {
@@ -81,5 +87,11 @@ export function setLanguage(
 ): void {
   const config = readFileConfig(configDir);
   config.language = language;
+  writeFileConfig(config, configDir);
+}
+
+export function unsetLanguage(configDir = DEFAULT_CONFIG_DIR): void {
+  const config = readFileConfig(configDir);
+  delete config.language;
   writeFileConfig(config, configDir);
 }

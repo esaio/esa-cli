@@ -8,6 +8,8 @@ import {
   readFileConfig,
   setDefaultTeam,
   setLanguage,
+  unsetDefaultTeam,
+  unsetLanguage,
 } from "../file-store.js";
 
 let dir: string;
@@ -85,4 +87,27 @@ test("ignores a non-string language", async () => {
   await mkdir(dir, { recursive: true });
   await writeFile(join(dir, "config.json"), '{"language": 123}');
   expect(getLanguage(dir)).toBeUndefined();
+});
+
+test("unset removes the default team and keeps the language", () => {
+  setDefaultTeam("docs", dir);
+  setLanguage("ja", dir);
+  unsetDefaultTeam(dir);
+  expect(getDefaultTeam(dir)).toBeUndefined();
+  expect(getLanguage(dir)).toBe("ja");
+  // キーごと消えていて、undefined で残っていないこと。
+  expect(readFileConfig(dir)).toEqual({ language: "ja" });
+});
+
+test("unset removes the language and keeps the default team", () => {
+  setDefaultTeam("docs", dir);
+  setLanguage("ja", dir);
+  unsetLanguage(dir);
+  expect(getLanguage(dir)).toBeUndefined();
+  expect(getDefaultTeam(dir)).toBe("docs");
+});
+
+test("unset on an absent file leaves an empty config", () => {
+  unsetDefaultTeam(dir);
+  expect(readFileConfig(dir)).toEqual({});
 });
