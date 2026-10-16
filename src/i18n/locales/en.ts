@@ -239,6 +239,7 @@ export const en = {
       "--expires-in must be between 1 and 604800 seconds: {{value}}",
     tooManyUrls: "sign accepts at most {{max}} URLs at once.",
     notFound: "Attachment not found: {{url}}",
+    notEsaUrl: "Not an esa attachment URL: {{url}}",
     notAFile: "Not a file: {{path}}",
     notReadable: "Cannot read file: {{path}}",
     fetchFailed:

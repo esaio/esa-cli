@@ -180,7 +180,8 @@ esa attachment download /uploads/x.png > x.png        # 標準出力に書き出
 
 署名の対象はセキュアチーム（セキュア添付）のファイルのみです。非セキュアチームの
 添付は公開 URL（`img.esa.io`）で配信されるため署名は不要で、
-`esa attachment download <公開URL>` で直接取得できます。
+`esa attachment download <公開URL>` で直接取得できます。esa の添付ファイル以外（カスタム S3 のバケットを含む）の URL は
+取得しないので、`curl` などで直接取得してください。
 
 ### フィードバック
 

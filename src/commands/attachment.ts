@@ -27,6 +27,12 @@ type UploadBody =
 // img.esa.io は公開なので署名不要で直接取得できる。
 const SIGNED_URL_HOSTS = ["files.esa.io", "dl.esa.io"];
 
+// 署名なしで取得する公開添付のホスト。esa の添付以外は取得しない。
+const PUBLIC_HOSTS = [
+  "img.esa.io",
+  "esa-storage-tokyo.s3-ap-northeast-1.amazonaws.com",
+];
+
 const EXPIRES_IN_MIN = 1;
 const EXPIRES_IN_MAX = 604800;
 
@@ -51,6 +57,16 @@ function needsSignedUrl(url: string): boolean {
   } catch {
     // URL として解釈できないものはパス扱いで署名対象にする。
     return true;
+  }
+}
+
+/** 署名なしで取得してよい esa の公開添付 URL かどうか。 */
+function isPublicEsaUrl(url: string): boolean {
+  try {
+    const { protocol, hostname } = new URL(url);
+    return protocol === "https:" && PUBLIC_HOSTS.includes(hostname);
+  } catch {
+    return false;
   }
 }
 
@@ -150,6 +166,8 @@ export function registerAttachmentCommand(program: Command): void {
           throw new Error(t("attachment.notFound", { url: query.urls }));
         }
         fetchUrl = signed;
+      } else if (!isPublicEsaUrl(url)) {
+        throw new Error(t("attachment.notEsaUrl", { url }));
       }
 
       const response = await fetch(fetchUrl);
