@@ -242,6 +242,7 @@ export const ja: Resources = {
     expiresInRange: "--expires-in は 1〜604800 秒で指定してください: {{value}}",
     tooManyUrls: "sign で一度に指定できるURLは最大 {{max}} 件です。",
     notFound: "添付ファイルが見つかりません: {{url}}",
+    notEsaUrl: "esa の添付ファイルの URL ではありません: {{url}}",
     notAFile: "ファイルではありません: {{path}}",
     notReadable: "ファイルを読み取れません: {{path}}",
     fetchFailed:

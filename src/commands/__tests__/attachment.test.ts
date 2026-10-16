@@ -205,6 +205,22 @@ test("`attachment download` ignores --expires-in for a public URL that needs no 
   expect(fetchMock).toHaveBeenCalledWith("https://img.esa.io/uploads/x.png");
 });
 
+test.each([
+  "https://example.com/x.png",
+  "http://img.esa.io/uploads/x.png",
+  "http://127.0.0.1:8080/",
+])(
+  "`attachment download` rejects a non-esa URL %s before any network call",
+  async (url) => {
+    await expect(run(["attachment", "download", url])).rejects.toThrow(
+      /not an esa attachment URL/i,
+    );
+    expect(resolveTeam).not.toHaveBeenCalled();
+    expect(get).not.toHaveBeenCalled();
+    expect(fetchMock).not.toHaveBeenCalled();
+  },
+);
+
 test("`attachment download` streams to stdout when no --output is given", async () => {
   // 添付はバイト列なので captureStdout（文字列）ではなくこちらで受ける。
   // pipeline が完了通知を待つ場合に備えて callback は呼び返す。
