@@ -226,10 +226,10 @@ esa api /v1/teams/{team}/comments/456 -X PATCH --input body.json
 `comment list` / `category list` / `tag list` / `member list` / `team list` /
 `team children` / `attachment sign`
 
-| 出力先 | 形式 |
-| --- | --- |
-| 端末 | 桁を揃えたテーブル。日時は相対表示（例: `2 hours ago`） |
-| パイプ | タブ区切り。見出しなし、色なし、日時は ISO 8601 |
+| 出力先 | 形式                                                    |
+| ------ | ------------------------------------------------------- |
+| 端末   | 桁を揃えたテーブル。日時は相対表示（例: `2 hours ago`） |
+| パイプ | タブ区切り。見出しなし、色なし、日時は ISO 8601         |
 
 値に含まれるタブや改行は、列や行の区切りと紛れないよう空白に均されます。元の値が必要な場合は `--json` を使ってください。
 
@@ -318,7 +318,6 @@ esa post list --json            # 指定できるフィールドを表示
 `--json` で JSON を stdout に出せて、本文やリクエストボディを標準入力（`-`）から受け取れるので、`jq` でパイプして繋げられます。エスケープ（改行やクォート）を `jq` に任せられるのも利点です。
 
 渡し方は 2 種類あります。
-
 - `esa post/comment ... --body-file -`: **本文テキストだけ**を受け取る。`jq -r`（raw 出力）でテキストを組み立てる
 - `esa api ... --input -`: **ボディ JSON 全体**を受け取る。`jq -n`（新規生成）で `{post: …}` や `{comment: …}` を組み立てる
 
@@ -342,7 +341,6 @@ esa post view 123 --json tags \
 ### 対象チームの指定
 
 post / comment 系コマンドはチームを対象に動きます。チームは次の順で解決されます:
-
 1. `--team <name>` フラグ
 2. 環境変数 `ESA_TEAM`
 3. 設定ファイルの既定チーム（`esa config set default-team <name>`）
@@ -361,7 +359,6 @@ esa post list --team docs          # 明示指定
 
 メッセージと `--help` は日本語（`ja`）と英語（`en`）に対応しています。
 使用言語は次の順で決まります（判定できない場合は既定の **英語**）:
-
 1. 環境変数 `ESA_LANG`（`en` / `ja`）
 2. 設定ファイルの `language`（`esa config set language ja`）
 3. OS のロケール（`LC_ALL` / `LC_MESSAGES` / `LANG`。例: `ja_JP.UTF-8` → `ja`）
@@ -376,7 +373,6 @@ esa config unset language     # 設定値を削除（OS のロケールに戻る
 ### 認証の優先順位
 
 API リクエストの認証は次の順で選ばれます:
-
 1. `esa auth login` で保存した **OAuth トークン**（期限が近づくと送信前に自動更新）
 2. 環境変数 **`ESA_ACCESS_TOKEN`**
 3. どちらも無ければエラー（`esa auth login` を案内）
@@ -406,15 +402,15 @@ npx skills add esaio/esa-skills
 
 ### 環境変数
 
-| 変数 | 説明 | 既定値 |
-| --- | --- | --- |
-| `ESA_OAUTH_SCOPE` | 要求するスコープ（スペース区切り）。`esa auth login --scopes` が優先される | `read:post write:post delete:post read:comment write:comment delete:comment read:category read:tag read:attachment write:attachment read:revision read:member read:team read:user write:feedback` |
-| `ESA_OAUTH_CLIENT_ID` | public app の client_id を上書き | 内蔵の公式 public app |
-| `ESA_API_BASE_URL` | API のベース URL。discovery の取得元でもある | `https://api.esa.io` |
-| `ESA_ACCESS_TOKEN` | OAuth を使わずアクセストークンを直接指定 | （未設定） |
-| `ESA_TEAM` | post 系コマンドの対象チーム（`--team` の既定） | （未設定） |
-| `ESA_LANG` | 表示言語（`en` / `ja`）。最優先で使われる | OS ロケール→`en` |
-| `ESA_DEBUG` | `1` のときエラーのスタックトレースを表示 | （未設定） |
+| 変数                  | 説明                                                                       | 既定値                                                                                                                                                                                            |
+| --------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ESA_OAUTH_SCOPE`     | 要求するスコープ（スペース区切り）。`esa auth login --scopes` が優先される | `read:post write:post delete:post read:comment write:comment delete:comment read:category read:tag read:attachment write:attachment read:revision read:member read:team read:user write:feedback` |
+| `ESA_OAUTH_CLIENT_ID` | public app の client_id を上書き                                           | 内蔵の公式 public app                                                                                                                                                                             |
+| `ESA_API_BASE_URL`    | API のベース URL。discovery の取得元でもある                               | `https://api.esa.io`                                                                                                                                                                              |
+| `ESA_ACCESS_TOKEN`    | OAuth を使わずアクセストークンを直接指定                                   | （未設定）                                                                                                                                                                                        |
+| `ESA_TEAM`            | post 系コマンドの対象チーム（`--team` の既定）                             | （未設定）                                                                                                                                                                                        |
+| `ESA_LANG`            | 表示言語（`en` / `ja`）。最優先で使われる                                  | OS ロケール→`en`                                                                                                                                                                                  |
+| `ESA_DEBUG`           | `1` のときエラーのスタックトレースを表示                                   | （未設定）                                                                                                                                                                                        |
 
 ## Development
 
@@ -435,17 +431,17 @@ node bin/index.js auth status
 
 ### Scripts
 
-| Script | 説明 |
-| --- | --- |
-| `npm run dev` | tsx でソースを直接実行 |
-| `npm run build` | tsdown で `bin/` にビルド |
-| `npm test` | vitest（watch） |
-| `npm run test:run` | vitest（1 回実行） |
-| `npm run test:coverage` | vitest（カバレッジ付き） |
-| `npm run lint` | biome によるチェック |
-| `npm run lint:fix` | biome による自動修正 |
-| `npm run type-check` | tsc による型チェック |
-| `npm run test:release` | テスト・型チェック・lint をまとめて実行 |
+| Script                  | 説明                                    |
+| ----------------------- | --------------------------------------- |
+| `npm run dev`           | tsx でソースを直接実行                  |
+| `npm run build`         | tsdown で `bin/` にビルド               |
+| `npm test`              | vitest（watch）                         |
+| `npm run test:run`      | vitest（1 回実行）                      |
+| `npm run test:coverage` | vitest（カバレッジ付き）                |
+| `npm run lint`          | biome によるチェック                    |
+| `npm run lint:fix`      | biome による自動修正                    |
+| `npm run type-check`    | tsc による型チェック                    |
+| `npm run test:release`  | テスト・型チェック・lint をまとめて実行 |
 
 ## License
 
