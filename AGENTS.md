@@ -94,7 +94,6 @@ For the full command reference and environment variables, see `README.md`.
 
 The client and command files derive types from `src/generated/api-types.ts`,
 generated from esa's `openapi.yaml` via `openapi-typescript`.
-
 - Regenerate with `npm run update-esa-api` (reads `../esa/api/openapi.yaml`).
 - Command files derive query/body types from `paths` rather than hand-writing them,
   e.g. `type XQuery = NonNullable<paths["/path"]["get"]["parameters"]["query"]>;`.
@@ -238,7 +237,6 @@ src/
 ### Test Writing Principles
 
 When writing tests, follow these principles for maintainable and readable test code:
-
 1. **Imports**
    - Use `import type` for type-only imports
    - Let Biome's `organizeImports` determine import ordering
